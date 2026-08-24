@@ -9,7 +9,7 @@
     "FileWriterTool"
   ],
   "settings": {
-    "verbose": false,
+    "verbose": true,
     "allow_delegation": true,
     "planning": true
   }

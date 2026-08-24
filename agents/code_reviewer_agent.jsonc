@@ -8,7 +8,7 @@
     "FileReadTool"
   ],
   "settings": {
-    "verbose": false,
+    "verbose": true,
     "allow_delegation": false,
     "planning": true
   }
