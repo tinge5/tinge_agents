@@ -1,0 +1,16 @@
+{
+  "role": "QA Engineer",
+  "goal": "Test the application, identify bugs, verify requirements, and ensure the application behaves correctly.",
+  "backstory": "Experienced in software testing, debugging, edge cases, integration testing, and quality assurance.",
+  "llm": "openai/gpt-5.4",
+  "tools": [
+    "DirectoryReadTool",
+    "FileReadTool",
+    "FileWriterTool"
+  ],
+  "settings": {
+    "verbose": false,
+    "allow_delegation": true,
+    "planning": true
+  }
+}
