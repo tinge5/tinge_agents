@@ -3,20 +3,25 @@
   "name": "tinge-agents",
 
   // Agents to include — each must have a matching agents/<name>.jsonc file
-  "agents": ["productrequirements_agent"],
+  "agents": ["productrequirements_agent",
+              "architect_agent",
+              "frontend_agent",
+              "backend_agent",
+              "testing_agent",
+              "codereview_agent"],
 
   // Task definitions — executed in order for sequential process
   "tasks": [
     {
       // Task identifier
-      "name": "they_will_eventually_build_task",
+      "name": "requirements_task",
 
       // What the task should accomplish
       // Use {placeholder} inputs here; crewai run prompts for missing values
-      "description": "{They will eventually build apps for me}",
+      "description": "Analyze the user's application idea and turn it into clear, specific, adn testable software requirements. Identify the core features, users, inputs, outputs, constraints, and acceptance criteria. If an existing project is provided, inspect the project files and existing functionality to identify what already exists, and what needs to be modified, and what new functionality is required. Do not make implementation decisions that belong to the architect or developers. Provide a clear and complete set of requirements for {app_name} that can be used by the architect and developers to design and implement the application.",
 
       // Clear definition of what the output should look like
-      "expected_output": "a useable applicatin able to be accessed via website or phone",
+      "expected_output": "A complete software requirements specification taht clearly defines what the application needs to do, including existing functionality that should be preserved or modified.",
 
       // Optional task guardrail(s) validate output before completion
       // Use "guardrail" for one rule or "guardrails" for many
@@ -46,8 +51,37 @@
       // "tools": [],
       // "human_input": false,
       // "async_execution": false
-    }
-
+    },
+    {
+      "name": "architecture_task",
+      "description": "Using the requirements produced by the productrequirements_agent, inspect the existing project files and directory structure before making architectural decisions. If it is new or empty, determine the architecture from the requirements. IF an existing applicaiton is present, understand and appropriate existing architecture. Determime what technologies, frameworks, dependencies, components, APIs, database structures and configuration already exists. Preserve appropriate existing architecture and functionality rather than unnecessarily replacing it. Then design or update the application's technical architecture based on the requirements and the actual project state. Determine the technology stack, database structure, APIs, major components, data flow, relationships between components, and implementation approach. Make practical technology choices appropriate for the project and clearly identify any existing files or components that should be modified, created, or preserved.",
+      "expected_output": "A detailed technical architecture describing the technology stack, database design, APIs, components, data flow, and implementaion approach.",
+      "agent": "architect_agent"
+    },
+    {
+      "name": "frontend_task",
+      "description": "Using the requirements and architecture produced by the previous agents, first inspect the actual project adn relevant frontend files before making any changes. IDentify the existing frontend framework, dependencies, components, routing, styling system, state management, API integration, and curent functionality. Follow the approved architecture and reuse existing components and patterns whenever appropriate. Implement the required frontend functionality by creating or modifying the necessary project files. Do not nunnecessarily rewrite or replace working functionality. After implementation, run the appropriate frontend build or tests and fix any errors you encounter.",
+      "expected_output": "A functional implementation in the actual project files that satisfies the requirements, follows teh approved architecture, preserves appropriate existing functionality if applicable, and successfully builds or passes the relevant tests.",
+      "agent": "frontend_agent"
+    },
+    {
+      "name": "backend_task",
+      "description": "Using the requirements and architecture produced by the previous agents, first inspect the actual project directory and relevant backend files before making any changes. Identify the existing backend framework, dependencies, API structure, database configuration, models, authentication, services, and current functionality. Follow the approved architecture and existing project conventions whenever appropriate. Implement the required backend functionality by creating or modifying the necessary project files, including server-side logic, APIs, authentication, database interactions, and application services. Do not unnecessarily rewrite or replace working functionality. After implementation, run the appropriate backend tests or application commands and fix any errors you encounter.",
+      "expected_output": "A functional backend implementation in the actual project files that satisfies the requirements, follows the approved architecture, preserves appropriate existing functionality, and successfully runs or passes the relevant tests.",
+      "agent": "backend_agent"
+    },
+    {
+      "name": "testing_task",
+      "description": "Test the actual application and inspect the project files created or modified by the frontend and backend agents. Begin by reviewing the requirements and architecture, then inspect the relevant source code, project structure, configuration, and tests. Run the application, build process, and available automated tests using the appropriate tools. Verify that the implementation satisfies the requirements and that the frontend, backend, APIs, database interactions, and major user workflows function correctly. Test normal use cases, invalid inputs, edge cases, error handling, and integration points. Identify the likely cause of failures and document specific files or components involved. Do not assume the application works based only on the previous agents' outputs.",
+      "expected_output": "A detailed test report based on actual execution and project inspection, identifying passed requirements, failed tests, bugs, affected files or components, edge cases, integration issues, and recommended fixes.",
+      "agent": "testing_agent"
+    },
+    {
+      "name": "code_review_task",
+      "description": "Review the completed application by inspecting the actual project files, source code, configuration, dependencies, and relevant tests. Review the original requirements, approved architecture, and testing results, then compare them against the actual implementation. Evaluate the implementation for correctness, security, maintainability, code quality, architectural consistency, error handling, and unnecessary complexity. Identify any remaining bugs, security vulnerabilities, architectural violations, poor practices, or maintainability concerns that should be addressed before the application is considered complete. Do not rely solely on the testing report or previous agents' descriptions; independently inspect the implementation.",
+      "expected_output": "A comprehensive code review based on the actual implementation, identifying security issues, bugs, architectural problems, maintainability concerns, deviations from requirements or architecture, and prioritized recommendations for final fixes.",
+      "agent": "codereview_agent"
+    },
   ],
 
   // Execution process
@@ -62,7 +96,7 @@
   "memory": true,
 
   // Automatically plan the execution strategy before running tasks
-  // "planning": false,
+   "planning": true,
 
   // LLM for the planning step (used when planning is true)
   // "planning_llm": "openai/gpt-4o",
@@ -94,5 +128,8 @@
   // Use {placeholder} in agent or task text, for example:
   // "description": "Research {topic} and write a brief"
   // `crewai run` prompts for any placeholders missing from this object.
-  "inputs": {}
+  "inputs": {
+    "app_name": "",
+    "app_description": ""
+  }
 }
