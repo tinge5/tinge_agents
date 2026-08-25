@@ -81,7 +81,7 @@
       "description": "Review the completed application by inspecting the actual project files, source code, configuration, dependencies, and relevant tests. Review the original requirements, approved architecture, and testing results, then compare them against the actual implementation. Evaluate the implementation for correctness, security, maintainability, code quality, architectural consistency, error handling, and unnecessary complexity. Identify any remaining bugs, security vulnerabilities, architectural violations, poor practices, or maintainability concerns that should be addressed before the application is considered complete. Do not rely solely on the testing report or previous agents' descriptions; independently inspect the implementation.",
       "expected_output": "A comprehensive code review based on the actual implementation, identifying security issues, bugs, architectural problems, maintainability concerns, deviations from requirements or architecture, and prioritized recommendations for final fixes.",
       "agent": "codereview_agent"
-    },
+    }
   ],
 
   // Execution process
