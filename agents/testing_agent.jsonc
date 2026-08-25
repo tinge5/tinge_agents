@@ -11,6 +11,7 @@
   "settings": {
     "verbose": true,
     "allow_delegation": true,
-    "planning": true
+    "planning": true,
+    "memory": false
   }
 }

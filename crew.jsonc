@@ -53,10 +53,10 @@
     },
     {
       "name": "architecture_task",
-      "description": "Using the requirements produced by the productrequirements_agent, inspect the existing project files and directory structure before making architectural decisions. If it is new or empty, determine the architecture from the requirements. IF an existing applicaiton is present, understand and appropriate existing architecture. Determime what technologies, frameworks, dependencies, components, APIs, database structures and configuration already exists. Preserve appropriate existing architecture and functionality rather than unnecessarily replacing it. Then design or update the application's technical architecture based on the requirements and the actual project state. Determine the technology stack, database structure, APIs, major components, data flow, relationships between components, and implementation approach. Make practical technology choices appropriate for the project and clearly identify any existing files or components that should be modified, created, or preserved.",
-      "expected_output": "A detailed technical architecture describing the technology stack, database design, APIs, components, data flow, and implementaion approach.",
+      "description": "Using the requirements produced by the Product/Requirements Agent, inspect the actual project directory and relevant project files before making architectural decisions. Determine whether the project is new, empty, or an existing application. If it is new or empty, design the architecture from the requirements. If existing application code is present, identify the existing technologies, frameworks, dependencies, components, APIs, database structures, configuration, and important conventions. Preserve appropriate existing architecture and functionality rather than unnecessarily replacing working code. Then design or update the technical architecture based on the requirements and actual project state. Define the recommended technology stack, database/data model, APIs, major components, data flow, relationships between components, authentication and security approach, and implementation structure. Clearly identify which existing files or components should be preserved, modified, or created.",
+      "expected_output": "A detailed, implementation-ready technical architecture describing the technology stack, database/data model, APIs, components, data flow, authentication, security, and implementation structure, including which existing files should be preserved, modified, or created.",
       "agent": "architect_agent"
-    },
+    },    
     {
       "name": "frontend_task",
       "description": "Using the requirements and architecture produced by the previous agents, first inspect the actual project adn relevant frontend files before making any changes. IDentify the existing frontend framework, dependencies, components, routing, styling system, state management, API integration, and curent functionality. Follow the approved architecture and reuse existing components and patterns whenever appropriate. Implement the required frontend functionality by creating or modifying the necessary project files. Do not nunnecessarily rewrite or replace working functionality. After implementation, run the appropriate frontend build or tests and fix any errors you encounter.",
@@ -92,7 +92,7 @@
   "verbose": true,
 
   // Enable crew memory — persists context and learnings across tasks
-  "memory": true,
+  "memory": false,
 
   // Automatically plan the execution strategy before running tasks
    "planning": true,

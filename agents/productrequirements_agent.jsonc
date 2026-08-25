@@ -73,7 +73,7 @@
     // "max_rpm": null,
 
     // Enable agent-level memory (persists across tasks)
-    // "memory": false,
+    "memory": false,
 
     // Cache tool results to avoid duplicate calls
     // "cache": true,
@@ -83,6 +83,7 @@
 
     // Maximum retries on execution errors
     // "max_retry_limit": 2,
+
 
     // Enable step-by-step planning before task execution
     "planning": false
