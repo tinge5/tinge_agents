@@ -8,7 +8,7 @@
               "frontend_agent",
               "backend_agent",
               "testing_agent",
-              "codereview_agent"],
+              "code_reviewer_agent"],
 
   // Task definitions — executed in order for sequential process
   "tasks": [
@@ -18,7 +18,7 @@
 
       // What the task should accomplish
       // Use {placeholder} inputs here; crewai run prompts for missing values
-      "description": "Analyze the user's application idea and turn it into clear, specific, adn testable software requirements. Identify the core features, users, inputs, outputs, constraints, and acceptance criteria. If an existing project is provided, inspect the project files and existing functionality to identify what already exists, and what needs to be modified, and what new functionality is required. Do not make implementation decisions that belong to the architect or developers. Provide a clear and complete set of requirements for {app_name} that can be used by the architect and developers to design and implement the application.",
+      "description": "Analyze the user's application request:\n\n{app_description} and turn it into clear, specific, adn testable software requirements. Identify the core features, users, inputs, outputs, constraints, and acceptance criteria. If an existing project is provided, inspect the project files and existing functionality to identify what already exists, and what needs to be modified, and what new functionality is required. Do not make implementation decisions that belong to the architect or developers. Provide a clear and complete set of requirements for {app_name} that can be used by the architect and developers to design and implement the application.",
 
       // Clear definition of what the output should look like
       "expected_output": "A complete software requirements specification taht clearly defines what the application needs to do, including existing functionality that should be preserved or modified.",
@@ -80,7 +80,7 @@
       "name": "code_review_task",
       "description": "Review the completed application by inspecting the actual project files, source code, configuration, dependencies, and relevant tests. Review the original requirements, approved architecture, and testing results, then compare them against the actual implementation. Evaluate the implementation for correctness, security, maintainability, code quality, architectural consistency, error handling, and unnecessary complexity. Identify any remaining bugs, security vulnerabilities, architectural violations, poor practices, or maintainability concerns that should be addressed before the application is considered complete. Do not rely solely on the testing report or previous agents' descriptions; independently inspect the implementation.",
       "expected_output": "A comprehensive code review based on the actual implementation, identifying security issues, bugs, architectural problems, maintainability concerns, deviations from requirements or architecture, and prioritized recommendations for final fixes.",
-      "agent": "codereview_agent"
+      "agent": "code_reviewer_agent"
     }
   ],
 
@@ -128,8 +128,5 @@
   // Use {placeholder} in agent or task text, for example:
   // "description": "Research {topic} and write a brief"
   // `crewai run` prompts for any placeholders missing from this object.
-  "inputs": {
-    "app_name": "",
-    "app_description": ""
-  }
+  "inputs": {}
 }
