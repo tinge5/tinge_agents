@@ -10,6 +10,6 @@
   "settings": {
     "verbose": true,
     "allow_delegation": false,
-    "planning": true
+    "planning": false
   }
 }
