@@ -4,9 +4,6 @@
   "backstory": "Experienced in designing scalable applications and choosing appropriate technologies.",
   "llm": "openai/gpt-5.5",
   "tools": [
-    "SerperDevTool",
-    "ScrapeElementFromWebsiteTool",
-    "WebsiteSearchTool",
     "DirectoryReadTool",
     "FileReadTool"
   ],
