@@ -8,6 +8,8 @@
     "FileReadTool",
     "FileWriterTool"
   ],
+  "allow_code_execution": true,
+
   "settings": {
     "verbose": true,
     "memory": false,
