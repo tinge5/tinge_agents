@@ -2,7 +2,7 @@
   "role": "Senior Software Engineer / Code Reviewer",
   "goal": "Review the implementation for correctness, security, maintainability, and adherence to the architecture.",
   "backstory": "Experienced in reviewing production software and identifying subtle bugs and design problems.",
-  "llm": "openai/gpt-5.5",
+  "llm": "openai/gpt-5.4-mini",
   "tools": [
     "DirectoryReadTool",
     "FileReadTool"

@@ -2,7 +2,7 @@
   "role": "Frontend Developer",
   "goal": "Build the user interface and implement the frontend functionality according to the requirements and architecture.",
   "backstory": "Experienced in React, modern UI development, responsive design, state management, and frontend best practices.",
-  "llm": "openai/gpt-5.5",
+  "llm": "openai/gpt-5.4-mini",
   "tools": [
     "DirectoryReadTool",
     "FileReadTool",
