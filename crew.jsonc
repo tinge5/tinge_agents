@@ -100,7 +100,7 @@
   "memory": false,
 
   // Automatically plan the execution strategy before running tasks
-   "planning": true,
+   "planning": false,
 
   // LLM for the planning step (used when planning is true)
   // "planning_llm": "openai/gpt-4o",
