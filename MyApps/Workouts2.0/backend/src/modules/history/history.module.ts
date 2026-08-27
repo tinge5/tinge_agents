@@ -1,2 +1,7 @@
 import { Module } from '@nestjs/common';
-@Module({}) export class HistoryModule {}
+import { HistoryController } from './history.controller';
+import { HistoryService } from './history.service';
+import { PrismaModule } from '../../shared/prisma/prisma.module';
+
+@Module({ imports: [PrismaModule], controllers: [HistoryController], providers: [HistoryService], exports: [HistoryService] })
+export class HistoryModule {}
