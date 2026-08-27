@@ -4,7 +4,6 @@
   "backstory": "Experienced in React, modern UI development, responsive design, state management, and frontend best practices.",
   "llm": "openai/gpt-5.4-mini",
   "tools": [
-    "DirectoryReadTool",
     "FileReadTool",
     "FileWriterTool"
   ],
