@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SessionStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum PlanStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String
+  displayName   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Session {
+  id            String   @id @default(cuid())
+  userId        String
+  refreshToken  String?
+  expiresAt     DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model WorkoutPlan {
+  id          String     @id @default(cuid())
+  userId      String
+  name        String
+  status      PlanStatus @default(ACTIVE)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model WorkoutPlanDay {
+  id            String @id @default(cuid())
+  workoutPlanId String
+  dayNumber     Int
+}
+
+model WorkoutPlanExercise {
+  id             String @id @default(cuid())
+  workoutPlanDayId String
+  exerciseName   String
+}
+
+model WorkoutSession {
+  id        String       @id @default(cuid())
+  userId    String
+  status    SessionStatus @default(ACTIVE)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+model WorkoutSetResult {
+  id              String @id @default(cuid())
+  workoutSessionId String
+  reps            Int
+  weight          Float
+}
+
+model ExerciseHistoryEntry {
+  id         String   @id @default(cuid())
+  userId     String
+  exercise   String
+  recordedAt DateTime @default(now())
+}
+
+model PlanCompletionArchive {
+  id        String   @id @default(cuid())
+  userId    String
+  planId    String
+  archivedAt DateTime @default(now())
+}
+
+model RecommendationSnapshot {
+  id        String   @id @default(cuid())
+  userId    String
+  payload   Json
+  createdAt DateTime @default(now())
+}
