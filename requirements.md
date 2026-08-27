@@ -1,226 +1,247 @@
-# Workouts2.0 — Software Requirements
+# Workout2.0 Requirements Specification
 
 ## 1. Purpose
-Workouts2.0 is a mobile workout application that enables users to create and manage personalized workout plans, track workout execution over time, view historical performance, and receive workout recommendations based on goals and prior activity.
+Workout2.0 is a mobile workout application that allows users to create accounts, sign in, build and manage workout plans, track workout completion and exercise history, and receive workout and weight recommendations based on their goals and past performance. The application must support a simple, intuitive workout experience and preserve user data between sessions.
 
 ## 2. Users and Access
-### 2.1 User Types
-- **Authenticated user**: A registered user who can create, view, update, and complete their own workout plans and view their own workout history and profile.
-- **Unauthenticated visitor**: A user who has not signed in and may only access account creation and sign-in functions.
+### 2.1 User Type
+- **Authenticated end user**: A person who creates an account, signs in, and manages personal workout data.
 
 ### 2.2 Access Rules
-- Each user must be able to access only their own account, profile, workout plans, workout history, completed plans, and exercise history.
-- User data must persist between app sessions.
-- The application must prevent cross-user access, modification, or viewing of private workout data.
+- Each user must only be able to access, view, create, update, and delete their own account data, profile, workout plans, workout history, completed plans, and exercise history.
+- No user may view or modify another user's workout data.
 
 ## 3. Core Features
-### 3.1 Account Management
-- Users must be able to create an account.
-- Users must be able to sign in to an existing account.
-- Users must be able to sign out of their account.
-- The application must associate all workout data with the signed-in user account.
+### 3.1 Account Creation and Sign-In
+- The application must allow a user to create an account.
+- The application must allow a user to sign in to an existing account.
+- The application must maintain the user session across app usage so that returning users remain authenticated until they sign out or their session expires.
 
 ### 3.2 User Profile
-Each user profile must allow storage and viewing of:
-- Active workout plan
-- Workout history
-- Completed plans
-- Exercise history
+- Each user must have a personal profile.
+- The profile must store and display:
+  - The user’s active workout plan.
+  - The user’s workout history.
+  - The user’s completed workout plans.
+  - The user’s exercise history.
 
 ### 3.3 Workout Plan Creation and Management
-Users must be able to:
-- Create workout plans tailored to individual goals.
-- Select a workout goal when creating a plan.
-- Enable or disable progressive overload for a plan.
-- Add, remove, replace, and modify exercises in a workout plan.
-- Add, remove, replace, and modify sets, reps, and weights for exercises.
-- Modify the active workout plan at any time.
-- Modify individual workout days at any time.
-- Save changes to workout plans and have those changes reflected immediately in the user’s active plan.
+- Users must be able to create workout plans tailored to their individual goals.
+- When creating a plan, users must be able to specify the goal the plan is intended to support.
+- When creating a plan, users must be able to enable or disable progressive overload.
+- Users must be able to view and edit their workout plans.
+- Users must be able to modify their active workout plan at any time.
+- Users must be able to modify individual workout days at any time.
 
 ### 3.4 Recommended Workouts and Exercises
 - The application must provide recommended workouts and exercises based on the user’s selected goals and workout plan.
-- Recommendations must be presented in a way that still allows the user to fully customize the plan.
-- Recommendations must not prevent the user from changing exercises, sets, reps, or weights.
+- Recommendations must be presented as suggestions only; users must retain full control over plan content.
 
-### 3.5 Progressive Overload
-- When progressive overload is enabled for a workout plan, the application must recommend future weight increases based on the user’s historical performance.
-- Recommendation logic must consider at minimum:
-  - Previous weights used
-  - Exercises performed
-  - Rep schemes completed
-- The application must use historical performance when determining recommended future weights.
-- Users must be able to turn progressive overload on or off when creating a plan.
-- If progressive overload is disabled, the system must not automatically recommend weight increases for that plan.
+### 3.5 Workout Customization
+Users must be able to fully customize workout plans, including the ability to:
+- Add exercises.
+- Remove exercises.
+- Replace exercises.
+- Modify exercises.
+- Change sets.
+- Change reps.
+- Change weights.
 
-### 3.6 Workout Schedule and Current Workout Determination
-- The application must automatically determine the user’s current workout based on the current day and the schedule defined by the active workout plan.
-- When a new day begins, the application must display the workout appropriate for that day.
-- When the current week of the plan is completed, the application must advance to the next week of the workout plan.
-- The current workout shown to the user must always align with the plan schedule and the current date.
+### 3.6 Progressive Overload Recommendations
+- If progressive overload is enabled for a plan, the application must recommend increased weights based on the user’s prior workout performance.
+- Recommendations must use the user’s historical performance, including previous exercises, previous weights, and rep schemes, when determining future recommended weights.
+- The application must not automatically override a user’s chosen workout values; recommendations must be visible and usable by the user.
 
-### 3.7 Workout Completion
-- Users must be able to mark individual workouts as completed.
-- When a user completes an entire workout plan, the completed plan must be saved to the user’s profile as workout history.
-- Completed plans must remain viewable after completion.
+### 3.7 Current Workout Determination and Scheduling
+- The application must determine the user’s current workout based on the current day and the schedule defined by the user’s active workout plan.
+- When a new day begins, the application must automatically display the workout assigned to that day in the active plan.
+- When the current week of the plan is completed, the application must correctly advance to the next week of the workout plan.
+- The application must always show the workout corresponding to the user’s current plan schedule.
 
-### 3.8 Historical Data and Performance Review
-Users must be able to view:
-- Previous completed workout plans
-- Historical exercise performance
-- Previous weights used
-- Previous reps completed
-- Other relevant workout data associated with past workouts and plans
+### 3.8 Workout Completion Tracking
+- Users must be able to mark individual workouts as completed when they finish them.
+- When a user completes an entire workout plan, the application must save that plan to the user’s profile as completed workout history.
+- Completed plans must remain viewable as historical records.
 
-### 3.9 Mobile User Experience
+### 3.9 Workout History and Exercise History
+- The application must preserve historical workout data for each user.
+- The application must allow users to view previous completed plans.
+- The application must allow users to view historical exercise performance, including at minimum:
+  - Previous weights.
+  - Previous reps.
+  - Other relevant workout data associated with completed or performed exercises.
+
+### 3.10 Mobile User Experience
 - The application must provide a clear and intuitive mobile interface.
-- The interface must support a simple workout experience suitable for use during an actual workout.
-- The application must make it easy for users to quickly view the current workout, log completion, and review or edit workout details.
+- The interface must support a simple workout flow suitable for use during an actual workout session.
+- The primary workout experience must minimize unnecessary complexity and allow fast access to the current workout.
+
+### 3.11 Data Persistence
+- User data must persist between sessions.
+- The application must preserve account information, active workout plans, completed plans, workout history, and exercise history after the app is closed and reopened.
 
 ## 4. Functional Requirements
-### 4.1 Authentication Requirements
-- The system shall allow a user to register a new account.
-- The system shall allow a user to sign in to an existing account.
-- The system shall allow a signed-in user to sign out.
-- The system shall maintain authenticated access state across sessions when appropriate.
+### 4.1 Authentication and Identity
+- FR-1: The system must support user registration.
+- FR-2: The system must support user sign-in.
+- FR-3: The system must associate all workout data with a single authenticated user account.
+- FR-4: The system must prevent cross-account access to private data.
 
-### 4.2 Profile Requirements
-- The system shall create and maintain a profile for each user account.
-- The system shall store the user’s active workout plan in the profile.
-- The system shall store workout history in the profile.
-- The system shall store completed plans in the profile.
-- The system shall store exercise history in the profile.
-- The system shall display these profile sections to the authenticated user.
+### 4.2 Profile Data
+- FR-5: The system must provide a user profile page or view.
+- FR-6: The profile must display the user’s active workout plan.
+- FR-7: The profile must display the user’s workout history.
+- FR-8: The profile must display the user’s completed plans.
+- FR-9: The profile must display the user’s exercise history.
 
-### 4.3 Workout Plan Requirements
-- The system shall allow a user to create a workout plan.
-- The system shall allow a user to define goals for the plan.
-- The system shall allow a user to enable progressive overload for the plan.
-- The system shall allow a user to disable progressive overload for the plan.
-- The system shall allow a user to define workout days and schedule structure.
-- The system shall allow a user to add exercises to workout days.
-- The system shall allow a user to edit exercises, sets, reps, and weights.
-- The system shall allow a user to remove exercises from a workout day.
-- The system shall allow a user to replace exercises in a workout day.
-- The system shall allow a user to modify the active workout plan at any time.
-- The system shall allow a user to modify a specific workout day at any time.
+### 4.3 Plan Creation and Editing
+- FR-10: The system must allow users to create workout plans.
+- FR-11: The system must allow users to define the goal for a workout plan.
+- FR-12: The system must allow users to enable or disable progressive overload on a plan.
+- FR-13: The system must allow users to edit any workout plan they own.
+- FR-14: The system must allow users to edit the active workout plan.
+- FR-15: The system must allow users to edit individual workout days.
+- FR-16: The system must allow users to add, remove, replace, and modify exercises in a plan.
+- FR-17: The system must allow users to change sets, reps, and weights in a plan.
 
-### 4.4 Recommendation Requirements
-- The system shall recommend workouts and exercises based on the user’s selected goals.
-- The system shall recommend workouts and exercises based on the user’s workout plan.
-- The system shall recommend future weights using historical performance when progressive overload is enabled.
-- The system shall use prior weights, exercises, and rep schemes as part of its recommendation basis.
+### 4.4 Recommendation Behavior
+- FR-18: The system must provide workout and exercise recommendations based on the user’s selected goals.
+- FR-19: The system must provide recommendations based on the structure and content of the user’s workout plan.
+- FR-20: If progressive overload is enabled, the system must provide weight recommendations based on prior user performance.
+- FR-21: The system must use historical performance data when generating future weight recommendations.
 
-### 4.5 Schedule and Day Progression Requirements
-- The system shall determine the current workout from the active workout plan and the current day.
-- The system shall show the appropriate workout when a new day begins.
-- The system shall advance to the next week of the workout plan when the current week is completed.
-- The system shall reflect schedule progression automatically without requiring the user to manually advance the plan.
+### 4.5 Schedule and Current Workout
+- FR-22: The system must determine the current workout from the active plan and the current day.
+- FR-23: The system must automatically present the correct workout for the current day.
+- FR-24: The system must advance to the next week of the plan after completion of the current week according to the plan schedule.
+- FR-25: The system must reflect plan schedule changes when a user edits the active plan.
 
-### 4.6 Completion and History Requirements
-- The system shall allow a user to mark a workout as completed.
-- The system shall record completion status for individual workouts.
-- The system shall move a completed plan into workout history when the entire plan is finished.
-- The system shall preserve completed plans for later viewing.
-- The system shall preserve historical exercise performance data, including previous weights and reps.
+### 4.6 Completion and History
+- FR-26: The system must allow users to mark individual workouts as completed.
+- FR-27: The system must record completion events for workouts.
+- FR-28: The system must move a fully completed workout plan into the user’s completed plan history.
+- FR-29: The system must preserve completed plans for future viewing.
+- FR-30: The system must preserve exercise performance history across completed and completed/recorded workouts.
 
-### 4.7 Data Ownership and Privacy Requirements
-- The system shall restrict each user’s workout data to that user only.
-- The system shall prevent users from viewing or modifying another user’s workout plans.
-- The system shall prevent users from viewing or modifying another user’s workout history or profile information.
-- The system shall preserve user data between sessions.
+### 4.7 Persistence and Session Continuity
+- FR-31: The system must persist user data between sessions.
+- FR-32: The system must restore each user’s personal data when they return to the application.
+- FR-33: The system must preserve the user’s active workout state across app restarts.
 
 ## 5. Inputs
-The application must accept the following user inputs:
-- Account registration details
-- Sign-in credentials
-- Workout goal selection
-- Plan name and plan details
-- Choice to enable or disable progressive overload
-- Exercise selection
-- Exercise replacement selection
-- Set, rep, and weight values
-- Workout day schedule configuration
-- Workout completion status updates
-- Plan modification updates
-- Profile and history viewing requests
+The application must accept the following inputs from users:
+- Account registration information.
+- Sign-in credentials.
+- Workout plan name and structure.
+- Selected workout goal.
+- Progressive overload enable/disable setting.
+- Workout schedule details.
+- Exercises to include in a plan.
+- Exercise details including sets, reps, and weights.
+- Edits to existing plans, workout days, and exercises.
+- Workout completion status for individual workouts.
+- Data associated with completed workouts and exercise performance.
 
 ## 6. Outputs
-The application must provide the following outputs:
-- Account creation confirmation or sign-in status
-- Current user profile information
-- Active workout plan details
-- Recommended workouts and exercises
-- Recommended weight adjustments when progressive overload is enabled
-- Current workout based on the current date and plan schedule
-- Workout completion confirmation
-- Completed plan history
-- Exercise history and performance history
-- Validation or error messages when user input is invalid or unauthorized
+The application must present the following outputs:
+- Account creation confirmation and sign-in state.
+- User profile views.
+- Active workout plan display.
+- Current workout for the current day.
+- Recommended workouts and exercises.
+- Recommended weights when progressive overload is enabled.
+- Editable workout plan views.
+- Workout completion confirmation.
+- Completed plan history.
+- Exercise history and performance summaries including previous weights and reps.
 
 ## 7. Business Rules
-- A user may only access data associated with their own account.
-- A workout plan must belong to exactly one user.
-- A user may have one active workout plan at a time unless the product defines otherwise.
-- A completed workout plan must be saved to the user’s workout history.
-- Progression recommendations for weight increases must be based on historical performance when progressive overload is enabled.
-- Users must remain free to customize all workout plan elements even when recommendations are provided.
-- The current workout must be determined by the active plan schedule and the current day.
-- When the current week of a plan ends, the next week of the plan must become active automatically.
-- A workout must be marked complete before it can be counted toward plan completion.
-- A plan is considered complete only when all required workouts in the plan are completed.
+- BR-1: A workout plan belongs to exactly one user.
+- BR-2: Only the owner of a plan may access or modify that plan.
+- BR-3: The active workout plan must represent the plan currently in use by the user.
+- BR-4: Progressive overload recommendations are required only when the feature is enabled for a plan.
+- BR-5: Weight recommendations must be based on the user’s historical workout performance rather than generic values alone.
+- BR-6: Users retain final control over all workout content and may override recommendations.
+- BR-7: A completed workout plan must be retained as historical data after completion.
+- BR-8: Workout and exercise history must remain available for future review.
+- BR-9: The current workout displayed by the application must match the active plan schedule for the current day.
+- BR-10: The application must automatically progress through the workout plan timeline according to the defined schedule.
 
-## 8. Constraints
-- The application must be mobile-first and usable during an active workout.
-- The interface must remain simple and intuitive.
-- The system must preserve data across sessions.
-- The system must ensure user isolation and privacy for all profile and workout data.
-- The system must support dynamic plan changes after creation.
-- The system must support historical data review for prior workouts and completed plans.
+## 8. Data Requirements
+The application must store, at minimum, the following data per user:
+- Account and authentication data.
+- Profile data.
+- Active workout plan data.
+- Workout plan definitions.
+- Workout day definitions.
+- Exercise definitions.
+- Sets, reps, and weights for each exercise.
+- Goal associated with each plan.
+- Progressive overload setting for each plan.
+- Workout completion records.
+- Completed plans.
+- Exercise history.
+- Historical performance data used for recommendations.
 
 ## 9. Acceptance Criteria
-### 9.1 Account Creation and Sign-In
-- Given a new user, when they register with valid information, then an account is created successfully.
-- Given an existing user, when they sign in with valid credentials, then they are authenticated successfully.
-- Given an unauthenticated user, when they attempt to access private workout data, then access is denied.
+### 9.1 Account Management
+- AC-1: A new user can register an account successfully.
+- AC-2: A registered user can sign in successfully.
+- AC-3: After signing in, the user can access only their own workout data.
 
-### 9.2 Profile Visibility
-- Given an authenticated user, when they open their profile, then they can view their active workout plan, workout history, completed plans, and exercise history.
-- Given an authenticated user, when they view their profile after a new session, then their data is still available.
+### 9.2 Profile and History
+- AC-4: The user profile displays the active workout plan.
+- AC-5: The user profile displays completed workout plans.
+- AC-6: The user profile displays workout history.
+- AC-7: The user profile displays exercise history.
 
-### 9.3 Workout Plan Creation and Editing
-- Given an authenticated user, when they create a workout plan, then the plan is saved to their account.
-- Given an authenticated user, when they enable progressive overload, then the plan is marked as using progressive overload.
-- Given an authenticated user, when they add, remove, replace, or modify exercises, sets, reps, or weights, then the plan updates accordingly.
-- Given an authenticated user, when they modify their active plan or a workout day, then the changes are reflected in the current plan.
+### 9.3 Plan Creation and Editing
+- AC-8: A user can create a workout plan for a selected goal.
+- AC-9: A user can enable or disable progressive overload when creating or editing a plan.
+- AC-10: A user can add, remove, replace, and modify exercises in a plan.
+- AC-11: A user can change sets, reps, and weights in a plan.
+- AC-12: A user can edit the active workout plan at any time.
+- AC-13: A user can edit an individual workout day at any time.
 
 ### 9.4 Recommendations
-- Given a user with a defined goal and workout plan, when recommendations are requested, then the system provides relevant workouts and exercises.
-- Given a plan with progressive overload enabled, when historical performance exists, then the system recommends future weights informed by that history.
-- Given a plan with progressive overload disabled, when the user views the plan, then no automatic weight progression recommendation is applied.
+- AC-14: The application provides workout and exercise recommendations based on the user’s goal and plan.
+- AC-15: When progressive overload is enabled, the application provides recommended weight increases based on prior performance.
+- AC-16: Recommendations reflect historical performance data such as prior weights, reps, and exercise patterns.
 
-### 9.5 Schedule Behavior
-- Given an active workout plan, when the current day changes, then the app displays the workout assigned to the new day.
-- Given a plan where the current week is completed, when the schedule progresses, then the next week becomes active automatically.
-- Given a user opening the app at any time, when the active plan exists, then the app shows the correct current workout for that day.
+### 9.5 Scheduling and Current Workout
+- AC-17: The application displays the correct workout for the current day based on the active plan.
+- AC-18: The application advances to the next workout week when the current week is completed.
+- AC-19: If the active plan schedule changes, the displayed current workout updates accordingly.
 
 ### 9.6 Completion and History
-- Given a user finishing a workout, when they mark it completed, then the completion is saved.
-- Given a user completing all required workouts in a plan, when the plan is finished, then it is moved into completed plans/history.
-- Given an authenticated user, when they view a completed plan, then the plan remains available for review.
-- Given an authenticated user, when they view exercise history, then previous weights, reps, and relevant performance data are shown.
+- AC-20: A user can mark an individual workout as completed.
+- AC-21: When all workouts in a plan are completed, the plan is saved to completed history.
+- AC-22: Completed plans remain available for later viewing.
+- AC-23: Exercise history remains available and includes prior weights and reps.
 
-### 9.7 Data Privacy
-- Given two different users, when one user signs in, then they cannot access the other user’s plan or history.
-- Given a user modifies their own plan, when the update is saved, then only their data changes.
+### 9.7 Persistence and Security
+- AC-24: User data remains available after the application is closed and reopened.
+- AC-25: A user cannot access another user’s profile, plans, workout history, or exercise history.
+- AC-26: The application preserves the user’s active workout state between sessions.
 
-## 10. Out of Scope
-The following are not defined by these requirements:
-- Social features such as sharing, following, or community feeds
-- Trainer/admin management tools
-- Nutrition tracking
-- Payment/subscription processing
-- Wearable device integration
-- Detailed algorithmic implementation for recommendation scoring
-- Specific visual design system or branding rules
-- Specific data storage technology or architecture
+## 10. Scope Clarifications
+- The application must define workout behavior, tracking, and recommendations for individual users only.
+- The application must prioritize a simple, mobile-friendly workout experience.
+- The application must support the storage and review of historical workout performance.
+- The application must not expose another user’s data under any circumstance.
+
+## 11. Non-Functional Requirements
+### 11.1 Usability
+- The application must be easy to use during a live workout.
+- The primary workout flow must be simple, clear, and mobile-friendly.
+
+### 11.2 Data Integrity
+- The application must preserve workout and profile data accurately between sessions.
+- Historical workout records must remain associated with the correct user and plan.
+
+### 11.3 Privacy and Access Control
+- The application must enforce user-level privacy for all personal workout information.
+
+### 11.4 Consistency
+- The application must consistently show the current workout based on the active plan schedule and current date.
+- The application must consistently apply progressive overload rules when enabled.
