@@ -1,37 +1,81 @@
-import React from 'react';
-import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Provider, useDispatch, useSelector } from 'react-redux';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
+import { ActivityIndicator, View } from 'react-native';
+import { store, RootState } from '@/shared/store';
+import { restoreSession } from '@/features/auth/authSlice';
+import { AuthScreen } from '@/features/auth/AuthScreen';
+import { RegisterScreen } from '@/features/auth/RegisterScreen';
+import { TodayScreen } from '@/features/workouts/TodayScreen';
+import { PlanEditorScreen } from '@/features/plans/PlanEditorScreen';
+import { ProfileScreen } from '@/features/profile/ProfileScreen';
+import { HistoryScreen } from '@/features/history/HistoryScreen';
+import { WorkoutDetailScreen } from '@/features/workouts/WorkoutDetailScreen';
 
-export default function App() {
+const queryClient = new QueryClient();
+const Stack = createNativeStackNavigator();
+const Tabs = createBottomTabNavigator();
+
+function MainTabs() {
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Workouts2.0</Text>
-        <Text style={styles.subtitle}>Frontend scaffold loaded successfully.</Text>
-      </View>
-    </SafeAreaView>
+    <Tabs.Navigator screenOptions={{ headerShown: false }}>
+      <Tabs.Screen name="Today" component={TodayScreen} />
+      <Tabs.Screen name="Plans" component={PlanEditorScreen} />
+      <Tabs.Screen name="History" component={HistoryScreen} />
+      <Tabs.Screen name="Profile" component={ProfileScreen} />
+    </Tabs.Navigator>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-  },
-  content: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#111827',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#4b5563',
-    textAlign: 'center',
-  },
-});
+function RootNavigator() {
+  const { hydrated, isAuthenticated } = useSelector((s: RootState) => s.auth);
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(restoreSession() as any);
+  }, [dispatch]);
+
+  if (!hydrated) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
+  return (
+    <NavigationContainer>
+      <Stack.Navigator>
+        {!isAuthenticated ? (
+          <>
+            <Stack.Screen name="SignIn" component={AuthScreen} options={{ title: 'Sign In' }} />
+            <Stack.Screen name="Register" component={RegisterScreen} options={{ title: 'Create Account' }} />
+          </>
+        ) : (
+          <>
+            <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false }} />
+            <Stack.Screen name="Workout" component={WorkoutDetailScreen} options={{ title: 'Workout' }} />
+          </>
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
+
+export default function App() {
+  return (
+    <Provider store={store}>
+      <QueryClientProvider client={queryClient}>
+        <SafeAreaProvider>
+          <StatusBar style="dark" />
+          <RootNavigator />
+        </SafeAreaProvider>
+      </QueryClientProvider>
+    </Provider>
+  );
+}

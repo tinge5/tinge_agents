@@ -1,2 +1,1 @@
-// Application bootstrap placeholder.
-// Kept minimal to match the existing frontend entry behavior.
+import 'react-native-gesture-handler';
