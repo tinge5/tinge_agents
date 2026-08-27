@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "name": "Workouts2.0",
+    "slug": "workouts2-0",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "jsEngine": "hermes",
+    "assetBundlePatterns": ["**/*"],
+    "platforms": ["ios", "android", "web"]
+  }
+}
