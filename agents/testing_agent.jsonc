@@ -4,7 +4,6 @@
   "backstory": "Experienced in software testing, debugging, edge cases, integration testing, and quality assurance.",
   "llm": "openai/gpt-5.4",
   "tools": [
-    "DirectoryReadTool",
     "FileReadTool",
     "FileWriterTool"
   ],

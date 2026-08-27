@@ -1,0 +1,3 @@
+import React from 'react';
+import { View, Text, ScrollView } from 'react-native';
+export function HistoryScreen() { return <ScrollView contentContainerStyle={{ padding: 20, gap: 12 }}><Text style={{ fontSize: 28, fontWeight: '800' }}>History</Text><View style={{ borderWidth: 1, borderColor: '#e2e8f0', padding: 16, borderRadius: 16 }}><Text style={{ fontWeight: '700' }}>Completed Plans</Text><Text>Strength Base — archived Jan 10</Text></View><View style={{ borderWidth: 1, borderColor: '#e2e8f0', padding: 16, borderRadius: 16 }}><Text style={{ fontWeight: '700' }}>Exercise History</Text><Text>Bench Press: 100 x 8, 105 x 8</Text></View></ScrollView>; }

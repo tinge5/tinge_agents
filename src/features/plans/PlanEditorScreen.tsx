@@ -1,0 +1,3 @@
+import React from 'react';
+import { View, Text, Pressable, ScrollView } from 'react-native';
+export function PlanEditorScreen() { return <ScrollView contentContainerStyle={{ padding: 20, gap: 12 }}><Text style={{ fontSize: 28, fontWeight: '800' }}>Plans</Text><View style={{ backgroundColor: '#f8fafc', padding: 16, borderRadius: 16, gap: 8 }}><Text style={{ fontWeight: '700' }}>Strength Base</Text><Text>Goals: strength, hypertrophy</Text><Text>Progressive overload: enabled</Text><Text>Schedule: Mon Push, Wed Pull</Text></View><Pressable style={{ backgroundColor: '#2563eb', padding: 16, borderRadius: 16 }}><Text style={{ color: 'white', textAlign: 'center', fontWeight: '700' }}>Create / Edit Plan</Text></Pressable></ScrollView>; }

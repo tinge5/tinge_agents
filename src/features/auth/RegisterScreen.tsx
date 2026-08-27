@@ -1,0 +1,3 @@
+import React from 'react';
+import { View, Text, Pressable } from 'react-native';
+export function RegisterScreen({ navigation }: any) { return <View style={{ padding: 20, gap: 12 }}><Text style={{ fontSize: 28, fontWeight: '700' }}>Create Account</Text><Text>Registration is available in the full backend flow. This frontend is wired for session-backed auth.</Text><Pressable onPress={() => navigation.navigate('SignIn')} style={{ backgroundColor: '#2563eb', padding: 16, borderRadius: 14 }}><Text style={{ color: 'white', textAlign: 'center', fontWeight: '700' }}>Back to Sign In</Text></Pressable></View>; }

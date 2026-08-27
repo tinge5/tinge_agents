@@ -1,407 +1,330 @@
-# Workout2.0 Technical Architecture
+# Workouts2.0 Architecture
 
-## 1. Architecture Overview
-Workout2.0 will be a mobile-first full-stack application with a client app, API backend, recommendation/scheduling services, and a relational database. The system is user-centric: all plans, workouts, history, and recommendations are scoped to a single authenticated user.
+## 1. Technology Stack
+- **Mobile frontend:** React Native with TypeScript.
+- **State management:** Redux Toolkit for global app state; React Query for server state and caching.
+- **Navigation:** React Navigation.
+- **Backend API:** Node.js with TypeScript using NestJS.
+- **Database:** PostgreSQL.
+- **ORM:** Prisma.
+- **Authentication:** JWT access tokens plus rotating refresh tokens stored securely on device.
+- **Background jobs/scheduling:** Backend scheduler using a queue/cron worker (for plan rollover, daily workout resolution, and archiving triggers).
+- **API style:** REST JSON.
+- **Validation:** Zod or class-validator on request DTOs.
+- **Logging/monitoring:** Structured server logs and error tracking.
 
-### Architectural style
-- Mobile client + API server
-- Layered backend: controllers/routes, services, repositories, jobs
-- Relational persistence with explicit ownership and history tables
-- Deterministic schedule resolution based on current date and plan definition
-- Recommendation engine that uses historical workout performance
+## 2. System Overview
+The system is a client-server mobile application. The mobile app handles authentication screens, profile views, plan creation/editing, daily workout display, completion tracking, and history views. The backend owns all persistence, authorization, workout recommendation logic, progressive overload calculations, schedule resolution, and archival rules. The database stores all user-owned plans, schedules, workout instances, exercise performance, and completed history.
 
-## 2. Technology Stack
-### Frontend
-- React Native with TypeScript
-- Expo for cross-platform mobile delivery
-- React Navigation for screen flow
-- Zustand or Redux Toolkit for local UI state
-- React Query or TanStack Query for server state and caching
-- Formik or React Hook Form for workout plan editing forms
+## 3. Frontend Structure
+### 3.1 App Shell
+- **Auth flow:** sign up, sign in, session restore, sign out.
+- **Main shell:** bottom tabs or stack routes for Today, Plans, Profile, and History.
 
-### Backend
-- Node.js with TypeScript
-- NestJS or Express with a structured service layer
-- REST API over HTTPS
-- Validation with Zod or class-validator
-- Background jobs with a queue worker for daily schedule refresh and completion rollups
+### 3.2 Core Screens
+- **Authentication screens:** register, sign in.
+- **Today screen:** shows current workout determined from active plan and current date.
+- **Plan builder/editor:** create plan, set goals, toggle progressive overload, manage schedule, and add/edit/remove exercises.
+- **Workout detail screen:** quick workout execution UI, set logging, completion action.
+- **Recommendations panel:** recommended workouts/exercises and weight adjustments, with accept/override actions.
+- **Profile screen:** active plan summary, completed plans, workout history, exercise history.
+- **History screens:** completed plans detail, workout history timeline, exercise-specific history.
 
-### Database and storage
-- PostgreSQL as the primary database
-- Redis for session/token revocation support, caching, and scheduled job coordination
-- Optional object storage is not required for core scope
+### 3.3 Frontend State
+- Auth state: session tokens, user identity, session status.
+- UI state: selected plan, selected day, editing drafts, modal state.
+- Server state: profile, plans, current workout, recommendations, history, and exercise analytics.
 
-### Authentication
-- Email/password registration and sign-in
-- JWT access tokens plus refresh tokens
-- Password hashing with Argon2 or bcrypt
+### 3.4 Mobile UX Rules
+- Primary workout actions must be one-tap accessible.
+- Forms should be segmented into small steps.
+- Workout logging must support large tap targets and minimal navigation.
+- Offline UI may cache the last loaded workout plan and history, but server remains source of truth.
 
-## 3. System Modules
-### Client app modules
-- Auth screens: register, sign in, session restore
-- Home/Profile screen: active plan, current workout, recent history
-- Plan builder/editor: create, edit, clone, reorder days, modify exercises, sets, reps, weights
-- Workout session screen: current workout, logging completion, quick edits, recommendation panel
-- History screens: completed plans, workout history, exercise history, performance charts
+## 4. Backend Structure
+### 4.1 Modules
+- **Auth module:** registration, login, token refresh, sign out.
+- **Users/Profile module:** user profile retrieval and summary data.
+- **Plans module:** CRUD for workout plans, plan activation, plan customization, schedule management.
+- **Workouts module:** current workout resolution, workout retrieval, workout completion.
+- **Recommendations module:** goal-based exercise/workout recommendations.
+- **Progressive overload module:** recommendation of future weights from historical performance.
+- **History module:** workout history, completed plans, exercise history.
+- **Archival module:** plan completion detection and archival into history.
 
-### Backend modules
-- Auth module: registration, login, token refresh, logout
-- User/Profile module: profile retrieval and account metadata
-- Plan module: create, update, delete, activate, version plan changes
-- Schedule module: resolve current workout from active plan and current date
-- Completion module: mark workouts complete, roll up completed plans
-- History module: workout history and exercise history queries
-- Recommendation module: goal-based and progressive-overload suggestions
-- Authorization module: ownership checks on every user-scoped resource
+### 4.2 Service Responsibilities
+- Enforce ownership on every user-scoped read/write.
+- Resolve current workout from active plan + current date/day-of-week + plan week index.
+- Maintain one active plan per user.
+- Record workout completion and generate exercise performance snapshots.
+- Archive fully completed plans while preserving historical records.
+- Compute recommendations from goal metadata, exercise structure, and historical performance.
 
-## 4. Data Model
-All mutable user data is owned by one user. Use UUID primary keys and foreign keys everywhere.
+## 5. Data Model
+### 5.1 User
+- `id`
+- `email`
+- `passwordHash`
+- `displayName`
+- `createdAt`
+- `updatedAt`
 
-### 4.1 Core entities
-#### users
-- id
-- email
-- password_hash
-- display_name
-- created_at
-- updated_at
-- last_login_at
-- is_active
+### 5.2 Session / Refresh Token
+- `id`
+- `userId`
+- `tokenHash`
+- `expiresAt`
+- `revokedAt`
+- `createdAt`
 
-#### profiles
-- id
-- user_id (unique)
-- active_plan_id (nullable)
-- current_week_index
-- current_day_index
-- plan_started_at
-- timezone
-- created_at
-- updated_at
+### 5.3 WorkoutPlan
+- `id`
+- `userId`
+- `name`
+- `goals` (array or normalized relation)
+- `isActive`
+- `progressiveOverloadEnabled`
+- `status` (`draft`, `active`, `completed`, `archived`)
+- `currentWeekIndex`
+- `createdAt`
+- `updatedAt`
 
-#### workout_plans
-- id
-- user_id
-- name
-- goal_type
-- progressive_overload_enabled
-- status: draft | active | completed | archived
-- current_week_count
-- total_weeks
-- activated_at
-- completed_at
-- created_at
-- updated_at
+### 5.4 WorkoutPlanDay
+- `id`
+- `planId`
+- `dayOfWeek`
+- `weekIndex`
+- `title`
+- `position`
 
-#### workout_weeks
-- id
-- plan_id
-- week_index
-- created_at
-- updated_at
+### 5.5 WorkoutPlanExercise
+- `id`
+- `planDayId`
+- `exerciseName`
+- `exerciseId` optional if using canonical catalog
+- `setsTarget`
+- `repsTarget`
+- `weightTarget`
+- `order`
+- `notes`
 
-#### workout_days
-- id
-- week_id
-- day_index
-- name
-- scheduled_day_of_week
-- created_at
-- updated_at
+### 5.6 WorkoutSession
+Represents a scheduled or completed workout instance.
+- `id`
+- `userId`
+- `planId`
+- `planDayId`
+- `scheduledDate`
+- `actualDate`
+- `weekIndex`
+- `status` (`scheduled`, `in_progress`, `completed`, `skipped`)
+- `completedAt`
 
-#### exercises
-- id
-- user_id
-- name
-- muscle_group
-- equipment
-- notes
-- created_at
-- updated_at
+### 5.7 WorkoutSetResult
+- `id`
+- `workoutSessionId`
+- `exerciseName`
+- `exerciseId` optional
+- `setNumber`
+- `reps`
+- `weight`
+- `completed`
 
-#### workout_day_exercises
-- id
-- workout_day_id
-- exercise_id
-- sort_order
-- sets
-- reps
-- target_weight
-- rest_seconds
-- variation_name
-- created_at
-- updated_at
+### 5.8 ExerciseHistoryEntry
+- `id`
+- `userId`
+- `exerciseName`
+- `exerciseId` optional
+- `workoutSessionId`
+- `date`
+- `sets`
+- `reps`
+- `weight`
+- `volume`
+- `rpe` optional
 
-### 4.2 Tracking and history entities
-#### workout_sessions
-Represents one performed workout instance.
-- id
-- user_id
-- plan_id
-- workout_day_id
-- scheduled_for_date
-- completed_at
-- status: planned | in_progress | completed | skipped
-- week_index
-- day_index
-- created_at
-- updated_at
+### 5.9 PlanCompletionArchive
+- `id`
+- `userId`
+- `planId`
+- `completedAt`
+- `summarySnapshot` (plan structure, goals, schedule, totals)
 
-#### workout_session_exercises
-- id
-- session_id
-- exercise_id
-- sets
-- reps
-- weight
-- actual_reps
-- actual_weight
-- rpe
-- completed
-- created_at
-- updated_at
+### 5.10 RecommendationSnapshot
+- `id`
+- `userId`
+- `planId`
+- `contextType` (`plan_creation`, `daily_workout`, `progressive_overload`)
+- `payload`
+- `generatedAt`
 
-#### exercise_performance_history
-Derived history table, populated from completed sessions.
-- id
-- user_id
-- plan_id
-- exercise_id
-- workout_session_id
-- performed_at
-- sets
-- reps
-- weight
-- actual_reps
-- actual_weight
-- recommendation_weight
-- created_at
+## 6. Database Relationships
+- A **User** has many **WorkoutPlans**, **WorkoutSessions**, **ExerciseHistoryEntries**, and **PlanCompletionArchives**.
+- A **WorkoutPlan** has many **WorkoutPlanDays** and one active flag per user.
+- A **WorkoutPlanDay** has many **WorkoutPlanExercises**.
+- A **WorkoutSession** belongs to one user, one plan, and one plan day.
+- A **WorkoutSession** has many **WorkoutSetResults**.
+- **ExerciseHistoryEntry** is derived from completed workout sessions and is queryable by exercise.
+- **PlanCompletionArchive** stores completed plan snapshots without deleting the original historical workout data.
 
-#### plan_completion_history
-- id
-- user_id
-- plan_id
-- completed_at
-- summary_json
-- created_at
+## 7. API Design
+### 7.1 Auth
+- `POST /auth/register`
+- `POST /auth/login`
+- `POST /auth/refresh`
+- `POST /auth/logout`
+- `GET /auth/session`
 
-### 4.3 Recommendation support
-#### recommendation_snapshots
-- id
-- user_id
-- plan_id
-- workout_day_id
-- exercise_id
-- recommended_sets
-- recommended_reps
-- recommended_weight
-- reason_code
-- generated_at
+### 7.2 Profile
+- `GET /me`
+- `GET /me/history`
+- `GET /me/exercises/:exerciseName/history`
+- `GET /me/completed-plans`
 
-### 4.4 Integrity rules
-- Each workout plan belongs to exactly one user.
-- Each workout day belongs to one plan week.
-- Each workout session belongs to one user and one plan.
-- History records are append-only.
-- Plan edits update the active plan definition, but historical sessions remain immutable.
+### 7.3 Plans
+- `GET /plans`
+- `POST /plans`
+- `GET /plans/:planId`
+- `PATCH /plans/:planId`
+- `DELETE /plans/:planId`
+- `POST /plans/:planId/activate`
+- `POST /plans/:planId/deactivate`
+- `PATCH /plans/:planId/days/:dayId`
+- `POST /plans/:planId/days`
+- `DELETE /plans/:planId/days/:dayId`
+- `POST /plans/:planId/days/:dayId/exercises`
+- `PATCH /plans/:planId/days/:dayId/exercises/:exerciseId`
+- `DELETE /plans/:planId/days/:dayId/exercises/:exerciseId`
 
-## 5. API Design
-Use versioned REST endpoints under /api/v1.
+### 7.4 Current Workout and Completion
+- `GET /workouts/today`
+- `GET /workouts/current`
+- `POST /workouts/:workoutSessionId/start`
+- `POST /workouts/:workoutSessionId/complete`
+- `PATCH /workouts/:workoutSessionId/sets/:setResultId`
+- `POST /workouts/:workoutSessionId/sets`
 
-### 5.1 Auth
-- POST /auth/register
-- POST /auth/login
-- POST /auth/refresh
-- POST /auth/logout
-- GET /auth/session
+### 7.5 Recommendations
+- `GET /recommendations/plan`
+- `GET /recommendations/workout/:planId`
+- `GET /recommendations/exercises`
+- `GET /recommendations/progressive-overload?exerciseName=...`
 
-### 5.2 Profile
-- GET /me
-- PATCH /me
-- GET /me/dashboard
+### 7.6 History and Archives
+- `GET /history/workouts`
+- `GET /history/workouts/:workoutSessionId`
+- `GET /history/plans/:planId`
+- `GET /history/exercises/:exerciseName`
 
-### 5.3 Plans
-- GET /plans
-- POST /plans
-- GET /plans/:id
-- PATCH /plans/:id
-- DELETE /plans/:id
-- POST /plans/:id/activate
-- POST /plans/:id/clone
+## 8. Authentication and Authorization
+- Use email/password registration with strong password hashing (Argon2 preferred, bcrypt acceptable).
+- Use JWT access tokens for API access and refresh tokens for session continuity.
+- Store refresh tokens hashed in the database; store tokens securely on mobile using Keychain/Keystore.
+- Protect all user-specific routes with auth guards.
+- Enforce row-level ownership checks in service layer for every resource fetch/mutation.
+- Never accept userId from the client as authority; derive it from the authenticated token.
+- Use short-lived access tokens and revoke refresh tokens on logout or suspected compromise.
 
-### 5.4 Plan structure
-- POST /plans/:id/weeks
-- PATCH /weeks/:id
-- DELETE /weeks/:id
-- POST /weeks/:id/days
-- PATCH /days/:id
-- DELETE /days/:id
-- POST /days/:id/exercises
-- PATCH /day-exercises/:id
-- DELETE /day-exercises/:id
-
-### 5.5 Workout execution
-- GET /workouts/current
-- GET /workouts/current/recommendations
-- POST /workouts/:id/start
-- POST /workouts/:id/complete
-- PATCH /workouts/:id/exercises/:sessionExerciseId
-- POST /workouts/:id/skip
-
-### 5.6 History
-- GET /history/workouts
-- GET /history/workouts/:id
-- GET /history/plans/completed
-- GET /history/exercises
-- GET /history/exercises/:exerciseId
-
-### 5.7 Recommendation payloads
-Recommendations must be advisory only and never auto-apply.
-Response fields:
-- exercise_id
-- suggested_sets
-- suggested_reps
-- suggested_weight
-- confidence or rationale
-- based_on_history references
-
-## 6. Authentication and Authorization
-### Authentication
-- Use JWT access tokens for API requests.
-- Use refresh tokens stored securely in HttpOnly secure cookies or platform secure storage.
-- Passwords are hashed with Argon2id preferred, bcrypt acceptable.
-- Enforce password policy and rate limiting on auth endpoints.
-
-### Authorization
-- All plan, workout, profile, and history endpoints require authentication.
-- Every query must be filtered by authenticated user_id.
-- Ownership checks occur in service layer before read/write/delete operations.
-- Cross-user IDs must return 404 or 403 without leaking existence details.
-- Active plan operations may only target the authenticated user’s plan.
-
-## 7. Security Controls
-- HTTPS everywhere
-- Secure token storage on device
-- HttpOnly refresh cookies if web-compatible auth is used
-- Input validation on every request body, path, and query param
-- Output encoding on client-rendered content
-- Rate limiting and brute-force protection on auth and workout mutation endpoints
-- Audit-safe logs without sensitive personal data or raw passwords
-- Server-side ownership enforcement, never client-trusted ownership
-- Prepared statements/ORM protection against SQL injection
-- Principle of least privilege for database access
-- CSRF protection if cookies are used for authentication
-
-## 8. Scheduling and Current Workout Resolution
-### Deterministic current workout logic
-- The active profile stores plan start date, current week, current day, and timezone.
-- On app launch and on each current-workout request, the server resolves the current workout from:
-  1. user timezone
-  2. active plan
-  3. plan schedule definition
-  4. current date
-- The server advances the week/day indexes when the calendar boundary is crossed according to the plan schedule.
-- If a user edits the active plan, the schedule resolver recalculates the current workout from the updated structure.
-- Completed workouts are recorded per session and do not alter historical data.
-
-### Background job
-- A daily scheduler runs to reconcile active plans, roll forward week/day pointers, and finalize completed plans when all scheduled sessions are marked completed.
-- The app must still resolve current workout on demand so the UI is always correct even if the scheduler runs late.
-
-## 9. Recommendation Engine
-### Inputs
-- Goal type
-- Plan structure
-- Exercise selection and ordering
-- Previous weights, reps, completion status, and rpe
-- Progressive overload flag
-
-### Behavior
-- If progressive overload is disabled, recommendations focus on workouts and exercise selection only.
-- If enabled, the engine recommends a weight increase based on historical performance for the same exercise and similar rep schemes.
-- Use recent successful sessions, completed reps, and prior target weight trends.
-- Recommendations remain suggestions only; the user can override them.
-
-### Output rules
-- Never persist recommendation as an enforced value in the plan automatically.
-- Persist recommendation snapshots for traceability and future tuning.
+## 9. Security
+- TLS for all traffic.
+- Password hashing with modern adaptive algorithm.
+- Input validation on every endpoint.
+- Parameterized queries through ORM.
+- Authorization checks on every query and mutation.
+- Rate limiting on authentication endpoints.
+- Audit-safe logging: do not log passwords, tokens, or full workout secrets.
+- CSRF protection if cookies are used; otherwise use bearer tokens plus secure storage.
+- Optional device/session revocation for lost devices.
 
 ## 10. Data Flow
-1. User registers or signs in.
-2. Client stores tokens securely and loads the user session.
-3. Client requests profile and active plan.
-4. Server validates user identity, loads profile, and resolves current workout.
-5. Client displays current workout and recommendations.
-6. User edits plan or workout day; server validates ownership and persists changes.
-7. User completes a workout; server records workout session, exercise performance, and completion history.
-8. If a plan is fully completed, the server marks it completed and retains it in historical records.
-9. Historical exercise data feeds subsequent recommendation generation.
+### 10.1 Sign-in Flow
+1. User submits credentials.
+2. Backend validates credentials and issues access/refresh tokens.
+3. App stores refresh token securely and access token in memory.
+4. App loads `GET /me` and `GET /plans`.
 
-## 11. Component Relationships
-- UI screens call client service layers, not the database directly.
-- Client service layers call REST APIs and manage cached server state.
-- Controllers expose endpoints and delegate to domain services.
-- Domain services coordinate schedule resolution, plan editing, completion tracking, and recommendations.
-- Repositories encapsulate PostgreSQL access.
-- Background jobs update schedule pointers and completion rollups.
-- History and recommendation modules read from completed sessions and performance records.
+### 10.2 Daily Workout Flow
+1. App calls `GET /workouts/today`.
+2. Backend reads the active plan and current date/day.
+3. Backend resolves the matching plan day and current week.
+4. Backend returns today’s workout or no-workout response.
 
-## 12. Implementation Structure
-### Backend source organization
-- src/modules/auth
-- src/modules/users
-- src/modules/plans
-- src/modules/workouts
-- src/modules/history
-- src/modules/recommendations
-- src/modules/scheduler
-- src/common/guards
-- src/common/interceptors
-- src/common/validators
-- src/database/migrations
-- src/database/seeds
+### 10.3 Workout Completion Flow
+1. User logs sets/reps/weights in workout UI.
+2. App saves set updates during the session.
+3. User taps complete.
+4. Backend persists `WorkoutSession` completion, generates `ExerciseHistoryEntry` records, updates plan progression, and checks if the plan is finished.
+5. If plan is complete, backend archives it into `PlanCompletionArchive` and marks plan completed/archived.
 
-### Frontend source organization
-- app/screens/auth
-- app/screens/profile
-- app/screens/plans
-- app/screens/workout
-- app/screens/history
-- app/components
-- app/hooks
-- app/services/api
-- app/state
-- app/utils
+### 10.4 Recommendation Flow
+1. App requests plan/workout/exercise recommendations.
+2. Backend uses plan goals, plan structure, and historical performance.
+3. If progressive overload is enabled, backend compares recent history, target reps/sets, and achieved performance to suggest adjusted weight.
+4. Backend returns recommendations and confidence/insufficient-data indicators.
 
-## 13. Preserved, Modified, and Created Files
-### Preserve
-- Existing project configuration and dependency lockfiles should be preserved unless required by implementation.
-- Any current source files not conflicting with the architecture should be retained and adapted instead of removed.
+## 11. Scheduling and Current Workout Resolution
+- Treat the active plan as the source of truth for the current workout.
+- Determine the workout by server-side current date and the plan’s `weekIndex` + `dayOfWeek` mapping.
+- Advance week index when the defined schedule spans multiple weeks or when a completed week boundary is crossed.
+- If no workout exists for the current day, return an explicit `no_schedule` state.
+- Recompute current workout on each request; optionally persist a daily materialized workout session for traceability.
+- A background job should reconcile missed day rollovers, create pending workout sessions if desired, and complete archival tasks.
 
-### Modify
-- Application entrypoints to wire auth, routing, and API clients.
-- Existing environment configuration to add database, JWT, and scheduler settings.
-- Existing navigation and screen files to support profile, plan editor, workout flow, and history.
-- Existing backend bootstrap files to register modules, middleware, and background jobs.
+## 12. Recommendations and Progressive Overload
+- Recommendation engine uses:
+  - selected goals
+  - plan structure and exercise order
+  - past exercise performance
+  - recent completion trends
+  - current targets and rep schemes
+- For progressive overload, recommend modest increases only when recent performance meets or exceeds targets.
+- If data is sparse, return a conservative suggestion or an `insufficient_history` flag.
+- Users may accept recommendations or manually override them; overrides are stored as plan edits and become the new source of truth.
 
-### Create
-- architecture.md
-- Database migration files for users, profiles, plans, plan structure, sessions, history, and recommendation snapshots
-- Auth, plan, workout, history, recommendation, and scheduler modules
-- Mobile screens for auth, dashboard, workout session, plan editor, and history views
-- Shared DTOs, validators, guards, and repository classes
+## 13. Component Relationships
+- **UI screens** call **frontend hooks/services**.
+- Frontend services call **REST APIs**.
+- **API controllers** delegate to domain services.
+- **Domain services** read/write **PostgreSQL** through **Prisma**.
+- **Workout completion service** emits derived history and archival updates.
+- **Recommendation service** reads plan configuration plus historical performance.
+- **Scheduler/worker** performs day rollover reconciliation and plan archival maintenance.
 
-## 14. Recommended Defaults
-- Use PostgreSQL UUID keys for all tables.
-- Use UTC storage with per-user timezone preference for display and schedule resolution.
-- Treat completed workout sessions as append-only records.
-- Keep recommendations non-blocking and user-controlled.
-- Prefer a single active plan per user.
-- If multiple drafts exist, only one plan may be marked active at a time.
+## 14. Suggested Project Structure
+### Frontend
+- `src/app/`
+- `src/features/auth/`
+- `src/features/plans/`
+- `src/features/workouts/`
+- `src/features/history/`
+- `src/features/profile/`
+- `src/shared/components/`
+- `src/shared/api/`
+- `src/shared/store/`
+- `src/shared/utils/`
 
-## 15. Operational Notes
-- All user data must be isolated by authenticated user ID.
-- The active workout displayed in the UI must always come from server-resolved state.
-- The client may cache the latest profile and active workout for offline viewing, but server state is authoritative.
-- The system must support fast workout access with minimal taps from launch to current workout.
-- Completed plan history and exercise performance history must remain queryable indefinitely unless a user explicitly deletes their account.
+### Backend
+- `src/modules/auth/`
+- `src/modules/users/`
+- `src/modules/plans/`
+- `src/modules/workouts/`
+- `src/modules/recommendations/`
+- `src/modules/history/`
+- `src/modules/archival/`
+- `src/shared/guards/`
+- `src/shared/interceptors/`
+- `src/shared/validation/`
+- `prisma/schema.prisma`
+
+## 15. Existing Files and Change Strategy
+- **Preserve:** `requirements.md`.
+- **Create:** `architecture.md` as the implementation blueprint.
+- **Create later during implementation:** frontend app entry, feature modules, backend modules, Prisma schema, migration files, API client, auth/session utilities, workout scheduling utilities, recommendation engine, and history/archival services.
+- **Modify only if they already exist during implementation:** application entry files, routing/navigation setup, build configuration, and environment configuration to wire in the architecture above.
+
+## 16. Implementation Notes
+- Keep the data model normalized enough to support history queries while allowing efficient plan and workout retrieval.
+- Derive exercise history from immutable workout completion records to avoid data loss.
+- Keep plan edits versioned logically through new snapshots or updated plan-day/exercise rows.
+- Favor server-side computation for schedule resolution, archival, and recommendations to ensure consistency across devices.
+- Maintain a simple mobile UI with minimal friction during active workouts.
