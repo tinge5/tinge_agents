@@ -28,6 +28,7 @@ export async function getTodayWorkout() { return request<TodayWorkout>('/workout
 export async function getPlans() { return request<Plan[]>('/plans'); }
 export async function createPlan(input: CreatePlanInput) { return request<Plan>('/plans', { method: 'POST', body: JSON.stringify(input) }); }
 export async function updatePlan(planId: string, input: UpdatePlanInput) { return request<Plan>(`/plans/${planId}`, { method: 'PATCH', body: JSON.stringify(input) }); }
+export async function deletePlan(planId: string) { return request<void>(`/plans/${planId}`, { method: 'DELETE' }); }
 export async function activatePlan(planId: string) { return request<Plan>(`/plans/${planId}/activate`, { method: 'POST' }); }
 export async function deactivatePlan(planId: string) { return request<Plan>(`/plans/${planId}/deactivate`, { method: 'POST' }); }
 export async function getCompletedPlans() { return request<any[]>('/me/completed-plans'); }

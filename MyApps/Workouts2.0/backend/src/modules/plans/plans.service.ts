@@ -6,15 +6,6 @@ const normalizeDayOfWeek = (value: any, fallback = 0) => {
   return Number.isInteger(parsed) && parsed >= 0 && parsed <= 6 ? parsed : fallback;
 };
 
-const daySort = (a: any, b: any) => {
-  const aPosition = Number(a.position ?? 0);
-  const bPosition = Number(b.position ?? 0);
-  if (aPosition !== bPosition) return aPosition - bPosition;
-  const aOrder = Number(a.id ? 1 : 0);
-  const bOrder = Number(b.id ? 1 : 0);
-  return aOrder - bOrder;
-};
-
 @Injectable()
 export class PlansService {
   constructor(private prisma: PrismaService) {}
@@ -66,6 +57,12 @@ export class PlansService {
     if (isActive) await this.prisma.workoutPlan.updateMany({ where: { userId, isActive: true, id: { not: planId } }, data: { isActive: false } });
     await this.prisma.workoutPlanDay.deleteMany({ where: { planId } });
     return this.prisma.workoutPlan.update({ where: { id: planId }, data: { name: dto.name ?? plan.name, goals: dto.goals ?? plan.goals, progressiveOverloadEnabled: dto.progressiveOverloadEnabled ?? plan.progressiveOverloadEnabled, isActive, status: isActive ? 'active' : 'draft', days: { create: this.normalizeDays(dto.days ?? plan.days) } }, include: { days: { include: { exercises: true } } } });
+  }
+
+  async remove(userId: string, planId: string) {
+    await this.get(userId, planId);
+    await this.prisma.workoutPlan.delete({ where: { id: planId } });
+    return { success: true };
   }
 
   async activate(userId: string, planId: string) {

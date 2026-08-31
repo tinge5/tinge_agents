@@ -5,6 +5,7 @@ import {
   activatePlan,
   createPlan,
   deactivatePlan,
+  deletePlan,
   getPlans,
   type Plan,
   type PlanDay,
@@ -191,12 +192,29 @@ function SuggestionInput({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const filtered = suggestions.filter((item) => item.toLowerCase().includes(value.toLowerCase())).slice(0, 6);
   return (
-    <View style={{ gap: 6 }}>
-      <TextInput value={value} onChangeText={(text) => { onChangeText(text); setShowSuggestions(true); }} onFocus={() => setShowSuggestions(true)} onBlur={() => setTimeout(() => setShowSuggestions(false), 150)} placeholder={placeholder} style={{ borderWidth: 1, padding: 12, borderRadius: 10 }} />
+    <View style={{ gap: 6, position: 'relative', zIndex: 20 }}>
+      <TextInput
+        value={value}
+        onChangeText={(text) => {
+          onChangeText(text);
+          setShowSuggestions(true);
+        }}
+        onFocus={() => setShowSuggestions(true)}
+        onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+        placeholder={placeholder}
+        style={{ borderWidth: 1, padding: 12, borderRadius: 10 }}
+      />
       {showSuggestions && filtered.length > 0 ? (
-        <View style={{ gap: 6, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 10, padding: 8, backgroundColor: 'white' }}>
+        <View style={{ gap: 6, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 10, padding: 8, backgroundColor: 'white', zIndex: 30, elevation: 8 }}>
           {filtered.map((item) => (
-            <Pressable key={item} onPress={() => onChangeText(item)} style={{ paddingVertical: 8 }}>
+            <Pressable
+              key={item}
+              onPress={() => {
+                onChangeText(item);
+                setShowSuggestions(false);
+              }}
+              style={{ paddingVertical: 8 }}
+            >
               <Text style={{ fontWeight: '600' }}>{item}</Text>
             </Pressable>
           ))}
@@ -206,7 +224,7 @@ function SuggestionInput({
   );
 }
 
-function PlanCard({ plan, onEdit, onActivate, onDeactivate }: { plan: Plan; onEdit: (plan: Plan) => void; onActivate: (plan: Plan) => void; onDeactivate: (plan: Plan) => void; }) {
+function PlanCard({ plan, onEdit, onActivate, onDeactivate, onDelete }: { plan: Plan; onEdit: (plan: Plan) => void; onActivate: (plan: Plan) => void; onDeactivate: (plan: Plan) => void; onDelete: (plan: Plan) => void; }) {
   const goals = safeArray<string>(plan.goals);
   const days = safeArray<PlanDay>(plan.days);
   return (
@@ -231,6 +249,9 @@ function PlanCard({ plan, onEdit, onActivate, onDeactivate }: { plan: Plan; onEd
             <Text style={{ color: 'white', fontWeight: '700' }}>Deactivate</Text>
           </Pressable>
         )}
+        <Pressable onPress={() => onDelete(plan)} style={{ backgroundColor: '#fee2e2', padding: 12, borderRadius: 12 }}>
+          <Text style={{ color: '#991b1b', fontWeight: '700' }}>Delete</Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -289,6 +310,7 @@ export function PlanEditorScreen() {
           exercises: safeArray<PlanDayExercise>((day as any)?.exercises).map((exercise, exerciseIndex) => ({
             ...exercise,
             exerciseName: normalizeExerciseName((exercise as any)?.exerciseName),
+            exerciseId: (exercise as any)?.exerciseId ?? null,
             setsTarget: Number((exercise as any)?.setsTarget ?? 0),
             repsTarget: Number((exercise as any)?.repsTarget ?? 0),
             weightTarget: (exercise as any)?.weightTarget === '' || (exercise as any)?.weightTarget === null || (exercise as any)?.weightTarget === undefined ? null : Number((exercise as any)?.weightTarget),
@@ -311,11 +333,19 @@ export function PlanEditorScreen() {
 
   const activateMutation = useMutation({ mutationFn: activatePlan, onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ['plans'] }); await queryClient.invalidateQueries({ queryKey: ['workouts', 'today'] }); }, onError: (err: any) => Alert.alert('Activation failed', err?.message ?? 'Unable to activate plan') });
   const deactivateMutation = useMutation({ mutationFn: deactivatePlan, onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ['plans'] }); await queryClient.invalidateQueries({ queryKey: ['workouts', 'today'] }); }, onError: (err: any) => Alert.alert('Deactivation failed', err?.message ?? 'Unable to deactivate plan') });
+  const deleteMutation = useMutation({ mutationFn: deletePlan, onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ['plans'] }); await queryClient.invalidateQueries({ queryKey: ['workouts', 'today'] }); resetDraft(); Alert.alert('Deleted', 'Plan has been deleted successfully.'); }, onError: (err: any) => Alert.alert('Delete failed', err?.message ?? 'Unable to delete plan') });
 
   const startEdit = (plan: Plan) => { setEditingPlanId(plan.id); setDraft(toDraftPlan(plan)); setActiveDayIndex(0); setSelectedPreviewWeek(1); setViewMode('edit'); };
   const startView = (plan: Plan) => { setEditingPlanId(plan.id); setDraft(toDraftPlan(plan)); setActiveDayIndex(0); setSelectedPreviewWeek(1); setViewMode('view'); };
   const resetDraft = () => { setEditingPlanId(null); setDraft(defaultDraft()); setActiveDayIndex(0); setSelectedPreviewWeek(1); setViewMode('edit'); };
   const updateDay = (updater: (day: PlanDay) => PlanDay) => { setDraft((prev: any) => { const days = safeArray<PlanDay>(prev.days).slice(); days[activeDayIndex] = updater(days[activeDayIndex] ?? emptyDay(0)); return { ...prev, days }; }); };
+  const removeDayAtIndex = (dayIndex: number) => {
+    setDraft((prev: any) => {
+      const days = safeArray<PlanDay>(prev.days).filter((_: PlanDay, index: number) => index !== dayIndex);
+      return { ...prev, days: days.length ? days : [emptyDay(1)] };
+    });
+    setActiveDayIndex((current) => Math.max(0, Math.min(current, Math.max(0, safeArray<PlanDay>(draft.days).length - 2))));
+  };
   const allDays = safeArray<PlanDay>(draft.days);
 
   return (
@@ -323,10 +353,10 @@ export function PlanEditorScreen() {
       <Text style={{ fontSize: 28, fontWeight: '800' }}>Plans</Text>
       <Text style={{ color: '#6b7280' }}>Use the New Plan action to start a fresh plan. Edit existing plans from the list below.</Text>
       <Pressable onPress={resetDraft} style={{ backgroundColor: '#dbeafe', padding: 12, borderRadius: 12, alignSelf: 'flex-start' }}><Text style={{ fontWeight: '700' }}>New Plan</Text></Pressable>
-      {isLoading ? <View style={{ paddingVertical: 40 }}><ActivityIndicator /></View> : isError ? <Text style={{ color: '#b91c1c' }}>{(error as Error)?.message ?? 'Unable to load plans'}</Text> : plans.length === 0 ? <View style={{ backgroundColor: '#fff7ed', padding: 16, borderRadius: 16 }}><Text style={{ fontWeight: '700' }}>No plans yet</Text><Text>Create your first workout plan below.</Text></View> : plans.map((plan) => <PlanCard key={plan.id} plan={plan} onEdit={startEdit} onActivate={(p) => activateMutation.mutate(p.id)} onDeactivate={(p) => deactivateMutation.mutate(p.id)} />)}
+      {isLoading ? <View style={{ paddingVertical: 40 }}><ActivityIndicator /></View> : isError ? <Text style={{ color: '#b91c1c' }}>{(error as Error)?.message ?? 'Unable to load plans'}</Text> : plans.length === 0 ? <View style={{ backgroundColor: '#fff7ed', padding: 16, borderRadius: 16 }}><Text style={{ fontWeight: '700' }}>No plans yet</Text><Text>Create your first workout plan below.</Text></View> : plans.map((plan) => <PlanCard key={plan.id} plan={plan} onEdit={startEdit} onActivate={(p) => activateMutation.mutate(p.id)} onDeactivate={(p) => deactivateMutation.mutate(p.id)} onDelete={(p) => Alert.alert('Delete plan?', `This will permanently delete \"${p.name}\" and all of its workout days. This cannot be undone.`, [{ text: 'Cancel', style: 'cancel' }, { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate(p.id) }])} />)}
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <Pressable onPress={() => setViewMode('edit')} style={{ backgroundColor: viewMode === 'edit' ? '#2563eb' : '#e5e7eb', padding: 10, borderRadius: 10 }}><Text style={{ color: viewMode === 'edit' ? 'white' : '#111827', fontWeight: '700' }}>Edit Plan</Text></Pressable>
-        <Pressable onPress={() => setViewMode('view')} style={{ backgroundColor: viewMode === 'view' ? '#2563eb' : '#e5e7eb', padding: 10, borderRadius: 10 }}><Text style={{ color: viewMode === 'view' ? 'white' : '#111827', fontWeight: '700' }}>View Plan</Text></Pressable>
+        <Pressable onPress={() => { setViewMode('view'); if (plans[0]) startView(plans[0]); }} style={{ backgroundColor: viewMode === 'view' ? '#2563eb' : '#e5e7eb', padding: 10, borderRadius: 10 }}><Text style={{ color: viewMode === 'view' ? 'white' : '#111827', fontWeight: '700' }}>View Plan</Text></Pressable>
       </View>
       <View style={{ backgroundColor: 'white', padding: 16, borderRadius: 16, gap: 12, borderWidth: 1, borderColor: '#e5e7eb' }}>
         <Text style={{ fontSize: 20, fontWeight: '700' }}>{viewMode === 'view' ? 'View Plan' : title}</Text>
@@ -375,6 +405,7 @@ export function PlanEditorScreen() {
                 <Pressable key={`${day.dayOfWeek}-${index}`} onPress={() => setActiveDayIndex(index)} style={{ backgroundColor: index === activeDayIndex ? '#2563eb' : '#e5e7eb', padding: 10, borderRadius: 999 }}><Text style={{ color: index === activeDayIndex ? 'white' : '#111827', fontWeight: '700' }}>Day {index + 1}</Text></Pressable>
               ))}
               <Pressable onPress={() => setDraft((prev: any) => ({ ...prev, days: [...safeArray<PlanDay>(prev.days), emptyDay((safeArray<PlanDay>(prev.days).length % DAYS_PER_WEEK))] }))} style={{ backgroundColor: '#dbeafe', padding: 10, borderRadius: 999 }}><Text style={{ fontWeight: '700' }}>+ Add Day</Text></Pressable>
+              <Pressable onPress={() => Alert.alert('Delete workout day?', 'This will permanently remove the selected workout day from the plan.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Delete Day', style: 'destructive', onPress: () => removeDayAtIndex(activeDayIndex) }])} style={{ backgroundColor: '#fee2e2', padding: 10, borderRadius: 999 }}><Text style={{ fontWeight: '700', color: '#991b1b' }}>Delete Day</Text></Pressable>
             </View>
           </>
         ) : (
@@ -399,7 +430,7 @@ export function PlanEditorScreen() {
             </View>
           </>
         )}
-        {viewMode === 'edit' ? <Pressable onPress={() => saveMutation.mutate()} style={{ backgroundColor: '#2563eb', padding: 14, borderRadius: 12 }}><Text style={{ color: 'white', textAlign: 'center', fontWeight: '700' }}>{saveMutation.isPending ? 'Saving...' : 'Save Plan'}</Text></Pressable> : null}
+        <Pressable onPress={() => saveMutation.mutate()} style={{ backgroundColor: '#2563eb', padding: 14, borderRadius: 12, alignSelf: 'flex-start' }}><Text style={{ color: 'white', fontWeight: '800' }}>{saveMutation.isPending ? 'Saving...' : 'Save Plan'}</Text></Pressable>
       </View>
     </ScrollView>
   );

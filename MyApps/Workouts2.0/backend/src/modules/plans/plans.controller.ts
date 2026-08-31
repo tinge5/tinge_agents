@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../shared/auth/jwt-auth.guard';
 import { PlansService } from './plans.service';
 
@@ -12,4 +12,5 @@ export class PlansController {
   @Post(':planId/activate') activate(@Req() req: any, @Param('planId') planId: string) { return this.plansService.activate(req.user.sub, planId); }
   @Post(':planId/deactivate') deactivate(@Req() req: any, @Param('planId') planId: string) { return this.plansService.deactivate(req.user.sub, planId); }
   @Patch(':planId') patch(@Req() req: any, @Param('planId') planId: string, @Body() body: any) { return this.plansService.update(req.user.sub, planId, body); }
+  @Delete(':planId') remove(@Req() req: any, @Param('planId') planId: string) { return this.plansService.remove(req.user.sub, planId); }
 }
