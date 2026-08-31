@@ -1,10 +1,19 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getTodayWorkout } from '@/shared/api/client';
 
 export function TodayScreen({ navigation }: any) {
+  const queryClient = useQueryClient();
   const { data, isLoading, isError, error } = useQuery({ queryKey: ['workouts', 'today'], queryFn: getTodayWorkout });
+
+  useEffect(() => {
+    const unsubscribe = navigation?.addListener?.('focus', () => {
+      queryClient.invalidateQueries({ queryKey: ['workouts', 'today'] });
+      queryClient.refetchQueries({ queryKey: ['workouts', 'today'], type: 'active' });
+    });
+    return unsubscribe;
+  }, [navigation, queryClient]);
 
   const workout = data;
   const exercises = workout?.exercises ?? [];
