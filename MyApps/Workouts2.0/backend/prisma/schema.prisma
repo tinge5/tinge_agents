@@ -28,86 +28,88 @@ enum RecommendationContextType {
 }
 
 model User {
-  id            String                 @id @default(cuid())
-  email         String                 @unique
-  passwordHash  String
-  displayName   String
-  createdAt     DateTime               @default(now())
-  updatedAt     DateTime               @updatedAt
-  sessions      Session[]
-  workoutPlans  WorkoutPlan[]
+  id              String                   @id @default(cuid())
+  email           String                   @unique
+  passwordHash    String
+  displayName     String
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  sessions        Session[]
+  workoutPlans    WorkoutPlan[]
   workoutSessions WorkoutSession[]
   exerciseHistory ExerciseHistoryEntry[]
-  planArchives  PlanCompletionArchive[]
+  planArchives    PlanCompletionArchive[]
   recommendationSnapshots RecommendationSnapshot[]
 }
 
 model Session {
-  id           String   @id @default(cuid())
-  userId       String
-  tokenHash    String
-  expiresAt    DateTime
-  revokedAt    DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
 
 model WorkoutPlan {
-  id                       String              @id @default(cuid())
-  userId                   String
-  name                     String
-  goals                    String[]
-  isActive                 Boolean             @default(false)
-  progressiveOverloadEnabled Boolean           @default(false)
-  status                   PlanStatus          @default(draft)
-  currentWeekIndex         Int                 @default(0)
-  createdAt                DateTime            @default(now())
-  updatedAt                DateTime            @updatedAt
-  user                     User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  days                     WorkoutPlanDay[]
-  sessions                 WorkoutSession[]
-  archives                 PlanCompletionArchive[]
+  id                        String              @id @default(cuid())
+  userId                    String
+  name                      String
+  goals                     String[]
+  isActive                  Boolean             @default(false)
+  progressiveOverloadEnabled Boolean            @default(false)
+  status                    PlanStatus          @default(draft)
+  currentWeekIndex          Int                 @default(0)
+  durationWeeks             Int                 @default(4)
+  startDate                 DateTime?
+  createdAt                 DateTime            @default(now())
+  updatedAt                 DateTime            @updatedAt
+  user                      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  days                      WorkoutPlanDay[]
+  sessions                  WorkoutSession[]
+  archives                  PlanCompletionArchive[]
 
   @@index([userId, isActive])
 }
 
 model WorkoutPlanDay {
-  id           String              @id @default(cuid())
-  planId       String
-  dayOfWeek    Int
-  weekIndex    Int                 @default(0)
-  title        String
-  position     Int                 @default(0)
-  plan         WorkoutPlan         @relation(fields: [planId], references: [id], onDelete: Cascade)
-  exercises    WorkoutPlanExercise[]
-  sessions     WorkoutSession[]
+  id         String              @id @default(cuid())
+  planId     String
+  dayOfWeek  Int
+  weekIndex  Int                 @default(0)
+  title      String
+  position   Int                 @default(0)
+  plan       WorkoutPlan         @relation(fields: [planId], references: [id], onDelete: Cascade)
+  exercises  WorkoutPlanExercise[]
+  sessions   WorkoutSession[]
 
   @@index([planId, weekIndex, dayOfWeek])
 }
 
 model WorkoutPlanExercise {
-  id            String           @id @default(cuid())
-  planDayId      String
-  exerciseName   String
-  exerciseId     String?
-  setsTarget     Int
-  repsTarget     Int
-  weightTarget   Float?          
-  order          Int             @default(0)
-  notes          String?
-  planDay        WorkoutPlanDay   @relation(fields: [planDayId], references: [id], onDelete: Cascade)
+  id          String           @id @default(cuid())
+  planDayId    String
+  exerciseName String
+  exerciseId   String?
+  setsTarget   Int
+  repsTarget   Int
+  weightTarget Float?
+  order        Int             @default(0)
+  notes        String?
+  planDay      WorkoutPlanDay   @relation(fields: [planDayId], references: [id], onDelete: Cascade)
 
   @@index([planDayId])
 }
 
 model WorkoutSession {
-  id           String            @id @default(cuid())
-  userId       String
-  planId       String
-  planDayId    String
+  id            String            @id @default(cuid())
+  userId        String
+  planId        String
+  planDayId     String
   scheduledDate DateTime
   actualDate    DateTime?
   weekIndex     Int
@@ -115,43 +117,43 @@ model WorkoutSession {
   completedAt   DateTime?
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
-  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan         WorkoutPlan        @relation(fields: [planId], references: [id], onDelete: Cascade)
-  planDay      WorkoutPlanDay     @relation(fields: [planDayId], references: [id], onDelete: Cascade)
-  setResults   WorkoutSetResult[]
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan          WorkoutPlan       @relation(fields: [planId], references: [id], onDelete: Cascade)
+  planDay       WorkoutPlanDay    @relation(fields: [planDayId], references: [id], onDelete: Cascade)
+  setResults    WorkoutSetResult[]
   exerciseHistory ExerciseHistoryEntry[]
 
   @@index([userId, status])
 }
 
 model WorkoutSetResult {
-  id               String         @id @default(cuid())
-  workoutSessionId  String
-  exerciseName     String
-  exerciseId       String?
-  setNumber        Int
-  reps             Int
-  weight           Float
-  completed        Boolean        @default(true)
-  workoutSession   WorkoutSession @relation(fields: [workoutSessionId], references: [id], onDelete: Cascade)
+  id              String         @id @default(cuid())
+  workoutSessionId String
+  exerciseName    String
+  exerciseId      String?
+  setNumber       Int
+  reps            Int
+  weight          Float
+  completed       Boolean        @default(true)
+  workoutSession  WorkoutSession @relation(fields: [workoutSessionId], references: [id], onDelete: Cascade)
 
   @@index([workoutSessionId])
 }
 
 model ExerciseHistoryEntry {
-  id              String         @id @default(cuid())
-  userId          String
-  exerciseName    String
-  exerciseId      String?
+  id               String         @id @default(cuid())
+  userId           String
+  exerciseName     String
+  exerciseId       String?
   workoutSessionId String
-  date            DateTime       @default(now())
-  sets            Int
-  reps            Int
-  weight          Float
-  volume          Float
-  rpe             Float?
-  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  workoutSession  WorkoutSession @relation(fields: [workoutSessionId], references: [id], onDelete: Cascade)
+  date             DateTime       @default(now())
+  sets             Int
+  reps             Int
+  weight           Float
+  volume           Float
+  rpe              Float?
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workoutSession   WorkoutSession @relation(fields: [workoutSessionId], references: [id], onDelete: Cascade)
 
   @@index([userId, exerciseName])
 }

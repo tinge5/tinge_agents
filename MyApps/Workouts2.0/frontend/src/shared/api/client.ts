@@ -62,6 +62,8 @@ export type Plan = {
   progressiveOverloadEnabled: boolean;
   status: 'draft' | 'active' | 'completed' | 'archived' | string;
   currentWeekIndex?: number;
+  durationWeeks?: number;
+  startDate?: string | null;
   createdAt?: string;
   updatedAt?: string;
   days: PlanDay[];
@@ -72,18 +74,24 @@ export type CreatePlanInput = {
   goals: string[];
   progressiveOverloadEnabled: boolean;
   isActive?: boolean;
+  durationWeeks?: number;
+  startDate?: string | null;
   days: PlanDay[];
 };
 
 export type UpdatePlanInput = Partial<CreatePlanInput>;
 
 export type TodayWorkout = {
-  status: 'scheduled' | 'no_schedule' | 'in_progress' | 'completed';
+  status: 'scheduled' | 'no_schedule' | 'in_progress' | 'completed' | 'no_active_plan';
   workoutSessionId?: string;
   title?: string;
   day?: string;
   note?: string;
-  exercises?: Array<{ name: string; sets: number; reps: number; weight: number }>;
+  weekIndex?: number;
+  planId?: string;
+  plan?: Plan;
+  planDay?: PlanDay;
+  exercises?: Array<{ name: string; sets: number; reps: number; weight: number | null }>;
 };
 
 async function readStoredTokens() {

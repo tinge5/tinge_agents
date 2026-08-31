@@ -5,11 +5,33 @@ import { PrismaService } from '../../shared/prisma/prisma.service';
 export class PlansService {
   constructor(private prisma: PrismaService) {}
 
+  private normalizeDays(dtoDays: any[] = []) {
+    return dtoDays.map((d: any, idx: number) => ({
+      dayOfWeek: Number(d.dayOfWeek),
+      weekIndex: Number(d.weekIndex ?? 0),
+      title: String(d.title ?? ''),
+      position: idx,
+      exercises: {
+        create: (d.exercises || []).map((e: any, eidx: number) => ({
+          exerciseName: String(e.exerciseName ?? '').trim(),
+          exerciseId: e.exerciseId,
+          setsTarget: Number(e.setsTarget),
+          repsTarget: Number(e.repsTarget),
+          weightTarget: e.weightTarget === '' || e.weightTarget === null || e.weightTarget === undefined ? null : Number(e.weightTarget),
+          order: eidx,
+          notes: e.notes,
+        })),
+      },
+    }));
+  }
+
   async list(userId: string) {
     return this.prisma.workoutPlan.findMany({ where: { userId }, include: { days: { include: { exercises: true } } } });
   }
 
   async create(userId: string, dto: any) {
+    const durationWeeks = Number(dto.durationWeeks ?? 4);
+    if (Number.isNaN(durationWeeks) || durationWeeks < 1) throw new BadRequestException('durationWeeks must be at least 1');
     if (dto.isActive) await this.prisma.workoutPlan.updateMany({ where: { userId, isActive: true }, data: { isActive: false } });
     return this.prisma.workoutPlan.create({
       data: {
@@ -19,25 +41,8 @@ export class PlansService {
         progressiveOverloadEnabled: !!dto.progressiveOverloadEnabled,
         isActive: !!dto.isActive,
         status: dto.isActive ? 'active' : 'draft',
-        days: {
-          create: dto.days?.map((d: any, idx: number) => ({
-            dayOfWeek: d.dayOfWeek,
-            weekIndex: d.weekIndex ?? 0,
-            title: d.title,
-            position: idx,
-            exercises: {
-              create: (d.exercises || []).map((e: any, eidx: number) => ({
-                exerciseName: e.exerciseName,
-                exerciseId: e.exerciseId,
-                setsTarget: e.setsTarget,
-                repsTarget: e.repsTarget,
-                weightTarget: e.weightTarget,
-                order: eidx,
-                notes: e.notes,
-              })),
-            },
-          })) || [],
-        },
+        currentWeekIndex: 0,
+        days: { create: this.normalizeDays(dto.days) },
       },
       include: { days: { include: { exercises: true } } },
     });
@@ -52,6 +57,7 @@ export class PlansService {
   async update(userId: string, planId: string, dto: any) {
     const plan = await this.get(userId, planId);
     const isActive = dto.isActive ?? plan.isActive;
+    if (dto.durationWeeks !== undefined && (Number(dto.durationWeeks) < 1 || Number.isNaN(Number(dto.durationWeeks)))) throw new BadRequestException('durationWeeks must be at least 1');
     if (isActive) {
       await this.prisma.workoutPlan.updateMany({ where: { userId, isActive: true, id: { not: planId } }, data: { isActive: false } });
     }
@@ -64,25 +70,7 @@ export class PlansService {
         progressiveOverloadEnabled: dto.progressiveOverloadEnabled ?? plan.progressiveOverloadEnabled,
         isActive,
         status: isActive ? 'active' : 'draft',
-        days: {
-          create: (dto.days ?? plan.days).map((d: any, idx: number) => ({
-            dayOfWeek: d.dayOfWeek,
-            weekIndex: d.weekIndex ?? 0,
-            title: d.title,
-            position: idx,
-            exercises: {
-              create: (d.exercises || []).map((e: any, eidx: number) => ({
-                exerciseName: e.exerciseName,
-                exerciseId: e.exerciseId,
-                setsTarget: e.setsTarget,
-                repsTarget: e.repsTarget,
-                weightTarget: e.weightTarget,
-                order: eidx,
-                notes: e.notes,
-              })),
-            },
-          })),
-        },
+        days: { create: this.normalizeDays(dto.days ?? plan.days) },
       },
       include: { days: { include: { exercises: true } } },
     });

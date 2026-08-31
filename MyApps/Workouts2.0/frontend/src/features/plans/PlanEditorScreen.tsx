@@ -12,6 +12,8 @@ import {
   updatePlan,
 } from '@/shared/api/client';
 
+const DAYS_PER_WEEK = 7;
+
 const emptyDay = (dayOfWeek: number): PlanDay => ({
   dayOfWeek,
   weekIndex: 0,
@@ -19,13 +21,26 @@ const emptyDay = (dayOfWeek: number): PlanDay => ({
   exercises: [],
 });
 
-const defaultDraft = (): { id?: string; userId?: string; name: string; goals: string[]; isActive: boolean; progressiveOverloadEnabled: boolean; currentWeekIndex: number; days: PlanDay[] } => ({
+const defaultDraft = (): {
+  id?: string;
+  userId?: string;
+  name: string;
+  goals: string[];
+  isActive: boolean;
+  progressiveOverloadEnabled: boolean;
+  currentWeekIndex: number;
+  durationWeeks: number;
+  startDate?: string | null;
+  days: PlanDay[];
+} => ({
   userId: undefined,
   name: '',
   goals: ['strength'],
   isActive: false,
   progressiveOverloadEnabled: false,
   currentWeekIndex: 0,
+  durationWeeks: 4,
+  startDate: null,
   days: [emptyDay(1), emptyDay(3)],
 });
 
@@ -48,6 +63,13 @@ const EXERCISE_SUGGESTIONS = [
   'Tricep Pushdown',
 ];
 
+const booleanOptions = [
+  { label: 'True', value: true },
+  { label: 'False', value: false },
+];
+
+const durationOptions = [4, 6, 8, 12];
+
 function normalizeExerciseName(name: unknown) {
   return typeof name === 'string' ? name.trim() : '';
 }
@@ -66,6 +88,8 @@ function toDraftPlan(plan: Plan) {
     isActive: !!plan.isActive,
     progressiveOverloadEnabled: !!plan.progressiveOverloadEnabled,
     currentWeekIndex: Number(plan.currentWeekIndex ?? 0),
+    durationWeeks: Number(plan.durationWeeks ?? 4),
+    startDate: plan.startDate ?? null,
     days: safeArray<PlanDay>(plan.days).length
       ? safeArray<PlanDay>(plan.days).map((day, index) => ({
           dayOfWeek: Number((day as any)?.dayOfWeek ?? index),
@@ -92,6 +116,40 @@ function toDraftPlan(plan: Plan) {
 
 function PlanFieldHelp({ text }: { text: string }) {
   return <Text style={{ color: '#6b7280', fontSize: 12, lineHeight: 16 }}>{text}</Text>;
+}
+
+function SelectField<T extends string | number | boolean>({
+  value,
+  onChangeValue,
+  options,
+}: {
+  value: T;
+  onChangeValue: (value: T) => void;
+  options: { label: string; value: T }[];
+}) {
+  return (
+    <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+      {options.map((option) => {
+        const selected = option.value === value;
+        return (
+          <Pressable
+            key={option.label}
+            onPress={() => onChangeValue(option.value)}
+            style={{
+              paddingVertical: 10,
+              paddingHorizontal: 14,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: selected ? '#2563eb' : '#d1d5db',
+              backgroundColor: selected ? '#2563eb' : 'white',
+            }}
+          >
+            <Text style={{ color: selected ? 'white' : '#111827', fontWeight: '700' }}>{option.label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
 }
 
 function SuggestionInput({
@@ -142,6 +200,8 @@ function PlanCard({ plan, onEdit, onActivate, onDeactivate }: { plan: Plan; onEd
       <Text>Goals: {goals.length ? goals.join(', ') : 'None'}</Text>
       <Text>Progressive overload: {plan.progressiveOverloadEnabled ? 'enabled' : 'disabled'}</Text>
       <Text>Status: {plan.status}{plan.isActive ? ' (active)' : ''}</Text>
+      <Text>Duration: {plan.durationWeeks ?? 4} weeks</Text>
+      <Text>Start date: {plan.startDate ? new Date(plan.startDate).toLocaleDateString() : 'Not set'}</Text>
       <Text>Schedule: {days.length ? days.map((day) => `${typeof day.title === 'string' && day.title.trim() ? day.title : `Day ${day.dayOfWeek}`}`).join(', ') : 'No days configured'}</Text>
       <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
         <Pressable onPress={() => onEdit(plan)} style={{ backgroundColor: '#111827', padding: 12, borderRadius: 12 }}>
@@ -161,17 +221,50 @@ function PlanCard({ plan, onEdit, onActivate, onDeactivate }: { plan: Plan; onEd
   );
 }
 
+function previewWeeks(startWeek: number, durationWeeks: number) {
+  return Array.from({ length: Math.max(1, durationWeeks) }, (_, index) => startWeek + index);
+}
+
+function applyProgressionToExercise(exercise: PlanDayExercise, weekIndex: number, enabled: boolean) {
+  if (!enabled || weekIndex <= 0) return exercise;
+  const weeksOfProgression = weekIndex;
+  const weightBase = typeof exercise.weightTarget === 'number' ? exercise.weightTarget : null;
+  const repsBase = Number(exercise.repsTarget ?? 0);
+  const setsBase = Number(exercise.setsTarget ?? 0);
+  const progressiveWeight = weightBase === null ? null : Number((weightBase * (1 + 0.025 * weeksOfProgression)).toFixed(1));
+  const progressiveReps = Math.max(1, repsBase + weeksOfProgression);
+  return {
+    ...exercise,
+    weightTarget: progressiveWeight,
+    repsTarget: progressiveReps,
+    setsTarget: Math.max(1, setsBase),
+  };
+}
+
+function getPreviewedDays(plan: any, weekIndex: number) {
+  return safeArray<PlanDay>(plan.days)
+    .filter((day) => Number(day.weekIndex ?? 0) === weekIndex)
+    .map((day) => ({
+      ...day,
+      exercises: safeArray<PlanDayExercise>(day.exercises).map((exercise) => applyProgressionToExercise(exercise, weekIndex, !!plan.progressiveOverloadEnabled)),
+    }));
+}
+
 export function PlanEditorScreen() {
   const queryClient = useQueryClient();
   const { data, isLoading, isError, error } = useQuery({ queryKey: ['plans'], queryFn: getPlans });
   const [draft, setDraft] = useState<any>(defaultDraft());
   const [editingPlanId, setEditingPlanId] = useState<string | null>(null);
   const [activeDayIndex, setActiveDayIndex] = useState(0);
+  const [selectedPreviewWeek, setSelectedPreviewWeek] = useState(1);
 
   const plans = data ?? [];
   const isCreating = !editingPlanId;
   const draftDay = draft.days?.[activeDayIndex] ?? emptyDay(1);
   const title = useMemo(() => (editingPlanId ? 'Edit Plan' : 'Create Plan'), [editingPlanId]);
+  const totalWeeks = Math.max(1, Number(draft.durationWeeks ?? 4));
+  const previewWeekNumbers = previewWeeks(1, totalWeeks);
+  const previewedDays = useMemo(() => getPreviewedDays(draft, selectedPreviewWeek - 1), [draft, selectedPreviewWeek]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -180,6 +273,8 @@ export function PlanEditorScreen() {
         goals: safeArray<string>(draft.goals).map((goal) => String(goal).trim()).filter(Boolean),
         progressiveOverloadEnabled: !!draft.progressiveOverloadEnabled,
         isActive: !!draft.isActive,
+        durationWeeks: Number(draft.durationWeeks ?? 4),
+        startDate: draft.startDate ?? null,
         days: safeArray<PlanDay>(draft.days).map((day: PlanDay, index: number) => ({
           ...day,
           dayOfWeek: Number((day as any)?.dayOfWeek ?? 0),
@@ -206,6 +301,7 @@ export function PlanEditorScreen() {
       await queryClient.invalidateQueries({ queryKey: ['plans'] });
       setEditingPlanId(savedPlan.id);
       setDraft(toDraftPlan(savedPlan));
+      setSelectedPreviewWeek(1);
       Alert.alert('Saved', 'Plan has been saved successfully.');
     },
     onError: (err: any) => Alert.alert('Save failed', err?.message ?? 'Unable to save plan'),
@@ -231,12 +327,14 @@ export function PlanEditorScreen() {
     setEditingPlanId(plan.id);
     setDraft(toDraftPlan(plan));
     setActiveDayIndex(0);
+    setSelectedPreviewWeek(1);
   };
 
   const resetDraft = () => {
     setEditingPlanId(null);
     setDraft(defaultDraft());
     setActiveDayIndex(0);
+    setSelectedPreviewWeek(1);
   };
 
   const updateDay = (updater: (day: PlanDay) => PlanDay) => {
@@ -251,6 +349,9 @@ export function PlanEditorScreen() {
     <ScrollView contentContainerStyle={{ padding: 20, gap: 16 }}>
       <Text style={{ fontSize: 28, fontWeight: '800' }}>Plans</Text>
       <Text style={{ color: '#6b7280' }}>Use the New Plan action to start a fresh plan. Edit existing plans from the list below.</Text>
+      <Pressable onPress={resetDraft} style={{ backgroundColor: '#dbeafe', padding: 12, borderRadius: 12, alignSelf: 'flex-start' }}>
+        <Text style={{ fontWeight: '700' }}>New Plan</Text>
+      </Pressable>
       {isLoading ? (
         <View style={{ paddingVertical: 40 }}><ActivityIndicator /></View>
       ) : isError ? (
@@ -278,19 +379,27 @@ export function PlanEditorScreen() {
         <TextInput value={draft.name} onChangeText={(name) => setDraft((prev: any) => ({ ...prev, name }))} placeholder="Plan name" style={{ borderWidth: 1, padding: 14, borderRadius: 12 }} />
         <PlanFieldHelp text="Goals: comma-separated tags describing the plan's purpose. Example: strength, hypertrophy." />
         <TextInput value={safeArray<string>(draft.goals).join(', ')} onChangeText={(text) => setDraft((prev: any) => ({ ...prev, goals: text.split(',').map((g) => g.trim()).filter(Boolean) }))} placeholder="Goals (comma separated)" style={{ borderWidth: 1, padding: 14, borderRadius: 12 }} />
-        <PlanFieldHelp text="Progressive overload: mark this on when the plan should be used to track increasing training load over time." />
-        <TextInput value={String(!!draft.progressiveOverloadEnabled)} onChangeText={(text) => setDraft((prev: any) => ({ ...prev, progressiveOverloadEnabled: text.toLowerCase() === 'true' }))} placeholder="Progressive overload (true/false)" style={{ borderWidth: 1, padding: 14, borderRadius: 12 }} />
-        <PlanFieldHelp text="Activate on save: save the plan as the currently active plan for the user." />
-        <TextInput value={String(!!draft.isActive)} onChangeText={(text) => setDraft((prev: any) => ({ ...prev, isActive: text.toLowerCase() === 'true' }))} placeholder="Activate plan on save (true/false)" style={{ borderWidth: 1, padding: 14, borderRadius: 12 }} />
+        <PlanFieldHelp text="Plan duration: choose how many weeks the plan should run before it ends." />
+        <SelectField value={Number(draft.durationWeeks ?? 4)} onChangeValue={(value) => setDraft((prev: any) => ({ ...prev, durationWeeks: Number(value) }))} options={durationOptions.map((value) => ({ label: `${value} weeks`, value }))} />
+        <PlanFieldHelp text="Progressive overload: choose True or False for whether the plan should use progressive overload tracking." />
+        <SelectField
+          value={!!draft.progressiveOverloadEnabled}
+          onChangeValue={(value) => setDraft((prev: any) => ({ ...prev, progressiveOverloadEnabled: value }))}
+          options={booleanOptions}
+        />
+        <PlanFieldHelp text="Activate on save: choose True or False to determine whether the plan is saved as active." />
+        <SelectField
+          value={!!draft.isActive}
+          onChangeValue={(value) => setDraft((prev: any) => ({ ...prev, isActive: value }))}
+          options={booleanOptions}
+        />
 
         <View style={{ gap: 8 }}>
           <Text style={{ fontWeight: '700' }}>Day {activeDayIndex + 1}</Text>
-          <PlanFieldHelp text="Day of week: use the application's schedule convention (0-6). Week index lets you repeat the same day across a multi-week plan." />
+          <PlanFieldHelp text="Day of week: use the application's schedule convention (0-6). Week progression is calculated automatically from the plan duration and start date; manual week index editing is not required." />
           <TextInput value={String(draftDay.dayOfWeek ?? 0)} onChangeText={(text) => updateDay((day) => ({ ...day, dayOfWeek: Number(text) }))} placeholder="Day of week (0-6)" keyboardType="numeric" style={{ borderWidth: 1, padding: 14, borderRadius: 12 }} />
           <PlanFieldHelp text="Workout title: optional short name for this scheduled workout day, such as Lower Body or Push Day." />
           <TextInput value={String(draftDay.title ?? '')} onChangeText={(text) => updateDay((day) => ({ ...day, title: text }))} placeholder="Workout title" style={{ borderWidth: 1, padding: 14, borderRadius: 12 }} />
-          <PlanFieldHelp text="Week index: 0 is the first week in the plan, 1 is the second, and so on." />
-          <TextInput value={String(draftDay.weekIndex ?? 0)} onChangeText={(text) => updateDay((day) => ({ ...day, weekIndex: Number(text) }))} placeholder="Week index" keyboardType="numeric" style={{ borderWidth: 1, padding: 14, borderRadius: 12 }} />
           <Pressable onPress={() => updateDay((day) => ({ ...day, exercises: [...safeArray<PlanDayExercise>(day.exercises), { exerciseName: '', setsTarget: 3, repsTarget: 8, weightTarget: null }] }))} style={{ backgroundColor: '#e5e7eb', padding: 12, borderRadius: 12 }}>
             <Text style={{ textAlign: 'center', fontWeight: '700' }}>Add Exercise</Text>
           </Pressable>
@@ -354,14 +463,47 @@ export function PlanEditorScreen() {
           </Pressable>
         </View>
 
-        <View style={{ flexDirection: 'row', gap: 12, flexWrap: 'wrap' }}>
-          <Pressable onPress={() => saveMutation.mutate()} disabled={saveMutation.isPending} style={{ backgroundColor: '#2563eb', padding: 14, borderRadius: 14, opacity: saveMutation.isPending ? 0.7 : 1 }}>
-            <Text style={{ color: 'white', fontWeight: '700' }}>{saveMutation.isPending ? 'Saving...' : 'Save Plan'}</Text>
-          </Pressable>
-          <Pressable onPress={resetDraft} style={{ backgroundColor: '#e5e7eb', padding: 14, borderRadius: 14 }}>
-            <Text style={{ fontWeight: '700' }}>{isCreating ? 'Reset New Plan' : 'New Plan'}</Text>
-          </Pressable>
+        <View style={{ gap: 8 }}>
+          <Text style={{ fontWeight: '700' }}>Week preview</Text>
+          <Text style={{ color: '#6b7280' }}>Select a week to preview how the current plan will look across its configured duration.</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {previewWeekNumbers.map((weekNumber) => (
+              <Pressable
+                key={weekNumber}
+                onPress={() => setSelectedPreviewWeek(weekNumber)}
+                style={{
+                  paddingVertical: 10,
+                  paddingHorizontal: 14,
+                  borderRadius: 999,
+                  backgroundColor: selectedPreviewWeek === weekNumber ? '#2563eb' : '#e5e7eb',
+                }}
+              >
+                <Text style={{ fontWeight: '700', color: selectedPreviewWeek === weekNumber ? 'white' : '#111827' }}>Week {weekNumber}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <View style={{ gap: 10, marginTop: 8 }}>
+            {previewedDays.length === 0 ? (
+              <Text style={{ color: '#6b7280' }}>No scheduled days found for this week.</Text>
+            ) : (
+              previewedDays.map((day, index) => (
+                <View key={`${selectedPreviewWeek}-${day.dayOfWeek}-${index}`} style={{ padding: 12, borderRadius: 12, backgroundColor: '#f8fafc', gap: 6 }}>
+                  <Text style={{ fontWeight: '700' }}>{day.title || `Day ${day.dayOfWeek}`}</Text>
+                  <Text style={{ color: '#6b7280' }}>Day of week: {day.dayOfWeek}</Text>
+                  {safeArray<PlanDayExercise>(day.exercises).map((exercise) => (
+                    <Text key={exercise.id ?? exercise.exerciseName} style={{ color: '#111827' }}>
+                      {exercise.exerciseName}: {exercise.setsTarget} sets x {exercise.repsTarget} reps{exercise.weightTarget !== null && exercise.weightTarget !== undefined ? ` @ ${exercise.weightTarget}` : ''}
+                    </Text>
+                  ))}
+                </View>
+              ))
+            )}
+          </View>
         </View>
+
+        <Pressable onPress={() => saveMutation.mutate()} style={{ backgroundColor: '#2563eb', padding: 14, borderRadius: 12 }}>
+          <Text style={{ color: 'white', textAlign: 'center', fontWeight: '700' }}>{saveMutation.isPending ? 'Saving...' : 'Save Plan'}</Text>
+        </Pressable>
       </View>
     </ScrollView>
   );
