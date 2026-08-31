@@ -207,7 +207,7 @@ function SuggestionInput({
           setShowSuggestions(true);
         }}
         onFocus={() => setShowSuggestions(true)}
-        onBlur={() => setTimeout(() => setShowSuggestions(false), 350)}
+        onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
         placeholder={placeholder}
         style={{ borderWidth: 1, padding: 12, borderRadius: 10 }}
       />
@@ -216,7 +216,7 @@ function SuggestionInput({
           {filtered.map((item) => (
             <Pressable
               key={item}
-              onPressIn={() => selectSuggestion(item)}
+              onPress={() => selectSuggestion(item)}
               style={{ paddingVertical: 8 }}
             >
               <Text style={{ fontWeight: '600' }}>{item}</Text>
@@ -370,7 +370,7 @@ export function PlanEditorScreen() {
   const allDays = safeArray<PlanDay>(draft.days);
 
   return (
-    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 20, gap: 16 }}>
+    <ScrollView contentContainerStyle={{ padding: 20, gap: 16 }}>
       <Text style={{ fontSize: 28, fontWeight: '800' }}>Plans</Text>
       <Text style={{ color: '#6b7280' }}>Use the New Plan action to start a fresh plan. Edit existing plans from the list below.</Text>
       <Pressable onPress={resetDraft} style={{ backgroundColor: '#dbeafe', padding: 12, borderRadius: 12, alignSelf: 'flex-start' }}><Text style={{ fontWeight: '700' }}>New Plan</Text></Pressable>
@@ -403,7 +403,7 @@ export function PlanEditorScreen() {
                   <SuggestionInput
                     value={String(exercise.exerciseName ?? '')}
                     onChangeText={(text) => updateDay((day) => { const exercises = safeArray<PlanDayExercise>(day.exercises).slice(); exercises[exerciseIndex] = { ...exercises[exerciseIndex], exerciseName: text }; return { ...day, exercises }; })}
-                    onSuggestionSelect={(selectedExercise) => updateDay((day) => { const exercises = safeArray<PlanDayExercise>(day.exercises).slice(); exercises[exerciseIndex] = { ...exercises[exerciseIndex], exerciseName: selectedExercise, exerciseId: exercises[exerciseIndex]?.exerciseId ?? null }; return { ...day, exercises }; })}
+                    onSuggestionSelect={(selectedExercise) => updateDay((day) => { const exercises = safeArray<PlanDayExercise>(day.exercises).slice(); exercises[exerciseIndex] = { ...exercises[exerciseIndex], exerciseName: selectedExercise, exerciseId: selectedExercise }; return { ...day, exercises }; })}
                     suggestions={EXERCISE_SUGGESTIONS}
                     placeholder="Exercise name"
                   />
