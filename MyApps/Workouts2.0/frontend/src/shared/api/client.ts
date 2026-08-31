@@ -5,7 +5,6 @@ const ACCESS_TOKEN_KEY = 'workouts2-access-token';
 const REFRESH_TOKEN_KEY = 'workouts2-refresh-token';
 export const SESSION_KEY = 'workouts2-session';
 
-
 export type AuthUser = {
   id: string;
   email: string;
@@ -33,6 +32,50 @@ export type MeProfile = {
   completedPlans?: Array<{ id?: string; name?: string; completedAt?: string }>;
   exerciseHistory?: Array<{ exerciseName?: string; weight?: number; reps?: number; date?: string }>;
 };
+
+export type PlanDayExercise = {
+  id?: string;
+  exerciseName: string;
+  exerciseId?: string | null;
+  setsTarget: number;
+  repsTarget: number;
+  weightTarget?: number | null;
+  order?: number;
+  notes?: string | null;
+};
+
+export type PlanDay = {
+  id?: string;
+  dayOfWeek: number;
+  weekIndex?: number;
+  title: string;
+  position?: number;
+  exercises?: PlanDayExercise[];
+};
+
+export type Plan = {
+  id: string;
+  userId?: string;
+  name: string;
+  goals: string[];
+  isActive: boolean;
+  progressiveOverloadEnabled: boolean;
+  status: 'draft' | 'active' | 'completed' | 'archived' | string;
+  currentWeekIndex?: number;
+  createdAt?: string;
+  updatedAt?: string;
+  days: PlanDay[];
+};
+
+export type CreatePlanInput = {
+  name: string;
+  goals: string[];
+  progressiveOverloadEnabled: boolean;
+  isActive?: boolean;
+  days: PlanDay[];
+};
+
+export type UpdatePlanInput = Partial<CreatePlanInput>;
 
 export type TodayWorkout = {
   status: 'scheduled' | 'no_schedule' | 'in_progress' | 'completed';
@@ -147,7 +190,23 @@ export async function getTodayWorkout() {
 }
 
 export async function getPlans() {
-  return request<any[]>('/plans');
+  return request<Plan[]>('/plans');
+}
+
+export async function createPlan(input: CreatePlanInput) {
+  return request<Plan>('/plans', { method: 'POST', body: JSON.stringify(input) });
+}
+
+export async function updatePlan(planId: string, input: UpdatePlanInput) {
+  return request<Plan>(`/plans/${planId}`, { method: 'PATCH', body: JSON.stringify(input) });
+}
+
+export async function activatePlan(planId: string) {
+  return request<Plan>(`/plans/${planId}/activate`, { method: 'POST' });
+}
+
+export async function deactivatePlan(planId: string) {
+  return request<Plan>(`/plans/${planId}/deactivate`, { method: 'POST' });
 }
 
 export async function getCompletedPlans() {
