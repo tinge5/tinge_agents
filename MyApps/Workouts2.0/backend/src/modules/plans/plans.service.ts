@@ -1,15 +1,29 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../shared/prisma/prisma.service';
 
+const normalizeDayOfWeek = (value: any, fallback = 0) => {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed >= 0 && parsed <= 6 ? parsed : fallback;
+};
+
+const daySort = (a: any, b: any) => {
+  const aPosition = Number(a.position ?? 0);
+  const bPosition = Number(b.position ?? 0);
+  if (aPosition !== bPosition) return aPosition - bPosition;
+  const aOrder = Number(a.id ? 1 : 0);
+  const bOrder = Number(b.id ? 1 : 0);
+  return aOrder - bOrder;
+};
+
 @Injectable()
 export class PlansService {
   constructor(private prisma: PrismaService) {}
 
   private normalizeDays(dtoDays: any[] = []) {
     return dtoDays.map((d: any, idx: number) => ({
-      dayOfWeek: Number(d.dayOfWeek),
+      dayOfWeek: normalizeDayOfWeek(d.dayOfWeek, idx % 7),
       weekIndex: Number(d.weekIndex ?? 0),
-      title: String(d.title ?? ''),
+      title: String(d.title ?? '').trim(),
       position: idx,
       exercises: {
         create: (d.exercises || []).map((e: any, eidx: number) => ({

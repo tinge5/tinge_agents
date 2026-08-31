@@ -37,7 +37,8 @@ export function TodayScreen({ navigation }: any) {
       ) : workout?.status === 'no_schedule' ? (
         <View style={{ backgroundColor: '#fff7ed', padding: 16, borderRadius: 16, gap: 8 }}>
           <Text style={{ fontSize: 20, fontWeight: '700' }}>No workout scheduled today</Text>
-          <Text>This active plan does not have a workout for the current day/week.</Text>
+          <Text>This active plan does not have a workout for the current calendar day in the current plan week.</Text>
+          <Text style={{ color: '#475569' }}>The plan may simply not schedule every day of the week.</Text>
         </View>
       ) : workout ? (
         <>

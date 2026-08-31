@@ -13,6 +13,25 @@ import {
 } from '@/shared/api/client';
 
 const DAYS_PER_WEEK = 7;
+const DAY_OF_WEEK_OPTIONS = [
+  { label: 'Monday', value: 1 },
+  { label: 'Tuesday', value: 2 },
+  { label: 'Wednesday', value: 3 },
+  { label: 'Thursday', value: 4 },
+  { label: 'Friday', value: 5 },
+  { label: 'Saturday', value: 6 },
+  { label: 'Sunday', value: 0 },
+] as const;
+
+const DAY_LABELS: Record<number, string> = {
+  0: 'Sunday',
+  1: 'Monday',
+  2: 'Tuesday',
+  3: 'Wednesday',
+  4: 'Thursday',
+  5: 'Friday',
+  6: 'Saturday',
+};
 
 const emptyDay = (dayOfWeek: number): PlanDay => ({
   dayOfWeek,
@@ -78,6 +97,12 @@ function safeArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? value : [];
 }
 
+function normalizeDayOfWeek(value: unknown, fallback = 1) {
+  const parsed = Number(value);
+  if (Number.isInteger(parsed) && parsed >= 0 && parsed <= 6) return parsed;
+  return fallback;
+}
+
 function toDraftPlan(plan: Plan) {
   return {
     ...defaultDraft(),
@@ -92,7 +117,7 @@ function toDraftPlan(plan: Plan) {
     startDate: plan.startDate ?? null,
     days: safeArray<PlanDay>(plan.days).length
       ? safeArray<PlanDay>(plan.days).map((day, index) => ({
-          dayOfWeek: Number((day as any)?.dayOfWeek ?? index),
+          dayOfWeek: normalizeDayOfWeek((day as any)?.dayOfWeek, index % DAYS_PER_WEEK),
           weekIndex: Number((day as any)?.weekIndex ?? 0),
           title: typeof (day as any)?.title === 'string' ? (day as any).title : '',
           position: Number((day as any)?.position ?? index),
@@ -192,7 +217,7 @@ function PlanCard({ plan, onEdit, onActivate, onDeactivate }: { plan: Plan; onEd
       <Text>Status: {plan.status}{plan.isActive ? ' (active)' : ''}</Text>
       <Text>Duration: {plan.durationWeeks ?? 4} weeks</Text>
       <Text>Start date: {plan.startDate ? new Date(plan.startDate).toLocaleDateString() : 'Not set'}</Text>
-      <Text>Schedule: {days.length ? days.map((day) => `${typeof day.title === 'string' && day.title.trim() ? day.title : `Day ${day.dayOfWeek}`}`).join(', ') : 'No days configured'}</Text>
+      <Text>Schedule: {days.length ? days.map((day) => `${typeof day.title === 'string' && day.title.trim() ? day.title : `Day ${Number(day.dayOfWeek) + 1}`} (${DAY_LABELS[normalizeDayOfWeek(day.dayOfWeek)]})`).join(', ') : 'No days configured'}</Text>
       <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
         <Pressable onPress={() => onEdit(plan)} style={{ backgroundColor: '#111827', padding: 12, borderRadius: 12 }}>
           <Text style={{ color: 'white', fontWeight: '700' }}>Edit</Text>
@@ -257,7 +282,7 @@ export function PlanEditorScreen() {
         startDate: draft.startDate ?? null,
         days: safeArray<PlanDay>(draft.days).map((day: PlanDay, index: number) => ({
           ...day,
-          dayOfWeek: Number((day as any)?.dayOfWeek ?? 0),
+          dayOfWeek: normalizeDayOfWeek((day as any)?.dayOfWeek, index % DAYS_PER_WEEK),
           weekIndex: Number((day as any)?.weekIndex ?? 0),
           position: index,
           title: String((day as any)?.title ?? '').trim(),
@@ -319,8 +344,9 @@ export function PlanEditorScreen() {
             <SelectField value={!!draft.isActive} onChangeValue={(value) => setDraft((prev: any) => ({ ...prev, isActive: value }))} options={booleanOptions} />
             <View style={{ gap: 8 }}>
               <Text style={{ fontWeight: '700' }}>Day {activeDayIndex + 1}</Text>
-              <PlanFieldHelp text="Week Index is handled automatically by the app and backend scheduling; do not enter it manually." />
-              <TextInput value={String(draftDay.dayOfWeek ?? 0)} onChangeText={(text) => updateDay((day) => ({ ...day, dayOfWeek: Number(text) }))} placeholder="Day of week (0-6)" keyboardType="numeric" style={{ borderWidth: 1, padding: 14, borderRadius: 12 }} />
+              <PlanFieldHelp text="Choose the calendar day of the week for this workout. The app preserves the internal Day 1, Day 2, Day 3 ordering automatically." />
+              <SelectField value={normalizeDayOfWeek(draftDay.dayOfWeek, 1) as 0 | 1 | 2 | 3 | 4 | 5 | 6} onChangeValue={(value) => updateDay((day) => ({ ...day, dayOfWeek: Number(value) }))} options={DAY_OF_WEEK_OPTIONS as any} />
+              <Text style={{ color: '#6b7280', fontSize: 12 }}>Selected: {DAY_LABELS[normalizeDayOfWeek(draftDay.dayOfWeek, 1)]}</Text>
               <PlanFieldHelp text="Workout title: optional short name for this scheduled workout day, such as Lower Body or Push Day." />
               <TextInput value={String(draftDay.title ?? '')} onChangeText={(text) => updateDay((day) => ({ ...day, title: text }))} placeholder="Workout title" style={{ borderWidth: 1, padding: 14, borderRadius: 12 }} />
               <Pressable onPress={() => updateDay((day) => ({ ...day, exercises: [...safeArray<PlanDayExercise>(day.exercises), { exerciseName: '', setsTarget: 3, repsTarget: 8, weightTarget: null }] }))} style={{ backgroundColor: '#e5e7eb', padding: 12, borderRadius: 12 }}><Text style={{ textAlign: 'center', fontWeight: '700' }}>Add Exercise</Text></Pressable>
@@ -364,8 +390,9 @@ export function PlanEditorScreen() {
             <View style={{ gap: 10, marginTop: 8 }}>
               {previewedDays.length === 0 ? <Text style={{ color: '#6b7280' }}>No scheduled days found for this week.</Text> : previewedDays.map((day, index) => (
                 <View key={`${selectedPreviewWeek}-${day.dayOfWeek}-${index}`} style={{ padding: 12, borderRadius: 12, backgroundColor: '#f8fafc', gap: 6 }}>
-                  <Text style={{ fontWeight: '700' }}>{day.title || `Day ${day.dayOfWeek}`}</Text>
-                  <Text style={{ color: '#6b7280' }}>Day of week: {day.dayOfWeek}</Text>
+                  <Text style={{ fontWeight: '700' }}>{day.title || `Day ${Number(day.dayOfWeek) + 1}`}</Text>
+                  <Text style={{ color: '#6b7280' }}>Calendar day: {DAY_LABELS[normalizeDayOfWeek(day.dayOfWeek)]}</Text>
+                  <Text style={{ color: '#6b7280' }}>Internal order: Day {index + 1}</Text>
                   {safeArray<PlanDayExercise>(day.exercises).map((exercise) => <Text key={exercise.id ?? exercise.exerciseName} style={{ color: '#111827' }}>{exercise.exerciseName}: {exercise.setsTarget} sets x {exercise.repsTarget} reps{exercise.weightTarget !== null && exercise.weightTarget !== undefined ? ` @ ${exercise.weightTarget}` : ''}</Text>)}
                 </View>
               ))}

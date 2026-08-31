@@ -61,14 +61,14 @@ model WorkoutPlan {
   name                      String
   goals                     String[]
   isActive                  Boolean             @default(false)
-  progressiveOverloadEnabled Boolean            @default(false)
+  progressiveOverloadEnabled Boolean              @default(false)
   status                    PlanStatus          @default(draft)
   currentWeekIndex          Int                 @default(0)
   durationWeeks             Int                 @default(4)
   startDate                 DateTime?
   createdAt                 DateTime            @default(now())
   updatedAt                 DateTime            @updatedAt
-  user                      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                      User                @relation(fields: {userId}, references: [id], onDelete: Cascade)
   days                      WorkoutPlanDay[]
   sessions                  WorkoutSession[]
   archives                  PlanCompletionArchive[]
@@ -100,7 +100,7 @@ model WorkoutPlanExercise {
   weightTarget Float?
   order        Int             @default(0)
   notes        String?
-  planDay      WorkoutPlanDay   @relation(fields: [planDayId], references: [id], onDelete: Cascade)
+  planDay      WorkoutPlanDay   @relation(fields: [planDayId], references: {id}, onDelete: Cascade)
 
   @@index([planDayId])
 }
@@ -117,9 +117,9 @@ model WorkoutSession {
   completedAt   DateTime?
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
-  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan          WorkoutPlan       @relation(fields: [planId], references: [id], onDelete: Cascade)
-  planDay       WorkoutPlanDay    @relation(fields: [planDayId], references: [id], onDelete: Cascade)
+  user          User              @relation(fields: {userId}, references: {id}, onDelete: Cascade)
+  plan          WorkoutPlan       @relation(fields: {planId}, references: {id}, onDelete: Cascade)
+  planDay       WorkoutPlanDay    @relation(fields: {planDayId}, references: {id}, onDelete: Cascade)
   setResults    WorkoutSetResult[]
   exerciseHistory ExerciseHistoryEntry[]
 
@@ -135,7 +135,7 @@ model WorkoutSetResult {
   reps            Int
   weight          Float
   completed       Boolean        @default(true)
-  workoutSession  WorkoutSession @relation(fields: [workoutSessionId], references: [id], onDelete: Cascade)
+  workoutSession  WorkoutSession @relation(fields: {workoutSessionId}, references: {id}, onDelete: Cascade)
 
   @@index([workoutSessionId])
 }
@@ -152,8 +152,8 @@ model ExerciseHistoryEntry {
   weight           Float
   volume           Float
   rpe              Float?
-  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  workoutSession   WorkoutSession @relation(fields: [workoutSessionId], references: [id], onDelete: Cascade)
+  user             User           @relation(fields: {userId}, references: {id}, onDelete: Cascade)
+  workoutSession   WorkoutSession @relation(fields: {workoutSessionId}, references: {id}, onDelete: Cascade)
 
   @@index([userId, exerciseName])
 }
@@ -164,8 +164,8 @@ model PlanCompletionArchive {
   planId         String
   completedAt    DateTime    @default(now())
   summarySnapshot Json
-  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan           WorkoutPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  user           User        @relation(fields: {userId}, references: {id}, onDelete: Cascade)
+  plan           WorkoutPlan @relation(fields: {planId}, references: {id}, onDelete: Cascade)
 
   @@index([userId, planId])
 }
@@ -177,7 +177,7 @@ model RecommendationSnapshot {
   contextType   RecommendationContextType
   payload       Json
   generatedAt   DateTime               @default(now())
-  user          User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User                   @relation(fields: {userId}, references: {id}, onDelete: Cascade)
 
   @@index([userId, contextType])
 }
