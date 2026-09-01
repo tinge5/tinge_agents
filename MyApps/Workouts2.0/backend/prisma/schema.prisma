@@ -72,6 +72,7 @@ model WorkoutPlan {
   days                      WorkoutPlanDay[]
   sessions                  WorkoutSession[]
   archives                  PlanCompletionArchive[]
+  exerciseHistory           ExerciseHistoryEntry[]
 
   @@index([userId, isActive])
 }
@@ -86,7 +87,7 @@ model WorkoutPlanDay {
   plan       WorkoutPlan         @relation(fields: [planId], references: [id], onDelete: Cascade)
   exercises  WorkoutPlanExercise[]
   sessions   WorkoutSession[]
-
+  exerciseHistory      ExerciseHistoryEntry[]
   @@index([planId, weekIndex, dayOfWeek])
 }
 
@@ -143,6 +144,8 @@ model WorkoutSetResult {
 model ExerciseHistoryEntry {
   id               String         @id @default(cuid())
   userId           String
+  planId           String
+  planDayId        String
   exerciseName     String
   exerciseId       String?
   workoutSessionId String
@@ -153,8 +156,11 @@ model ExerciseHistoryEntry {
   volume           Float
   rpe              Float?
   user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan             WorkoutPlan    @relation(fields: [planId], references: [id], onDelete: Cascade)
+  planDay          WorkoutPlanDay  @relation(fields: [planDayId], references: [id], onDelete: Cascade)
   workoutSession   WorkoutSession @relation(fields: [workoutSessionId], references: [id], onDelete: Cascade)
 
+  @@index([userId, planId, planDayId, exerciseName])
   @@index([userId, exerciseName])
 }
 
