@@ -1,0 +1,187 @@
+export type ProgressiveStrategy =
+  | 'weight'
+  | 'reps'
+  | 'sets'
+  | 'hybrid'
+  | 'bodyweight'
+  | 'generic';
+
+export type ExerciseProgressionRule = {
+  canonicalName: string;
+  strategy: ProgressiveStrategy;
+  weight?: {
+    type: 'percent' | 'increment';
+    value: number;
+    decimals?: number;
+    min?: number;
+  };
+  reps?: {
+    type: 'increment' | 'range';
+    value: number;
+    min?: number;
+    max?: number;
+  };
+  sets?: {
+    type: 'increment' | 'cap';
+    value: number;
+    min?: number;
+    max?: number;
+  };
+  notes?: string;
+};
+
+export const EXERCISE_LIBRARY: Record<string, ExerciseProgressionRule> = {
+  'Barbell Back Squat': {
+  canonicalName: 'Barbell Back Squat',
+  strategy: 'weight',
+  weight: { type: 'increment', value: 5, decimals: 1 },
+  reps: { type: 'increment', value: 0, min: 1 },
+  sets: { type: 'increment', value: 0, min: 1 },
+  notes: 'Primary lower-body strength lift; increase load by 5 lb per progressed week while keeping programmed sets and reps stable.',
+},
+
+'Barbell Bench Press': {
+  canonicalName: 'Barbell Bench Press',
+  strategy: 'weight',
+  weight: { type: 'increment', value: 2.5, decimals: 1 },
+  reps: { type: 'increment', value: 0, min: 1 },
+  sets: { type: 'increment', value: 0, min: 1 },
+  notes: 'Primary upper-body strength lift; increase load by 2.5 lb per progressed week while keeping programmed sets and reps stable.',
+},
+
+'Barbell Deadlift': {
+  canonicalName: 'Barbell Deadlift',
+  strategy: 'weight',
+  weight: { type: 'increment', value: 5, decimals: 1 },
+  reps: { type: 'increment', value: 0, min: 1 },
+  sets: { type: 'increment', value: 0, min: 1 },
+  notes: 'Heavy posterior-chain compound; use a conservative 5 lb weekly increase while preserving programmed volume.',
+},
+
+'Overhead Press': {
+  canonicalName: 'Overhead Press',
+  strategy: 'weight',
+  weight: { type: 'increment', value: 2.5, decimals: 1 },
+  reps: { type: 'increment', value: 0, min: 1 },
+  sets: { type: 'increment', value: 0, min: 1 },
+  notes: 'Upper-body strength movement; use small 2.5 lb weekly increases.',
+},
+
+'Incline Dumbbell Press': {
+  canonicalName: 'Incline Dumbbell Press',
+  strategy: 'weight',
+  weight: { type: 'increment', value: 2.5, decimals: 1 },
+  reps: { type: 'increment', value: 0, min: 1 },
+  sets: { type: 'increment', value: 0, min: 1 },
+  notes: 'Dumbbell pressing movement; increase load gradually while preserving programmed volume.',
+},
+
+'Dumbbell Shoulder Press': {
+  canonicalName: 'Dumbbell Shoulder Press',
+  strategy: 'weight',
+  weight: { type: 'increment', value: 2.5, decimals: 1 },
+  reps: { type: 'increment', value: 0, min: 1 },
+  sets: { type: 'increment', value: 0, min: 1 },
+},
+
+'Dumbbell Row': {
+  canonicalName: 'Dumbbell Row',
+  strategy: 'weight',
+  weight: { type: 'increment', value: 2.5, decimals: 1 },
+  reps: { type: 'increment', value: 0, min: 1 },
+  sets: { type: 'increment', value: 0, min: 1 },
+},
+
+'Seated Cable Row': {
+  canonicalName: 'Seated Cable Row',
+  strategy: 'weight',
+  weight: { type: 'increment', value: 2.5, decimals: 1 },
+  reps: { type: 'increment', value: 0, min: 1 },
+  sets: { type: 'increment', value: 0, min: 1 },
+},
+
+'Lat Pulldown': {
+  canonicalName: 'Lat Pulldown',
+  strategy: 'weight',
+  weight: { type: 'increment', value: 2.5, decimals: 1 },
+  reps: { type: 'increment', value: 0, min: 1 },
+  sets: { type: 'increment', value: 0, min: 1 },
+},
+
+'Romanian Deadlift': {
+  canonicalName: 'Romanian Deadlift',
+  strategy: 'weight',
+  weight: { type: 'increment', value: 5, decimals: 1 },
+  reps: { type: 'increment', value: 0, min: 1 },
+  sets: { type: 'increment', value: 0, min: 1 },
+},
+
+'Leg Press': {
+  canonicalName: 'Leg Press',
+  strategy: 'weight',
+  weight: { type: 'increment', value: 10, decimals: 1 },
+  reps: { type: 'increment', value: 0, min: 1 },
+  sets: { type: 'increment', value: 0, min: 1 },
+},
+
+'Lunge': {
+  canonicalName: 'Lunge',
+  strategy: 'hybrid',
+  weight: { type: 'increment', value: 2.5, decimals: 1 },
+  reps: { type: 'increment', value: 1, min: 1 },
+  sets: { type: 'increment', value: 0, min: 1 },
+},
+
+'Bulgarian Split Squat': {
+  canonicalName: 'Bulgarian Split Squat',
+  strategy: 'hybrid',
+  weight: { type: 'increment', value: 2.5, decimals: 1 },
+  reps: { type: 'increment', value: 1, min: 1 },
+  sets: { type: 'increment', value: 0, min: 1 },
+},
+
+'Pull-Up': {
+  canonicalName: 'Pull-Up',
+  strategy: 'bodyweight',
+  weight: { type: 'increment', value: 0, decimals: 1 },
+  reps: { type: 'increment', value: 1, min: 1 },
+  sets: { type: 'increment', value: 0, min: 1 },
+  notes: 'Progress reps first. Do not automatically add external weight when no numeric starting weight exists.',
+},
+
+'Bicep Curl': {
+  canonicalName: 'Bicep Curl',
+  strategy: 'reps',
+  weight: { type: 'increment', value: 2.5, decimals: 1 },
+  reps: { type: 'increment', value: 1, min: 1 },
+  sets: { type: 'increment', value: 0, min: 1 },
+},
+
+'Tricep Pushdown': {
+  canonicalName: 'Tricep Pushdown',
+  strategy: 'reps',
+  weight: { type: 'increment', value: 2.5, decimals: 1 },
+  reps: { type: 'increment', value: 1, min: 1 },
+  sets: { type: 'increment', value: 0, min: 1 },
+},
+};
+
+export const GENERIC_PROGRESSIVE_OVERLOAD_RULE: ExerciseProgressionRule = {
+  canonicalName: 'Generic Exercise',
+  strategy: 'generic',
+  weight: { type: 'percent', value: 0.025, decimals: 1 },
+  reps: { type: 'increment', value: 1, min: 1 },
+  sets: { type: 'increment', value: 0, min: 1 },
+  notes: 'Fallback for custom or unknown exercises. Prefer reps first when no exercise-specific strategy exists.',
+};
+
+export const EXERCISE_AUTOCOMPLETE_OPTIONS = Object.keys(EXERCISE_LIBRARY).sort();
+
+export function normalizeExerciseCanonicalName(name: unknown) {
+  return typeof name === 'string' ? name.trim().replace(/\s+/g, ' ') : '';
+}
+
+export function getExerciseProgressionRule(exerciseName: unknown) {
+  const canonicalName = normalizeExerciseCanonicalName(exerciseName);
+  return EXERCISE_LIBRARY[canonicalName] ?? GENERIC_PROGRESSIVE_OVERLOAD_RULE;
+}

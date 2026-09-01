@@ -1,4 +1,8 @@
 import React, { useMemo, useState } from 'react';
+import {
+  EXERCISE_AUTOCOMPLETE_OPTIONS,
+  getExerciseProgressionRule,
+} from '../../shared/exerciseLibrary';
 import { Alert, ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -282,17 +286,67 @@ function previewWeeks(startWeek: number, durationWeeks: number) {
   return Array.from({ length: Math.max(1, durationWeeks) }, (_, index) => startWeek + index);
 }
 
-function applyProgressionToExercise(exercise: PlanDayExercise, weekIndex: number, enabled: boolean) {
+function applyProgressionToExercise(
+  exercise: PlanDayExercise,
+  weekIndex: number,
+  enabled: boolean,
+) {
   if (!enabled || weekIndex <= 0) return exercise;
-  const weeksOfProgression = weekIndex;
-  const weightBase = typeof exercise.weightTarget === 'number' ? exercise.weightTarget : null;
-  const repsBase = Number(exercise.repsTarget ?? 0);
-  const setsBase = Number(exercise.setsTarget ?? 0);
-  const progressiveWeight = weightBase === null ? null : Number((weightBase * (1 + 0.025 * weeksOfProgression)).toFixed(1));
-  const progressiveReps = Math.max(1, repsBase + weeksOfProgression);
-  return { ...exercise, weightTarget: progressiveWeight, repsTarget: progressiveReps, setsTarget: Math.max(1, setsBase) };
-}
 
+  const rule = getExerciseProgressionRule(exercise.exerciseName);
+
+  const setsBase = Number(exercise.setsTarget ?? 0);
+  const repsBase = Number(exercise.repsTarget ?? 0);
+  const weightBase =
+    typeof exercise.weightTarget === 'number'
+      ? exercise.weightTarget
+      : null;
+
+  const rounds = weekIndex;
+
+  let setsTarget = Math.max(1, setsBase);
+  let repsTarget = Math.max(1, repsBase);
+  let weightTarget = weightBase;
+
+  if (rule.sets?.type === 'increment') {
+    setsTarget = Math.max(
+      rule.sets.min ?? 1,
+      setsBase + rule.sets.value * rounds,
+    );
+  }
+
+  if (rule.reps?.type === 'increment') {
+    repsTarget = Math.max(
+      rule.reps.min ?? 1,
+      repsBase + rule.reps.value * rounds,
+    );
+  }
+
+  if (rule.weight?.type === 'increment' && weightBase !== null) {
+    const calculatedWeight =
+      weightBase + rule.weight.value * rounds;
+
+    weightTarget = Math.ceil(calculatedWeight / 5) * 5;
+  }
+
+  if (rule.weight?.type === 'percent' && weightBase !== null) {
+    const calculatedWeight =
+      weightBase * (1 + rule.weight.value * rounds);
+
+    weightTarget = Math.ceil(calculatedWeight / 5) * 5;
+  }
+
+  if (rule.strategy === 'bodyweight' && weightBase === null) {
+    weightTarget = null;
+  }
+
+  return {
+    ...exercise,
+    setsTarget,
+    repsTarget,
+    weightTarget,
+  };
+}
 function getPreviewedDays(plan: any, weekIndex: number) {
   const days = safeArray<PlanDay>(plan.days).filter((day) => Number(day.weekIndex ?? 0) === weekIndex);
   return days.length ? days.map((day) => ({ ...day, exercises: safeArray<PlanDayExercise>(day.exercises).map((exercise) => applyProgressionToExercise(exercise, weekIndex, !!plan.progressiveOverloadEnabled)) })) : safeArray<PlanDay>(plan.days).filter((day) => Number(day.weekIndex ?? 0) === 0).map((day) => ({ ...day, exercises: safeArray<PlanDayExercise>(day.exercises).map((exercise) => applyProgressionToExercise(exercise, weekIndex, !!plan.progressiveOverloadEnabled)) }));
@@ -404,7 +458,7 @@ export function PlanEditorScreen() {
                     value={String(exercise.exerciseName ?? '')}
                     onChangeText={(text) => updateDay((day) => { const exercises = safeArray<PlanDayExercise>(day.exercises).slice(); exercises[exerciseIndex] = { ...exercises[exerciseIndex], exerciseName: text }; return { ...day, exercises }; })}
                     onSuggestionSelect={(selectedExercise) => updateDay((day) => { const exercises = safeArray<PlanDayExercise>(day.exercises).slice(); exercises[exerciseIndex] = { ...exercises[exerciseIndex], exerciseName: selectedExercise, exerciseId: exercises[exerciseIndex]?.exerciseId ?? null }; return { ...day, exercises }; })}
-                    suggestions={EXERCISE_SUGGESTIONS}
+                    suggestions={EXERCISE_AUTOCOMPLETE_OPTIONS}
                     placeholder="Exercise name"
                   />
                   <View style={{ flexDirection: 'row', gap: 8 }}>
