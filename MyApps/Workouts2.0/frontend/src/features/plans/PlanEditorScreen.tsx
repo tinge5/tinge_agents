@@ -414,6 +414,19 @@ export function PlanEditorScreen() {
   const startView = (plan: Plan) => { setEditingPlanId(plan.id); setDraft(toDraftPlan(plan)); setActiveDayIndex(0); setSelectedPreviewWeek(1); setViewMode('view'); };
   const resetDraft = () => { setEditingPlanId(null); setDraft(defaultDraft()); setActiveDayIndex(0); setSelectedPreviewWeek(1); setViewMode('edit'); };
   const updateDay = (updater: (day: PlanDay) => PlanDay) => { setDraft((prev: any) => { const days = safeArray<PlanDay>(prev.days).slice(); days[activeDayIndex] = updater(days[activeDayIndex] ?? emptyDay(0)); return { ...prev, days }; }); };
+  const addDay = () => {
+    setDraft((prev: any) => {
+      const days = safeArray<PlanDay>(prev.days).slice();
+      const nextDayOfWeek = days.length
+        ? days[days.length - 1]?.dayOfWeek === 6
+          ? 0
+          : normalizeDayOfWeek(Number(days[days.length - 1]?.dayOfWeek ?? 0) + 1, 1)
+        : 1;
+      days.push(emptyDay(nextDayOfWeek));
+      return { ...prev, days };
+    });
+    setActiveDayIndex(safeArray<PlanDay>(draft.days).length);
+  };
   const removeDayAtIndex = (dayIndex: number) => {
     setDraft((prev: any) => {
       const days = safeArray<PlanDay>(prev.days).filter((_: PlanDay, index: number) => index !== dayIndex);
@@ -444,6 +457,35 @@ export function PlanEditorScreen() {
             <PlanFieldHelp text="Activate on save: choose True or False to determine whether the plan is saved as active." />
             <SelectField value={!!draft.isActive} onChangeValue={(value) => setDraft((prev: any) => ({ ...prev, isActive: value }))} options={booleanOptions} />
             <View style={{ gap: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                <Text style={{ fontWeight: '700' }}>Workout Days</Text>
+                <Pressable onPress={addDay} style={{ backgroundColor: '#dbeafe', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12 }}>
+                  <Text style={{ fontWeight: '700', color: '#1d4ed8' }}>Add Day</Text>
+                </Pressable>
+              </View>
+              <PlanFieldHelp text="Add Day creates a new workout day in the plan. Select a weekday, then add exercises exactly like any existing day." />
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                {allDays.map((day, index) => {
+                  const selected = index === activeDayIndex;
+                  const label = day.title?.trim() || `Day ${index + 1}`;
+                  return (
+                    <Pressable
+                      key={`${day.position ?? index}-${index}`}
+                      onPress={() => setActiveDayIndex(index)}
+                      style={{
+                        paddingVertical: 8,
+                        paddingHorizontal: 12,
+                        borderRadius: 999,
+                        backgroundColor: selected ? '#2563eb' : '#e5e7eb',
+                      }}
+                    >
+                      <Text style={{ color: selected ? 'white' : '#111827', fontWeight: '700' }}>
+                        {label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
               <Text style={{ fontWeight: '700' }}>Day {activeDayIndex + 1}</Text>
               <PlanFieldHelp text="Choose the calendar day of the week for this workout. The app preserves the internal Day 1, Day 2, Day 3 ordering automatically." />
               <SelectField value={normalizeDayOfWeek(draftDay.dayOfWeek, 1) as 0 | 1 | 2 | 3 | 4 | 5 | 6} onChangeValue={(value) => updateDay((day) => ({ ...day, dayOfWeek: Number(value) }))} options={DAY_OF_WEEK_OPTIONS as any} />
