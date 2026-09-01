@@ -13,7 +13,8 @@ export type PlanDay = { id?: string; dayOfWeek: number; weekIndex?: number; titl
 export type Plan = { id: string; userId?: string; name: string; goals: string[]; isActive: boolean; progressiveOverloadEnabled: boolean; status: 'draft' | 'active' | 'completed' | 'archived' | string; currentWeekIndex?: number; durationWeeks?: number; startDate?: string | null; createdAt?: string; updatedAt?: string; days: PlanDay[]; };
 export type CreatePlanInput = { name: string; goals: string[]; progressiveOverloadEnabled: boolean; isActive?: boolean; durationWeeks?: number; startDate?: string | null; days: PlanDay[]; };
 export type UpdatePlanInput = Partial<CreatePlanInput>;
-export type TodayWorkout = { status: 'scheduled' | 'no_schedule' | 'in_progress' | 'completed' | 'no_active_plan'; workoutSessionId?: string; title?: string; day?: string; note?: string; weekIndex?: number; planId?: string; plan?: Plan; planDay?: PlanDay; exercises?: Array<{ name: string; sets: number; reps: number; weight: number | null }>; };
+export type TodayWorkout = { status: 'scheduled' | 'no_schedule' | 'in_progress' | 'completed' | 'no_active_plan'; workoutSessionId?: string; title?: string; day?: string; note?: string; weekIndex?: number; planId?: string; plan?: Plan; planDay?: PlanDay; exercises?: Array<{ name: string; sets: number | null; reps: number | null; weight: number | null; previousPerformance?: { sets: number | null; reps: number | null; weight: number | null } | null; suggestedTarget?: { sets: number | null; reps: number | null; weight: number | null } | null; }>; };
+export type WorkoutSetResultInput = { exerciseName: string; sets: number | null; reps: number | null; weight: number | null; };
 
 async function readStoredTokens() { const [accessToken, refreshToken] = await Promise.all([AsyncStorage.getItem(ACCESS_TOKEN_KEY), AsyncStorage.getItem(REFRESH_TOKEN_KEY)]); return { accessToken, refreshToken }; }
 async function persistTokens(session: AuthSession | null) { if (!session) { await Promise.all([AsyncStorage.removeItem(ACCESS_TOKEN_KEY), AsyncStorage.removeItem(REFRESH_TOKEN_KEY), AsyncStorage.removeItem(SESSION_KEY)]); return; } await Promise.all([AsyncStorage.setItem(ACCESS_TOKEN_KEY, session.accessToken), AsyncStorage.setItem(REFRESH_TOKEN_KEY, session.refreshToken), AsyncStorage.setItem(SESSION_KEY, JSON.stringify(session))]); }
@@ -25,6 +26,9 @@ export async function restoreSessionFromStorage() { const raw = await AsyncStora
 export async function signOut() { try { const { refreshToken } = await readStoredTokens(); if (refreshToken) { await request('/auth/logout', { method: 'POST', body: JSON.stringify({ refreshToken }) }, false).catch(() => undefined); } } finally { await persistTokens(null); } }
 export async function getMe() { return request<MeProfile>('/me'); }
 export async function getTodayWorkout() { return request<TodayWorkout>('/workouts/today'); }
+export async function startWorkoutSession() { return request<TodayWorkout>('/workouts/start', { method: 'POST' }); }
+export async function saveWorkoutSetResult(workoutSessionId: string, input: WorkoutSetResultInput) { return request<void>(`/workouts/${workoutSessionId}/set-results`, { method: 'POST', body: JSON.stringify(input) }); }
+export async function completeWorkoutSession(workoutSessionId: string) { return request<void>(`/workouts/${workoutSessionId}/complete`, { method: 'POST' }); }
 export async function getPlans() { return request<Plan[]>('/plans'); }
 export async function createPlan(input: CreatePlanInput) { return request<Plan>('/plans', { method: 'POST', body: JSON.stringify(input) }); }
 export async function updatePlan(planId: string, input: UpdatePlanInput) { return request<Plan>(`/plans/${planId}`, { method: 'PATCH', body: JSON.stringify(input) }); }

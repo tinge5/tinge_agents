@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getTodayWorkout } from '@/shared/api/client';
 
@@ -59,16 +59,6 @@ function ExerciseCard({ exercise }: { exercise: TodayExercise }) {
           <Text>Weight: {formatValue(displaySuggested.weight ?? null, ' lb')}</Text>
         </View>
       </View>
-
-      <View style={{ gap: 8 }}>
-        <Text style={{ fontSize: 13, fontWeight: '700', color: '#475569', textTransform: 'uppercase' }}>Current Workout Input</Text>
-        <View style={{ backgroundColor: '#f8fafc', borderRadius: 12, padding: 12, gap: 10 }}>
-          <TextInput placeholder='Sets' keyboardType='numeric' style={{ borderWidth: 1, borderColor: '#cbd5e1', padding: 12, borderRadius: 12 }} />
-          <TextInput placeholder='Reps' keyboardType='numeric' style={{ borderWidth: 1, borderColor: '#cbd5e1', padding: 12, borderRadius: 12 }} />
-          <TextInput placeholder='Weight' keyboardType='numeric' style={{ borderWidth: 1, borderColor: '#cbd5e1', padding: 12, borderRadius: 12 }} />
-          <Text style={{ color: '#64748b' }}>Enter the actual work you complete. This does not change the suggested target above.</Text>
-        </View>
-      </View>
     </View>
   );
 }
@@ -87,6 +77,8 @@ export function TodayScreen({ navigation }: any) {
 
   const workout = data;
   const exercises = useMemo(() => workout?.exercises ?? [], [workout]);
+  const isWorkoutStartedOrCompleted = workout?.status === 'in_progress' || workout?.status === 'completed';
+  const workoutButtonLabel = isWorkoutStartedOrCompleted ? "View Today's Workout" : 'Review Workout';
 
   return (
     <ScrollView contentContainerStyle={{ padding: 20, gap: 12 }}>
@@ -121,8 +113,11 @@ export function TodayScreen({ navigation }: any) {
           {exercises.map((exercise: TodayExercise) => (
             <ExerciseCard key={exercise.name} exercise={exercise} />
           ))}
-          <Pressable onPress={() => navigation.navigate('Workout', { workout })} style={{ backgroundColor: '#16a34a', padding: 18, borderRadius: 16 }}>
-            <Text style={{ color: 'white', textAlign: 'center', fontWeight: '800' }}>Start Workout</Text>
+          <Pressable
+            onPress={() => navigation.navigate('Workout', { workout, reviewOnly: true })}
+            style={{ backgroundColor: '#16a34a', padding: 18, borderRadius: 16 }}
+          >
+            <Text style={{ color: 'white', textAlign: 'center', fontWeight: '800' }}>{workoutButtonLabel}</Text>
           </Pressable>
         </>
       ) : null}

@@ -77,8 +77,8 @@ function toNullableNumber(value: unknown) {
 function aggregateSetResults(setResults: { setNumber: number; reps: number; weight: number }[]) {
   if (setResults.length === 0) return null;
   const sets = setResults.length;
-  const reps = setResults.reduce((sum, row) => sum + row.reps, 0);
-  const weight = setResults.reduce((sum, row) => sum + row.weight, 0) / setResults.length;
+  const reps = setResults[0].reps;
+  const weight = setResults[0].weight;
   return { sets, reps, weight };
 }
 
@@ -104,6 +104,42 @@ function getPerformanceFromHistory(history: {
 @Injectable()
 export class WorkoutsService {
   constructor(private prisma: PrismaService) {}
+
+  async saveWorkoutSetResult(userId: string, workoutSessionId: string, input: { exerciseName: string; sets: number; reps: number; weight: number }) {
+    const session = await this.prisma.workoutSession.findFirst({ where: { id: workoutSessionId, userId } });
+    if (!session) throw new NotFoundException('Workout session not found');
+    if (session.status === 'completed') return { success: true };
+
+    const canonicalExerciseName = normalizeExerciseCanonicalName(input.exerciseName);
+    const desiredSets = Math.max(0, Math.floor(Number(input.sets) || 0));
+    if (desiredSets === 0) return { success: true };
+
+    const existing = await this.prisma.workoutSetResult.findMany({
+      where: { workoutSessionId, exerciseName: canonicalExerciseName, completed: true },
+      orderBy: [{ setNumber: 'asc' }, { id: 'asc' }],
+    });
+
+    const missingSetNumbers = new Set<number>();
+    for (let i = 1; i <= desiredSets; i += 1) missingSetNumbers.add(i);
+    for (const row of existing) missingSetNumbers.delete(row.setNumber);
+
+    const rowsToCreate = Array.from(missingSetNumbers)
+      .sort((a, b) => a - b)
+      .map((setNumber) => ({
+        workoutSessionId,
+        exerciseName: canonicalExerciseName,
+        setNumber,
+        reps: Number(input.reps),
+        weight: Number(input.weight),
+        completed: true,
+      }));
+
+    if (rowsToCreate.length > 0) {
+      await this.prisma.workoutSetResult.createMany({ data: rowsToCreate });
+    }
+
+    return { success: true };
+  }
 
   private async getPreviousPerformance(userId: string, exercise: WorkoutPlanExerciseLike, planId?: string | null, planDayId?: string | null): Promise<PreviousPerformance | null> {
     const progressionWhere = buildProgressionWhere({
@@ -273,7 +309,43 @@ export class WorkoutsService {
     return this.today(userId);
   }
 
-  async start(userId: string, workoutSessionId: string) {
+  async start(userId: string, workoutSessionId?: string) {
+    if (!workoutSessionId) {
+      const today = await this.today(userId);
+      if (!today || today.status !== 'scheduled' || !today.planId || !today.planDay?.id) {
+        throw new NotFoundException('No workout session available to start');
+      }
+
+      const existingSession = await this.prisma.workoutSession.findFirst({
+        where: {
+          userId,
+          planId: today.planId,
+          planDayId: today.planDay.id,
+          status: { in: ['in_progress'] },
+        },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      });
+
+      if (existingSession) {
+        return this.prisma.workoutSession.update({
+          where: { id: existingSession.id },
+          data: { status: 'in_progress', actualDate: existingSession.actualDate ?? new Date() },
+        });
+      }
+
+      return this.prisma.workoutSession.create({
+        data: {
+          userId,
+          planId: today.planId,
+          planDayId: today.planDay.id,
+          scheduledDate: new Date(),
+          weekIndex: today.weekIndex,
+          status: 'in_progress',
+          actualDate: new Date(),
+        },
+      });
+    }
+
     const session = await this.prisma.workoutSession.findFirst({ where: { id: workoutSessionId, userId } });
     if (!session) throw new NotFoundException();
     return this.prisma.workoutSession.update({ where: { id: workoutSessionId }, data: { status: 'in_progress', actualDate: new Date() } });
@@ -304,10 +376,9 @@ export class WorkoutsService {
 
       for (const [key, setResults] of setResultsByExercise.entries()) {
         const [exerciseName, exerciseId] = key.split('::');
-        const first = setResults[0];
         const sets = setResults.length;
-        const reps = setResults.reduce((sum, row) => sum + row.reps, 0);
-        const weight = setResults.reduce((sum, row) => sum + row.weight, 0) / setResults.length;
+        const reps = setResults[0]?.reps ?? 0;
+        const weight = setResults[0]?.weight ?? 0;
         const volume = setResults.reduce((sum, row) => sum + row.reps * row.weight, 0);
         const avgRpe = null;
 
