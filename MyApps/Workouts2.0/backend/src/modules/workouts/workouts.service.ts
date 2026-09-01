@@ -59,13 +59,16 @@ function buildProgressionWhere(params: {
   exerciseName: string;
   exerciseId?: string | null;
 }) {
-  return {
+  const where: Prisma.ExerciseHistoryEntryWhereInput = {
     userId: params.userId,
-    planId: params.planId ?? null,
-    planDayId: params.planDayId ?? null,
     exerciseName: normalizeExerciseCanonicalName(params.exerciseName),
     exerciseId: params.exerciseId ?? null,
-  } satisfies Prisma.ExerciseHistoryEntryWhereInput;
+  };
+
+  if (params.planId !== undefined) where.planId = params.planId;
+  if (params.planDayId !== undefined) where.planDayId = params.planDayId;
+
+  return where;
 }
 
 function toNullableNumber(value: unknown) {
