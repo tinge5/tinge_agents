@@ -105,9 +105,9 @@
     */
     {
       "name": "Plans Feature Integration",
-      "description": "Update ./MyApps/Workouts2.0/frontend/src/features/plans/PlanEditorScreen.tsx to restore the ability to add a new workout day while creating or editing a plan. The Plan Editor should have an Add Day button that creates a new plan day, allows the user to choose its day of the week, and then add exercises to that new day exactly like existing days. Preserve all existing Plan Editor functionality, exercise autocomplete, progression rules, duration, save/edit behavior, and existing days. Do not redesign the screen or modify unrelated files. First inspect the existing Plan Editor and existing plan API functions/routes to determine how days are currently created, then restore the missing functionality using the existing backend endpoints if available.",
-      "expected_output": "PlanEditorScreen.tsx updated so users can create a new workout day in both new and existing plans, select its weekday, add exercises to it, and save the plan without breaking existing functionality. List the exact files changed and briefly explain how the restored Add Day flow works.",
-      "agent": "frontend_agent"
+      "description": "Fix the backend today() previous-performance lookup so saving/editing a plan does not erase the previous completed session's previousPerformance. Saving a plan should still reset Today’s workout status to Start Workout, but Today must continue returning the previous completed performance for exercises that existed in the prior session. Inspect ./MyApps/Workouts2.0/backend/src/modules/workouts/workouts.service.ts and the plan update logic to determine why the existing history/session is no longer matched after a plan edit. Preserve the existing exact workout-context history behavior and progression logic. Make the smallest targeted backend fix and do not modify frontend files unless absolutely necessary.",
+      "expected_output": "Previous performance remains visible on Today after saving a plan, while Today status can still reset to Start Workout. List the exact backend files changed and explain why the previous-performance lookup was failing.",
+      "agent": "backend_agent"
     }
     
     

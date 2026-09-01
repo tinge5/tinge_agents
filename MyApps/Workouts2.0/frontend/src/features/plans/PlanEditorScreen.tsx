@@ -459,11 +459,36 @@ export function PlanEditorScreen() {
             <View style={{ gap: 8 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                 <Text style={{ fontWeight: '700' }}>Workout Days</Text>
-                <Pressable onPress={addDay} style={{ backgroundColor: '#dbeafe', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12 }}>
-                  <Text style={{ fontWeight: '700', color: '#1d4ed8' }}>Add Day</Text>
-                </Pressable>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <Pressable onPress={addDay} style={{ backgroundColor: '#dbeafe', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12 }}>
+                    <Text style={{ fontWeight: '700', color: '#1d4ed8' }}>Add Day</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => {
+                      if (!allDays.length) return;
+                      const day = allDays[activeDayIndex] ?? allDays[0];
+                      const label = day.title?.trim() || `Day ${activeDayIndex + 1}`;
+                      Alert.alert(
+                        'Delete day?',
+                        `This will permanently delete ${label} and all exercises in it. This cannot be undone.`,
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          {
+                            text: 'Delete Day',
+                            style: 'destructive',
+                            onPress: () => removeDayAtIndex(activeDayIndex),
+                          },
+                        ],
+                      );
+                    }}
+                    style={{ backgroundColor: '#fee2e2', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12 }}
+                  >
+                    <Text style={{ fontWeight: '700', color: '#991b1b' }}>Delete Day</Text>
+                  </Pressable>
+                </View>
               </View>
               <PlanFieldHelp text="Add Day creates a new workout day in the plan. Select a weekday, then add exercises exactly like any existing day." />
+              <PlanFieldHelp text="Delete Day removes the currently selected workout day and all of its exercises after confirmation." />
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                 {allDays.map((day, index) => {
                   const selected = index === activeDayIndex;
