@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { completeWorkoutSession, getWorkoutHistory, saveWorkoutSetResult, startWorkoutSession, type TodayWorkout } from '@/shared/api/client';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { completeWorkoutSession, saveWorkoutSetResult, startWorkoutSession, type TodayWorkout } from '@/shared/api/client';
 
 type WorkoutExercise = {
   name: string;
@@ -9,39 +9,16 @@ type WorkoutExercise = {
   reps: number | null;
   weight: number | null;
   exerciseId?: string | null;
+  previousPerformance?: { sets?: number | null; reps?: number | null; weight?: number | null } | null;
 };
 
 type WorkoutInputState = Record<string, { sets: string; reps: string; weight: string }>;
-
-type SavedWorkoutSetResult = {
-  exerciseName?: string;
-  exerciseId?: string;
-  sets?: number | null;
-  reps?: number | null;
-  weight?: number | null;
-};
-
-type HistoryWorkoutSession = {
-  id?: string;
-  workoutSessionId?: string;
-  setResults?: SavedWorkoutSetResult[];
-};
-
-type WorkoutHistoryResponse = {
-  workouts?: HistoryWorkoutSession[];
-  exerciseHistory?: unknown[];
-  planArchives?: unknown[];
-};
 
 function toNumberOrNull(value: string) {
   const trimmed = value.trim();
   if (!trimmed) return null;
   const parsed = Number(trimmed);
   return Number.isFinite(parsed) ? parsed : null;
-}
-
-function normalizeKey(value: unknown) {
-  return typeof value === 'string' ? value.trim().toLowerCase() : '';
 }
 
 function buildInitialInputs(exercises: WorkoutExercise[]): WorkoutInputState {
@@ -55,31 +32,6 @@ function buildInitialInputs(exercises: WorkoutExercise[]): WorkoutInputState {
       },
     ])
   );
-}
-
-function getHistoryWorkouts(history: unknown): HistoryWorkoutSession[] {
-  if (!history || typeof history !== 'object') return [];
-  const workouts = (history as WorkoutHistoryResponse).workouts;
-  return Array.isArray(workouts) ? workouts : [];
-}
-
-function getCompletedSessionResults(history: unknown, workoutSessionId?: string): SavedWorkoutSetResult[] {
-  const workouts = getHistoryWorkouts(history);
-  if (!workoutSessionId) return [];
-
-  const matchedSession = workouts.find(session => String(session?.workoutSessionId ?? session?.id ?? '') === String(workoutSessionId));
-  return Array.isArray(matchedSession?.setResults) ? matchedSession!.setResults! : [];
-}
-
-function findLoggedResultForExercise(exercise: WorkoutExercise, results: SavedWorkoutSetResult[]) {
-  const exerciseNameKey = normalizeKey(exercise.name);
-  const exerciseIdKey = normalizeKey(exercise.exerciseId);
-
-  return results.find(result => {
-    const resultNameKey = normalizeKey(result.exerciseName);
-    const resultIdKey = normalizeKey(result.exerciseId);
-    return (exerciseIdKey && resultIdKey && exerciseIdKey === resultIdKey) || (exerciseNameKey && resultNameKey && exerciseNameKey === resultNameKey);
-  });
 }
 
 export function WorkoutDetailScreen({ route, navigation }: any) {
@@ -172,19 +124,6 @@ export function WorkoutDetailScreen({ route, navigation }: any) {
   };
 
   const completedState = reviewOnly || isCompleted || workout?.status === 'completed';
-  const workoutCompletedData = (workout as any)?.session ?? (workout as any)?.workoutSession ?? (workout as any)?.completedWorkout ?? workout;
-  const workoutSessionId = activeSessionId ?? routeSessionId ?? (workoutCompletedData as any)?.id ?? (workoutCompletedData as any)?.workoutSessionId;
-
-  const historyQuery = useQuery({
-    queryKey: ['workout-history', workoutSessionId],
-    queryFn: async () => getWorkoutHistory(),
-    enabled: completedState && !!workoutSessionId,
-  });
-
-  const savedResults = useMemo(() => {
-    if (!completedState) return [] as SavedWorkoutSetResult[];
-    return getCompletedSessionResults(historyQuery.data, workoutSessionId);
-  }, [completedState, historyQuery.data, workoutSessionId]);
 
   return (
     <ScrollView contentContainerStyle={{ padding: 20, gap: 12 }}>
@@ -200,10 +139,9 @@ export function WorkoutDetailScreen({ route, navigation }: any) {
       <View style={{ gap: 10 }}>
         {exercises.map(exercise => {
           const value = inputs[exercise.name] ?? { sets: '', reps: '', weight: '' };
-          const savedResult = completedState ? findLoggedResultForExercise(exercise, savedResults) : null;
-          const loggedSets = completedState ? savedResult?.sets ?? null : null;
-          const loggedReps = completedState ? savedResult?.reps ?? null : null;
-          const loggedWeight = completedState ? savedResult?.weight ?? null : null;
+          const displaySets = completedState ? exercise.previousPerformance?.sets ?? null : null;
+          const displayReps = completedState ? exercise.previousPerformance?.reps ?? null : null;
+          const displayWeight = completedState ? exercise.previousPerformance?.weight ?? null : null;
 
           return (
             <View key={exercise.name} style={{ borderWidth: 1, borderColor: '#cbd5e1', padding: 14, borderRadius: 16, gap: 8 }}>
@@ -212,15 +150,15 @@ export function WorkoutDetailScreen({ route, navigation }: any) {
                 <View style={{ gap: 8 }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
                     <Text style={{ fontWeight: '600' }}>Sets</Text>
-                    <Text>{loggedSets != null ? String(loggedSets) : '—'}</Text>
+                    <Text>{displaySets != null ? String(displaySets) : '—'}</Text>
                   </View>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
                     <Text style={{ fontWeight: '600' }}>Reps</Text>
-                    <Text>{loggedReps != null ? String(loggedReps) : '—'}</Text>
+                    <Text>{displayReps != null ? String(displayReps) : '—'}</Text>
                   </View>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
                     <Text style={{ fontWeight: '600' }}>Weight</Text>
-                    <Text>{loggedWeight != null ? String(loggedWeight) : '—'}</Text>
+                    <Text>{displayWeight != null ? String(displayWeight) : '—'}</Text>
                   </View>
                 </View>
               ) : (
