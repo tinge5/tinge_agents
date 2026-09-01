@@ -249,6 +249,20 @@ export class WorkoutsService {
 
     if (!day) return { status: 'no_schedule', planId: plan.id, currentWeekIndex: weekIndex, plan };
 
+    const latestRelevantSession = await this.prisma.workoutSession.findFirst({
+      where: {
+        userId,
+        planId: plan.id,
+        planDayId: day.id,
+        weekIndex,
+      },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      select: {
+        id: true,
+        status: true,
+      },
+    });
+
     const exercises = await Promise.all(
       day.exercises.map(async (exercise) => {
         const previousPerformance = await this.getPreviousPerformance(userId, exercise as WorkoutPlanExerciseLike, plan.id, day.id);
@@ -292,6 +306,34 @@ export class WorkoutsService {
         };
       }),
     );
+
+    if (latestRelevantSession?.status === 'completed') {
+      return {
+        status: 'completed',
+        workoutSessionId: latestRelevantSession.id,
+        planId: plan.id,
+        planDay: day,
+        plan,
+        weekIndex,
+        title: day.title,
+        day: `Day ${day.dayOfWeek + 1} (${DAY_LABELS[day.dayOfWeek] ?? 'Day'})`,
+        exercises,
+      };
+    }
+
+    if (latestRelevantSession?.status === 'in_progress') {
+      return {
+        status: 'in_progress',
+        workoutSessionId: latestRelevantSession.id,
+        planId: plan.id,
+        planDay: day,
+        plan,
+        weekIndex,
+        title: day.title,
+        day: `Day ${day.dayOfWeek + 1} (${DAY_LABELS[day.dayOfWeek] ?? 'Day'})`,
+        exercises,
+      };
+    }
 
     return {
       status: 'scheduled',

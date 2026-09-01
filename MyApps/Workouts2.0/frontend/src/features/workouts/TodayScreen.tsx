@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getTodayWorkout } from '@/shared/api/client';
@@ -70,15 +70,16 @@ export function TodayScreen({ navigation }: any) {
   useEffect(() => {
     const unsubscribe = navigation?.addListener?.('focus', () => {
       queryClient.invalidateQueries({ queryKey: ['workouts', 'today'] });
-      queryClient.refetchQueries({ queryKey: ['workouts', 'today'], type: 'active' });
     });
     return unsubscribe;
   }, [navigation, queryClient]);
 
   const workout = data;
-  const exercises = useMemo(() => workout?.exercises ?? [], [workout]);
-  const isWorkoutStartedOrCompleted = workout?.status === 'in_progress' || workout?.status === 'completed';
-  const workoutButtonLabel = isWorkoutStartedOrCompleted ? "View Today's Workout" : 'Review Workout';
+  const exercises = workout?.exercises ?? [];
+  const isCompletedWorkout = workout?.status === 'completed';
+  const isInProgressWorkout = workout?.status === 'in_progress';
+  const isReviewMode = isCompletedWorkout;
+  const workoutButtonLabel = isReviewMode ? 'Review Workout' : 'Start Workout';
 
   return (
     <ScrollView contentContainerStyle={{ padding: 20, gap: 12 }}>
@@ -109,13 +110,15 @@ export function TodayScreen({ navigation }: any) {
             <Text>{workout.day ?? 'Today'}</Text>
             <Text style={{ color: '#475569' }}>Week {workout.weekIndex != null ? Number(workout.weekIndex) + 1 : 1}</Text>
             {workout.note ? <Text>{workout.note}</Text> : null}
+            {isInProgressWorkout ? <Text style={{ color: '#0f766e', fontWeight: '700' }}>Workout in progress</Text> : null}
+            {isCompletedWorkout ? <Text style={{ color: '#15803d', fontWeight: '700' }}>Workout completed</Text> : null}
           </View>
           {exercises.map((exercise: TodayExercise) => (
             <ExerciseCard key={exercise.name} exercise={exercise} />
           ))}
           <Pressable
-            onPress={() => navigation.navigate('Workout', { workout, reviewOnly: true })}
-            style={{ backgroundColor: '#16a34a', padding: 18, borderRadius: 16 }}
+            onPress={() => navigation.navigate('Workout', { workout, reviewOnly: isReviewMode })}
+            style={{ backgroundColor: isReviewMode ? '#16a34a' : '#2563eb', padding: 18, borderRadius: 16 }}
           >
             <Text style={{ color: 'white', textAlign: 'center', fontWeight: '800' }}>{workoutButtonLabel}</Text>
           </Pressable>

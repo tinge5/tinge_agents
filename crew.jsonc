@@ -105,8 +105,8 @@
     */
     {
       "name": "Plans Feature Integration",
-      "description": "ix Today workout button state in ./MyApps/Workouts2.0/frontend: a newly created or newly activated plan with no completed session must show Start Workout, never Review Workout. Inspect TodayScreen.tsx and the workout/session state returned by the existing API. Determine whether the current plan/day has an actual completed workout session before setting reviewOnly: true. Do not infer completion merely from having a workout, an active plan, or a session object. Preserve the existing behavior where a genuinely completed workout shows Review Workout and opens the read-only completed workout. Do not modify the backend or API contracts.",
-      "expected_output": "",
+      "description": "Fix Review Workout history parsing in ./MyApps/Workouts2.0/frontend/src/features/workouts/WorkoutDetailScreen.tsx. The GET /me/history response is an object with workouts, exerciseHistory, and planArchives, not an array. For review mode, use history.workouts, find the workout whose id or workoutSessionId matches the current workout session ID, then read its setResults array. Map each set result to exerciseName, exerciseId, sets, reps, and weight, and display those actual completed values for the matching exercises. Remove the previous guessed response-shape parsing (exerciseResults, results, workouts as arbitrary containers). Do not change backend progression logic, workout completion logic, or other screens.",
+      "expected_output": "WorkoutDetailScreen.tsx updated so Review Workout correctly reads completed workout data from GET /me/history → workouts[] → matching workout session → setResults[], displaying the saved actual sets/reps/weight for each exercise. No backend changes.",
       "agent": "frontend_agent"
     }
     

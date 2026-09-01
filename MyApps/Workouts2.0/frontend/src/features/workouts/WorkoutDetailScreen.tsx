@@ -21,14 +21,16 @@ type SavedWorkoutSetResult = {
   weight?: number | null;
 };
 
-type SavedWorkoutSession = {
+type HistoryWorkoutSession = {
   id?: string;
   workoutSessionId?: string;
-  exerciseResults?: SavedWorkoutSetResult[];
   setResults?: SavedWorkoutSetResult[];
-  results?: SavedWorkoutSetResult[];
-  workouts?: SavedWorkoutSetResult[];
-  exercises?: Array<SavedWorkoutSetResult & { results?: SavedWorkoutSetResult[]; setResults?: SavedWorkoutSetResult[] }>;
+};
+
+type WorkoutHistoryResponse = {
+  workouts?: HistoryWorkoutSession[];
+  exerciseHistory?: unknown[];
+  planArchives?: unknown[];
 };
 
 function toNumberOrNull(value: string) {
@@ -42,35 +44,36 @@ function normalizeKey(value: unknown) {
   return typeof value === 'string' ? value.trim().toLowerCase() : '';
 }
 
-function getCompletedSessionResults(workout: any): SavedWorkoutSetResult[] {
-  const session = workout?.session ?? workout?.workoutSession ?? workout?.completedWorkout ?? workout;
-  const candidates = [
-    session?.exerciseResults,
-    session?.setResults,
-    session?.results,
-    session?.workouts,
-    session?.exercises,
-    workout?.exerciseResults,
-    workout?.setResults,
-    workout?.results,
-  ];
+function buildInitialInputs(exercises: WorkoutExercise[]): WorkoutInputState {
+  return Object.fromEntries(
+    exercises.map(exercise => [
+      exercise.name,
+      {
+        sets: exercise.sets != null ? String(exercise.sets) : '',
+        reps: exercise.reps != null ? String(exercise.reps) : '',
+        weight: exercise.weight != null ? String(exercise.weight) : '',
+      },
+    ])
+  );
+}
 
-  for (const candidate of candidates) {
-    if (Array.isArray(candidate) && candidate.length > 0) {
-      return candidate.flatMap(item => {
-        if (item && Array.isArray((item as any).results)) return (item as any).results;
-        if (item && Array.isArray((item as any).setResults)) return (item as any).setResults;
-        return [item as SavedWorkoutSetResult];
-      });
-    }
-  }
+function getHistoryWorkouts(history: unknown): HistoryWorkoutSession[] {
+  if (!history || typeof history !== 'object') return [];
+  const workouts = (history as WorkoutHistoryResponse).workouts;
+  return Array.isArray(workouts) ? workouts : [];
+}
 
-  return [];
+function getCompletedSessionResults(history: unknown, workoutSessionId?: string): SavedWorkoutSetResult[] {
+  const workouts = getHistoryWorkouts(history);
+  if (!workoutSessionId) return [];
+
+  const matchedSession = workouts.find(session => String(session?.workoutSessionId ?? session?.id ?? '') === String(workoutSessionId));
+  return Array.isArray(matchedSession?.setResults) ? matchedSession!.setResults! : [];
 }
 
 function findLoggedResultForExercise(exercise: WorkoutExercise, results: SavedWorkoutSetResult[]) {
   const exerciseNameKey = normalizeKey(exercise.name);
-  const exerciseIdKey = normalizeKey((exercise as any).exerciseId);
+  const exerciseIdKey = normalizeKey(exercise.exerciseId);
 
   return results.find(result => {
     const resultNameKey = normalizeKey(result.exerciseName);
@@ -84,19 +87,8 @@ export function WorkoutDetailScreen({ route, navigation }: any) {
   const workout: TodayWorkout = route?.params?.workout ?? { title: 'Workout', exercises: [] };
   const reviewOnly = Boolean(route?.params?.reviewOnly);
   const routeSessionId: string | undefined = route?.params?.workoutSessionId ?? workout?.workoutSessionId;
-  const exercises = useMemo<WorkoutExercise[]>(() => workout?.exercises ?? [], [workout]);
-  const [inputs, setInputs] = useState<WorkoutInputState>(() =>
-    Object.fromEntries(
-      exercises.map(exercise => [
-        exercise.name,
-        {
-          sets: exercise.sets != null ? String(exercise.sets) : '',
-          reps: exercise.reps != null ? String(exercise.reps) : '',
-          weight: exercise.weight != null ? String(exercise.weight) : '',
-        },
-      ])
-    )
-  );
+  const exercises = useMemo<WorkoutExercise[]>(() => workout?.exercises ?? [], [workout?.exercises]);
+  const [inputs, setInputs] = useState<WorkoutInputState>(() => buildInitialInputs(exercises));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompleted, setIsCompleted] = useState(workout?.status === 'completed');
   const [activeSessionId, setActiveSessionId] = useState<string | undefined>(routeSessionId);
@@ -112,18 +104,18 @@ export function WorkoutDetailScreen({ route, navigation }: any) {
   }, [reviewOnly, workout?.status]);
 
   useEffect(() => {
-    setInputs(
-      Object.fromEntries(
-        exercises.map(exercise => [
-          exercise.name,
-          {
-            sets: exercise.sets != null ? String(exercise.sets) : '',
-            reps: exercise.reps != null ? String(exercise.reps) : '',
-            weight: exercise.weight != null ? String(exercise.weight) : '',
-          },
-        ])
-      )
-    );
+    const next = buildInitialInputs(exercises);
+    setInputs(prev => {
+      const prevKeys = Object.keys(prev);
+      const nextKeys = Object.keys(next);
+      const sameLength = prevKeys.length === nextKeys.length;
+      const sameValues = sameLength && nextKeys.every(key => {
+        const current = prev[key];
+        const incoming = next[key];
+        return current?.sets === incoming.sets && current?.reps === incoming.reps && current?.weight === incoming.weight;
+      });
+      return sameValues ? prev : next;
+    });
   }, [exercises]);
 
   const startMutation = useMutation({
@@ -191,16 +183,8 @@ export function WorkoutDetailScreen({ route, navigation }: any) {
 
   const savedResults = useMemo(() => {
     if (!completedState) return [] as SavedWorkoutSetResult[];
-
-    const history = (historyQuery.data ?? []) as SavedWorkoutSession[];
-    const fromHistory = history.find(session => {
-      const sessionId = String(session?.workoutSessionId ?? session?.id ?? '');
-      return sessionId && workoutSessionId ? sessionId === String(workoutSessionId) : false;
-    });
-
-    const directResults = fromHistory ? getCompletedSessionResults(fromHistory) : getCompletedSessionResults(workoutCompletedData);
-    return directResults;
-  }, [completedState, historyQuery.data, workoutCompletedData, workoutSessionId]);
+    return getCompletedSessionResults(historyQuery.data, workoutSessionId);
+  }, [completedState, historyQuery.data, workoutSessionId]);
 
   return (
     <ScrollView contentContainerStyle={{ padding: 20, gap: 12 }}>
@@ -241,9 +225,9 @@ export function WorkoutDetailScreen({ route, navigation }: any) {
                 </View>
               ) : (
                 <>
-                  <TextInput value={value.sets} onChangeText={text => setInputs(prev => ({ ...prev, [exercise.name]: { ...value, sets: text } }))} placeholder='Sets' keyboardType='numeric' style={{ borderWidth: 1, padding: 12, borderRadius: 12 }} />
-                  <TextInput value={value.reps} onChangeText={text => setInputs(prev => ({ ...prev, [exercise.name]: { ...value, reps: text } }))} placeholder='Reps' keyboardType='numeric' style={{ borderWidth: 1, padding: 12, borderRadius: 12 }} />
-                  <TextInput value={value.weight} onChangeText={text => setInputs(prev => ({ ...prev, [exercise.name]: { ...value, weight: text } }))} placeholder='Weight' keyboardType='numeric' style={{ borderWidth: 1, padding: 12, borderRadius: 12 }} />
+                  <TextInput value={value.sets} onChangeText={text => setInputs(prev => ({ ...prev, [exercise.name]: { ...prev[exercise.name], sets: text } }))} placeholder='Sets' keyboardType='numeric' style={{ borderWidth: 1, padding: 12, borderRadius: 12 }} />
+                  <TextInput value={value.reps} onChangeText={text => setInputs(prev => ({ ...prev, [exercise.name]: { ...prev[exercise.name], reps: text } }))} placeholder='Reps' keyboardType='numeric' style={{ borderWidth: 1, padding: 12, borderRadius: 12 }} />
+                  <TextInput value={value.weight} onChangeText={text => setInputs(prev => ({ ...prev, [exercise.name]: { ...prev[exercise.name], weight: text } }))} placeholder='Weight' keyboardType='numeric' style={{ borderWidth: 1, padding: 12, borderRadius: 12 }} />
                 </>
               )}
             </View>
