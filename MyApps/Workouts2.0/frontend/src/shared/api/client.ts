@@ -15,6 +15,8 @@ export type CreatePlanInput = { name: string; goals: string[]; progressiveOverlo
 export type UpdatePlanInput = Partial<CreatePlanInput>;
 export type TodayWorkout = { status: 'scheduled' | 'no_schedule' | 'in_progress' | 'completed' | 'no_active_plan'; workoutSessionId?: string; title?: string; day?: string; note?: string; weekIndex?: number; planId?: string; plan?: Plan; planDay?: PlanDay; exercises?: Array<{ name: string; sets: number | null; reps: number | null; weight: number | null; previousPerformance?: { sets: number | null; reps: number | null; weight: number | null } | null; suggestedTarget?: { sets: number | null; reps: number | null; weight: number | null } | null; }>; };
 export type WorkoutSetResultInput = { exerciseName: string; sets: number | null; reps: number | null; weight: number | null; };
+export type WorkoutHistorySetResult = { id?: string; setNumber: number; exerciseName: string; weight: number | null; reps: number | null; completedAt?: string; };
+export type WorkoutHistorySession = { id: string; completedAt: string; workoutName?: string; workoutTitle?: string; planDay?: { id?: string; title?: string; name?: string; } | null; plan?: { id?: string; name?: string; } | null; setResults: WorkoutHistorySetResult[]; };
 
 async function readStoredTokens() { const [accessToken, refreshToken] = await Promise.all([AsyncStorage.getItem(ACCESS_TOKEN_KEY), AsyncStorage.getItem(REFRESH_TOKEN_KEY)]); return { accessToken, refreshToken }; }
 async function persistTokens(session: AuthSession | null) { if (!session) { await Promise.all([AsyncStorage.removeItem(ACCESS_TOKEN_KEY), AsyncStorage.removeItem(REFRESH_TOKEN_KEY), AsyncStorage.removeItem(SESSION_KEY)]); return; } await Promise.all([AsyncStorage.setItem(ACCESS_TOKEN_KEY, session.accessToken), AsyncStorage.setItem(REFRESH_TOKEN_KEY, session.refreshToken), AsyncStorage.setItem(SESSION_KEY, JSON.stringify(session))]); }
@@ -36,6 +38,6 @@ export async function deletePlan(planId: string) { return request<void>(`/plans/
 export async function activatePlan(planId: string) { return request<Plan>(`/plans/${planId}/activate`, { method: 'POST' }); }
 export async function deactivatePlan(planId: string) { return request<Plan>(`/plans/${planId}/deactivate`, { method: 'POST' }); }
 export async function getCompletedPlans() { return request<any[]>('/me/completed-plans'); }
-export async function getWorkoutHistory() { return request<any[]>('/me/history'); }
+export async function getWorkoutHistory() { return request<WorkoutHistorySession[]>('/history/workouts'); }
 export async function getExerciseHistory(exerciseName: string) { return request<any[]>(`/me/exercises/${encodeURIComponent(exerciseName)}/history`); }
 export async function getCurrentWorkout() { return request<any>('/workouts/current'); }
