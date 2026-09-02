@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -11,6 +11,7 @@ import { store, RootState } from '@/shared/store';
 import { restoreSession } from '@/features/auth/authSlice';
 import { AuthScreen } from '@/features/auth/AuthScreen';
 import { RegisterScreen } from '@/features/auth/RegisterScreen';
+import { WelcomeScreen } from '@/features/auth/WelcomeScreen';
 import { TodayScreen } from '@/features/workouts/TodayScreen';
 import { PlanEditorScreen } from '@/features/plans/PlanEditorScreen';
 import { ProfileScreen } from '@/features/profile/ProfileScreen';
@@ -32,13 +33,27 @@ function MainTabs() {
   );
 }
 
+function MainFlow() {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false }} />
+      <Stack.Screen name="Workout" component={WorkoutDetailScreen} options={{ title: 'Workout' }} />
+    </Stack.Navigator>
+  );
+}
+
 function RootNavigator() {
-  const { hydrated, isAuthenticated } = useSelector((s: RootState) => s.auth);
+  const { hydrated, isAuthenticated, restoredSession } = useSelector((s: RootState) => s.auth);
   const dispatch = useDispatch();
 
   useEffect(() => {
     dispatch(restoreSession() as any);
   }, [dispatch]);
+
+  const initialRouteName = useMemo(() => {
+    if (!isAuthenticated) return 'SignIn';
+    return restoredSession ? 'Welcome' : 'MainFlow';
+  }, [isAuthenticated, restoredSession]);
 
   if (!hydrated) {
     return (
@@ -50,7 +65,7 @@ function RootNavigator() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator>
+      <Stack.Navigator initialRouteName={initialRouteName}>
         {!isAuthenticated ? (
           <>
             <Stack.Screen name="SignIn" component={AuthScreen} options={{ title: 'Sign In' }} />
@@ -58,8 +73,8 @@ function RootNavigator() {
           </>
         ) : (
           <>
-            <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false }} />
-            <Stack.Screen name="Workout" component={WorkoutDetailScreen} options={{ title: 'Workout' }} />
+            <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="MainFlow" component={MainFlow} options={{ headerShown: false }} />
           </>
         )}
       </Stack.Navigator>

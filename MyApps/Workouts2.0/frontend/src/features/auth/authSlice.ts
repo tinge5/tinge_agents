@@ -7,6 +7,7 @@ export type AuthState = {
   loading: boolean;
   error: string | null;
   isAuthenticated: boolean;
+  restoredSession: boolean;
   accessToken: string | null;
   refreshToken: string | null;
   user: MeProfile | null;
@@ -17,6 +18,7 @@ const initialState: AuthState = {
   loading: false,
   error: null,
   isAuthenticated: false,
+  restoredSession: false,
   accessToken: null,
   refreshToken: null,
   user: null,
@@ -78,11 +80,13 @@ const authSlice = createSlice({
         state.error = null;
         if (action.payload) {
           state.isAuthenticated = true;
+          state.restoredSession = true;
           state.accessToken = action.payload.accessToken;
           state.refreshToken = action.payload.refreshToken;
           state.user = action.payload.user as MeProfile;
         } else {
           state.isAuthenticated = false;
+          state.restoredSession = false;
           state.accessToken = null;
           state.refreshToken = null;
           state.user = null;
@@ -102,6 +106,7 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(login.fulfilled, (state, action) => {
+        state.restoredSession = false;
         state.loading = false;
         state.isAuthenticated = true;
         state.accessToken = action.payload.accessToken;
@@ -111,6 +116,7 @@ const authSlice = createSlice({
       .addCase(register.fulfilled, (state, action) => {
         state.loading = false;
         state.isAuthenticated = true;
+        state.restoredSession = false;
         state.accessToken = action.payload.accessToken;
         state.refreshToken = action.payload.refreshToken;
         state.user = null;
