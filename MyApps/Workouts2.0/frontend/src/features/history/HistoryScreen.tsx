@@ -38,9 +38,9 @@ function formatTime(value?: string) {
 }
 
 function formatSet(weight?: number | null, reps?: number | null) {
-  const weightText = weight != null ? `${weight}` : '-';
-  const repsText = reps != null ? `${reps}` : '-';
-  return `${weightText} x ${repsText}`;
+  const weightText = weight != null ? `${weight} lbs` : '- lbs';
+  const repsText = reps != null ? `${reps} reps` : '- reps';
+  return `${weightText} × ${repsText}`;
 }
 
 function getWorkoutTitle(workout: WorkoutHistorySession) {
