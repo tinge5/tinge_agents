@@ -205,37 +205,6 @@ export class WorkoutsService {
     };
   }
 
-  private buildSuggestedTarget(exercise: WorkoutPlanExerciseLike, previousPerformance: PreviousPerformance | null, progressiveOverloadEnabled: boolean) {
-    if (!previousPerformance || previousPerformance.source === 'plan_target') {
-      return {
-        ...exercise,
-        suggestedTarget: {
-          sets: exercise.setsTarget,
-          reps: exercise.repsTarget,
-          weight: exercise.weightTarget,
-        },
-      };
-    }
-
-    const completedPerformance = {
-      ...exercise,
-      setsTarget: previousPerformance.sets ?? exercise.setsTarget,
-      repsTarget: previousPerformance.reps ?? exercise.repsTarget,
-      weightTarget: previousPerformance.weight ?? exercise.weightTarget,
-    };
-
-    const suggested = applyProgression(completedPerformance, 1, progressiveOverloadEnabled);
-
-    return {
-      ...exercise,
-      suggestedTarget: {
-        sets: suggested.setsTarget,
-        reps: suggested.repsTarget,
-        weight: suggested.weightTarget,
-      },
-    };
-  }
-
   async today(userId: string) {
     const plan = await this.prisma.workoutPlan.findFirst({
       where: { userId, isActive: true },
@@ -265,6 +234,28 @@ export class WorkoutsService {
         status: true,
       },
     });
+
+    const hasCompletedSessionBeforeToday = await this.prisma.workoutSession.findFirst({
+      where: {
+        userId,
+        planId: plan.id,
+        planDayId: day.id,
+        status: 'completed',
+        completedAt: {
+          not: null,
+          lte: new Date(),
+        },
+      },
+      orderBy: [{ completedAt: 'desc' }, { id: 'desc' }],
+      select: {
+        id: true,
+        completedAt: true,
+      },
+    });
+
+    const planUpdatedAfterLastCompletion =
+      !!hasCompletedSessionBeforeToday &&
+      new Date(plan.updatedAt).getTime() > new Date(hasCompletedSessionBeforeToday.completedAt as Date).getTime();
 
     const exercises = await Promise.all(
       day.exercises.map(async (exercise) => {
@@ -310,7 +301,7 @@ export class WorkoutsService {
       }),
     );
 
-    if (latestRelevantSession?.status === 'completed') {
+    if (latestRelevantSession?.status === 'completed' && !planUpdatedAfterLastCompletion) {
       return {
         status: 'completed',
         workoutSessionId: latestRelevantSession.id,
