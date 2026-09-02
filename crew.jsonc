@@ -105,9 +105,9 @@
     */
     {
       "name": "Plans Feature Integration",
-      "description": "",
-      "expected_output": "",
-      "agent": "backend_agent"
+      "description": "Make a targeted frontend fix in ./MyApps/Workouts2.0/frontend/src/features/profile/ProfileScreen.tsx so the Profile screen refreshes its existing getMe() data whenever the Profile screen becomes active/focused, ensuring Active plan always displays the user's current active plan after switching plans. Use the existing React Navigation focus mechanism available to the screen, such as useFocusEffect, and reuse the existing getMe() and getCompletedPlans() calls. Keep everything else exactly the same: Profile layout, styling, name, email, Active Plan display, Completed Plans, logout, navigation, API behavior, and all other functionality. Do not modify backend files or create new endpoints. Do not run npm commands or claim build/runtime testing; I will verify the frontend separately.",
+      "expected_output": "Updated only ./MyApps/Workouts2.0/frontend/src/features/profile/ProfileScreen.tsx so the existing Profile data refreshes whenever the screen gains focus, causing Active plan to immediately reflect the currently active plan after switching plans. Everything else remains unchanged. Do not claim npm/build/runtime testing.",
+      "agent": "frontend_agent"
     }
     
     

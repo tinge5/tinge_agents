@@ -24,6 +24,11 @@ type PreviousPerformance = {
   rpe?: number | null;
 };
 
+type PlanCompletionResult = {
+  planCompleted: boolean;
+  archiveCreated: boolean;
+};
+
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const DAY_LABELS: Record<number, string> = {
   0: 'Sunday',
@@ -102,6 +107,17 @@ function getPerformanceFromHistory(history: {
     completedAt: history.date,
     rpe: history.rpe,
   };
+}
+
+function getScheduledWorkoutCount(plan: {
+  days: { weekIndex: number; dayOfWeek: number }[];
+  durationWeeks: number;
+}) {
+  const durationWeeks = Math.max(1, Number(plan.durationWeeks ?? 1));
+  return plan.days.filter((day) => {
+    const weekIndex = Number(day.weekIndex ?? 0);
+    return weekIndex >= 0 && weekIndex < durationWeeks;
+  }).length;
 }
 
 @Injectable()
@@ -387,6 +403,102 @@ export class WorkoutsService {
     return this.prisma.workoutSession.update({ where: { id: workoutSessionId }, data: { status: 'in_progress', actualDate: new Date() } });
   }
 
+  private async finalizePlanIfNeeded(tx: any, userId: string, session: { id: string; planId: string; planDayId: string; weekIndex: number }) : Promise<PlanCompletionResult> {
+    const plan = await tx.workoutPlan.findFirst({
+      where: { id: session.planId, userId },
+      include: {
+        days: {
+          select: {
+            id: true,
+            weekIndex: true,
+            dayOfWeek: true,
+          },
+        },
+        sessions: {
+          where: { status: 'completed' },
+          select: {
+            id: true,
+            planDayId: true,
+            weekIndex: true,
+            completedAt: true,
+          },
+        },
+        archives: {
+          where: { planId: session.planId, userId },
+          select: { id: true },
+        },
+      },
+    });
+
+    if (!plan) throw new NotFoundException();
+    if (plan.status === 'completed' || plan.archives.length > 0) {
+      return { planCompleted: plan.status === 'completed', archiveCreated: false };
+    }
+
+    const durationWeeks = Math.max(1, Number(plan.durationWeeks ?? 1));
+    const scheduledWorkoutDays = plan.days.filter((day) => Number(day.weekIndex ?? 0) >= 0 && Number(day.weekIndex ?? 0) < durationWeeks);
+    const totalScheduledWorkouts = scheduledWorkoutDays.length;
+    const completedSessions = plan.sessions.filter((item) => item.completedAt && Number(item.weekIndex ?? 0) < durationWeeks);
+
+    if (completedSessions.length < totalScheduledWorkouts) {
+      return { planCompleted: false, archiveCreated: false };
+    }
+
+    const weekIndexes = scheduledWorkoutDays.map((day) => Number(day.weekIndex ?? 0));
+    const lastWeekIndex = weekIndexes.length > 0 ? Math.max(...weekIndexes) : durationWeeks - 1;
+    const finalScheduledDay = scheduledWorkoutDays.filter((day) => Number(day.weekIndex ?? 0) === lastWeekIndex);
+    if (finalScheduledDay.length === 0) {
+      return { planCompleted: false, archiveCreated: false };
+    }
+
+    const finalWeekCompletedSessions = completedSessions.filter((item) => Number(item.weekIndex ?? 0) === lastWeekIndex);
+    const finalWeekRequiredCount = finalScheduledDay.length;
+    if (finalWeekCompletedSessions.length < finalWeekRequiredCount) {
+      return { planCompleted: false, archiveCreated: false };
+    }
+
+    const completedSessionDays = new Set(completedSessions.map((item) => item.planDayId));
+    const hasAnyUncompletedScheduledDay = scheduledWorkoutDays.some((day) => !completedSessionDays.has(day.id));
+    if (hasAnyUncompletedScheduledDay) {
+      return { planCompleted: false, archiveCreated: false };
+    }
+
+    const completedAt = new Date();
+    const summarySnapshot = {
+      planId: plan.id,
+      planName: plan.name,
+      durationWeeks: plan.durationWeeks,
+      completedWorkoutSessions: completedSessions.length,
+      totalScheduledWorkouts,
+      completedSessionIds: completedSessions.map((item) => item.id),
+      completedAt: completedAt.toISOString(),
+    };
+
+    await tx.workoutPlan.update({
+      where: { id: plan.id },
+      data: { status: 'completed', isActive: false },
+    });
+
+    const existingArchive = await tx.planCompletionArchive.findFirst({
+      where: { userId, planId: plan.id },
+      select: { id: true },
+    });
+
+    if (!existingArchive) {
+      await tx.planCompletionArchive.create({
+        data: {
+          userId,
+          planId: plan.id,
+          completedAt,
+          summarySnapshot,
+        },
+      });
+      return { planCompleted: true, archiveCreated: true };
+    }
+
+    return { planCompleted: true, archiveCreated: false };
+  }
+
   async complete(userId: string, workoutSessionId: string) {
     const session = await this.prisma.workoutSession.findFirst({
       where: { id: workoutSessionId, userId },
@@ -435,6 +547,13 @@ export class WorkoutsService {
           },
         });
       }
+
+      await this.finalizePlanIfNeeded(tx, userId, {
+        id: session.id,
+        planId: session.planId,
+        planDayId: session.planDayId,
+        weekIndex: session.weekIndex,
+      });
     });
 
     return { success: true };
