@@ -37,10 +37,11 @@ function formatTime(value?: string) {
     : date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 }
 
-function formatSet(weight?: number | null, reps?: number | null) {
+function formatSet(weight?: number | null, reps?: number | null, setCount?: number) {
   const weightText = weight != null ? `${weight} lbs` : '- lbs';
   const repsText = reps != null ? `${reps} reps` : '- reps';
-  return `${weightText} × ${repsText}`;
+  const setsText = setCount != null ? `${setCount} sets` : '- sets';
+  return `${weightText} × ${repsText} × ${setsText}`;
 }
 
 function getWorkoutTitle(workout: WorkoutHistorySession) {
@@ -263,7 +264,7 @@ export function HistoryScreen() {
                               <View key={`${workout.id ?? workout.completedAt}-${exerciseName}`} style={{ gap: 4 }}>
                                 <Text style={{ fontWeight: '600' }}>{exerciseName}</Text>
                                 <Text style={{ color: '#475569' }}>
-                                  {setResult ? formatSet(setResult.weight, setResult.reps) : 'No recorded sets'}
+                                  {setResult ? formatSet(setResult.weight, setResult.reps, groupedSets[exerciseName]?.length) : 'No recorded sets'}
                                 </Text>
                               </View>
                             );

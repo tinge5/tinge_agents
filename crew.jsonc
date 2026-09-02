@@ -105,9 +105,9 @@
     */
     {
       "name": "Plans Feature Integration",
-      "description": "Make one very small UI-only change to the Workouts2.0 History screen in ./MyApps/Workouts2.0/frontend/src/features/history/HistoryScreen.tsx: wherever exercise performance is currently displayed in the format '10 x 8', change the display to clearly show units, such as '10 lbs × 8 reps'. Keep absolutely everything else unchanged, including the layout, workout grouping, clickable selections, dates, times, exercises, navigation, styling, data handling, backend/API behavior, and all other History functionality. Do not modify any other files unless strictly necessary for this exact text change. Do not run npm commands or claim build/runtime testing; I will verify the frontend separately.",
-      "expected_output": "Updated only the History exercise performance display so values such as '10 x 8' now clearly read '10 lbs × 8 reps'. Everything else in the History screen remains unchanged. List the exact file changed. Do not claim npm/build/runtime testing was performed.",
-      "agent": "frontend_agent"
+      "description": "",
+      "expected_output": "",
+      "agent": "backend_agent"
     }
     
     
