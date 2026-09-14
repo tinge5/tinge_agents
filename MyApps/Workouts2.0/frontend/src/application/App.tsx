@@ -17,6 +17,7 @@ import { PlanEditorScreen } from '@/features/plans/PlanEditorScreen';
 import { ProfileScreen } from '@/features/profile/ProfileScreen';
 import { HistoryScreen } from '@/features/history/HistoryScreen';
 import { WorkoutDetailScreen } from '@/features/workouts/WorkoutDetailScreen';
+import { theme } from '@/shared/theme';
 
 const queryClient = new QueryClient();
 const Stack = createNativeStackNavigator();
@@ -24,7 +25,7 @@ const Tabs = createBottomTabNavigator();
 
 function MainTabs() {
   return (
-    <Tabs.Navigator screenOptions={{ headerShown: false }}>
+    <Tabs.Navigator screenOptions={{ headerShown: false, tabBarStyle: { backgroundColor: theme.colors.surface, borderTopColor: theme.colors.border }, tabBarActiveTintColor: theme.colors.primary, tabBarInactiveTintColor: theme.colors.textMuted } as any}>
       <Tabs.Screen name="Today" component={TodayScreen} />
       <Tabs.Screen name="Plans" component={PlanEditorScreen} />
       <Tabs.Screen name="History" component={HistoryScreen} />
@@ -35,7 +36,7 @@ function MainTabs() {
 
 function MainFlow() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator screenOptions={{ contentStyle: { backgroundColor: theme.colors.background }, headerStyle: { backgroundColor: theme.colors.surface }, headerTintColor: theme.colors.text, headerShadowVisible: false } as any}>
       <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false }} />
       <Stack.Screen name="Workout" component={WorkoutDetailScreen} options={{ title: 'Workout' }} />
     </Stack.Navigator>
@@ -57,15 +58,15 @@ function RootNavigator() {
 
   if (!hydrated) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator />
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.background }}>
+        <ActivityIndicator color={theme.colors.primary} />
       </View>
     );
   }
 
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName={initialRouteName}>
+      <Stack.Navigator initialRouteName={initialRouteName} screenOptions={{ contentStyle: { backgroundColor: theme.colors.background }, headerStyle: { backgroundColor: theme.colors.surface }, headerTintColor: theme.colors.text, headerShadowVisible: false } as any}>
         {!isAuthenticated ? (
           <>
             <Stack.Screen name="SignIn" component={AuthScreen} options={{ title: 'Sign In' }} />
@@ -87,7 +88,7 @@ export default function App() {
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
         <SafeAreaProvider>
-          <StatusBar style="dark" />
+          <StatusBar style="light" />
           <RootNavigator />
         </SafeAreaProvider>
       </QueryClientProvider>

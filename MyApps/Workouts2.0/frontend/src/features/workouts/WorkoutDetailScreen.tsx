@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { completeWorkoutSession, saveWorkoutSetResult, startWorkoutSession, type TodayWorkout } from '@/shared/api/client';
+import { theme } from '@/shared/theme';
 
 type WorkoutExercise = {
   name: string;
@@ -126,13 +127,13 @@ export function WorkoutDetailScreen({ route, navigation }: any) {
   const completedState = reviewOnly || isCompleted || workout?.status === 'completed';
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 20, gap: 12 }}>
-      <Text style={{ fontSize: 28, fontWeight: '800' }}>{workout.title ?? 'Workout'}</Text>
-      <Text>{reviewOnly ? 'Read-only review of your completed workout.' : 'Quick logging UI optimized for mobile workouts.'}</Text>
+    <ScrollView contentContainerStyle={{ padding: 20, gap: 12, backgroundColor: theme.colors.background, flexGrow: 1 }}>
+      <Text style={{ fontSize: 28, fontWeight: '800', color: theme.colors.text }}>{workout.title ?? 'Workout'}</Text>
+      <Text style={{ color: theme.colors.text }}>{reviewOnly ? 'Read-only review of your completed workout.' : 'Quick logging UI optimized for mobile workouts.'}</Text>
 
       {!reviewOnly && startMutation.isPending ? (
         <View style={{ paddingVertical: 8 }}>
-          <ActivityIndicator />
+          <ActivityIndicator color={theme.colors.primary} />
         </View>
       ) : null}
 
@@ -144,28 +145,28 @@ export function WorkoutDetailScreen({ route, navigation }: any) {
           const displayWeight = completedState ? exercise.previousPerformance?.weight ?? null : null;
 
           return (
-            <View key={exercise.name} style={{ borderWidth: 1, borderColor: '#cbd5e1', padding: 14, borderRadius: 16, gap: 8 }}>
-              <Text style={{ fontSize: 18, fontWeight: '700' }}>{exercise.name}</Text>
+            <View key={exercise.name} style={{ borderWidth: 1, borderColor: theme.colors.border, padding: 14, borderRadius: 16, gap: 8, backgroundColor: theme.colors.surface }}>
+              <Text style={{ fontSize: 18, fontWeight: '700', color: theme.colors.text }}>{exercise.name}</Text>
               {completedState ? (
                 <View style={{ gap: 8 }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
-                    <Text style={{ fontWeight: '600' }}>Sets</Text>
-                    <Text>{displaySets != null ? String(displaySets) : '—'}</Text>
+                    <Text style={{ fontWeight: '600', color: theme.colors.text }}>Sets</Text>
+                    <Text style={{ color: theme.colors.text }}>{displaySets != null ? String(displaySets) : '—'}</Text>
                   </View>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
-                    <Text style={{ fontWeight: '600' }}>Reps</Text>
-                    <Text>{displayReps != null ? String(displayReps) : '—'}</Text>
+                    <Text style={{ fontWeight: '600', color: theme.colors.text }}>Reps</Text>
+                    <Text style={{ color: theme.colors.text }}>{displayReps != null ? String(displayReps) : '—'}</Text>
                   </View>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
-                    <Text style={{ fontWeight: '600' }}>Weight</Text>
-                    <Text>{displayWeight != null ? String(displayWeight) : '—'}</Text>
+                    <Text style={{ fontWeight: '600', color: theme.colors.text }}>Weight</Text>
+                    <Text style={{ color: theme.colors.text }}>{displayWeight != null ? String(displayWeight) : '—'}</Text>
                   </View>
                 </View>
               ) : (
                 <>
-                  <TextInput value={value.sets} onChangeText={text => setInputs(prev => ({ ...prev, [exercise.name]: { ...prev[exercise.name], sets: text } }))} placeholder='Sets' keyboardType='numeric' style={{ borderWidth: 1, padding: 12, borderRadius: 12 }} />
-                  <TextInput value={value.reps} onChangeText={text => setInputs(prev => ({ ...prev, [exercise.name]: { ...prev[exercise.name], reps: text } }))} placeholder='Reps' keyboardType='numeric' style={{ borderWidth: 1, padding: 12, borderRadius: 12 }} />
-                  <TextInput value={value.weight} onChangeText={text => setInputs(prev => ({ ...prev, [exercise.name]: { ...prev[exercise.name], weight: text } }))} placeholder='Weight' keyboardType='numeric' style={{ borderWidth: 1, padding: 12, borderRadius: 12 }} />
+                  <TextInput value={value.sets} onChangeText={text => setInputs(prev => ({ ...prev, [exercise.name]: { ...prev[exercise.name], sets: text } }))} placeholder='Sets' placeholderTextColor={theme.colors.textMuted} keyboardType='numeric' style={{ borderWidth: 1, padding: 12, borderRadius: 12, borderColor: theme.colors.border, backgroundColor: theme.colors.background, color: theme.colors.text }} />
+                  <TextInput value={value.reps} onChangeText={text => setInputs(prev => ({ ...prev, [exercise.name]: { ...prev[exercise.name], reps: text } }))} placeholder='Reps' placeholderTextColor={theme.colors.textMuted} keyboardType='numeric' style={{ borderWidth: 1, padding: 12, borderRadius: 12, borderColor: theme.colors.border, backgroundColor: theme.colors.background, color: theme.colors.text }} />
+                  <TextInput value={value.weight} onChangeText={text => setInputs(prev => ({ ...prev, [exercise.name]: { ...prev[exercise.name], weight: text } }))} placeholder='Weight' placeholderTextColor={theme.colors.textMuted} keyboardType='numeric' style={{ borderWidth: 1, padding: 12, borderRadius: 12, borderColor: theme.colors.border, backgroundColor: theme.colors.background, color: theme.colors.text }} />
                 </>
               )}
             </View>
@@ -174,11 +175,11 @@ export function WorkoutDetailScreen({ route, navigation }: any) {
       </View>
 
       {completedState ? (
-        <View style={{ backgroundColor: '#dcfce7', padding: 18, borderRadius: 16, borderWidth: 1, borderColor: '#22c55e' }}>
+        <View style={{ backgroundColor: theme.colors.success, padding: 18, borderRadius: 16, borderWidth: 1, borderColor: theme.colors.success }}>
           <Text style={{ color: '#166534', textAlign: 'center', fontWeight: '800', fontSize: 16 }}>Workout Completed</Text>
         </View>
       ) : (
-        <Pressable onPress={handleMarkCompleted} disabled={isSubmitting || completeMutation.isPending} style={{ backgroundColor: '#111827', padding: 18, borderRadius: 16, opacity: isSubmitting ? 0.7 : 1 }}>
+        <Pressable onPress={handleMarkCompleted} disabled={isSubmitting || completeMutation.isPending} style={{ backgroundColor: theme.colors.primaryDark, padding: 18, borderRadius: 16, opacity: isSubmitting ? 0.7 : 1 }}>
           <Text style={{ color: 'white', textAlign: 'center', fontWeight: '800' }}>{isSubmitting || completeMutation.isPending ? 'Saving...' : 'Mark Complete'}</Text>
         </Pressable>
       )}

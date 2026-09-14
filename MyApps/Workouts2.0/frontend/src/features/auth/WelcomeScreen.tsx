@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Image } from 'expo-image';
+import { theme } from '@/shared/theme';
 
 export function WelcomeScreen() {
   const navigation = useNavigation<any>();
@@ -32,7 +33,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 24,
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.background,
   },
   logo: {
     width: 220,
@@ -42,12 +43,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#111827',
+    color: theme.colors.text,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#6b7280',
+    color: theme.colors.textMuted,
     textAlign: 'center',
     marginBottom: 28,
   },
@@ -56,7 +57,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderRadius: 14,
-    backgroundColor: '#111827',
+    backgroundColor: theme.colors.primaryDark,
     alignItems: 'center',
   },
   buttonText: {

@@ -8,6 +8,7 @@ import {
   Pressable,
 } from 'react-native';
 import { getWorkoutHistory, WorkoutHistorySession } from '@/shared/api/client';
+import { theme } from '@/shared/theme';
 
 type HistoryState = {
   workouts: WorkoutHistorySession[];
@@ -159,30 +160,30 @@ export function HistoryScreen() {
 
   return (
     <ScrollView
-      contentContainerStyle={{ padding: 20, gap: 12 }}
+      contentContainerStyle={{ padding: 20, gap: 12, backgroundColor: theme.colors.background, flexGrow: 1 }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
-      <Text style={{ fontSize: 28, fontWeight: '800' }}>History</Text>
+      <Text style={{ fontSize: 28, fontWeight: '800', color: theme.colors.text }}>History</Text>
 
       {loading ? (
         <View style={{ paddingVertical: 24, alignItems: 'center' }}>
-          <ActivityIndicator />
+          <ActivityIndicator color={theme.colors.primary} />
         </View>
       ) : error ? (
-        <View style={{ borderWidth: 1, borderColor: '#e2e8f0', padding: 16, borderRadius: 16 }}>
-          <Text style={{ fontWeight: '700', marginBottom: 4 }}>Unable to load history</Text>
-          <Text>{error}</Text>
+        <View style={{ borderWidth: 1, borderColor: theme.colors.border, padding: 16, borderRadius: 16, backgroundColor: theme.colors.surface }}>
+          <Text style={{ fontWeight: '700', marginBottom: 4, color: theme.colors.text }}>Unable to load history</Text>
+          <Text style={{ color: theme.colors.text }}>{error}</Text>
         </View>
       ) : workouts.length === 0 ? (
-        <View style={{ borderWidth: 1, borderColor: '#e2e8f0', padding: 16, borderRadius: 16 }}>
-          <Text style={{ fontWeight: '700', marginBottom: 4 }}>No completed workouts yet</Text>
-          <Text style={{ color: '#64748b' }}>
+        <View style={{ borderWidth: 1, borderColor: theme.colors.border, padding: 16, borderRadius: 16, backgroundColor: theme.colors.surface }}>
+          <Text style={{ fontWeight: '700', marginBottom: 4, color: theme.colors.text }}>No completed workouts yet</Text>
+          <Text style={{ color: theme.colors.textMuted }}>
             Your completed workout sessions will appear here once you finish one.
           </Text>
         </View>
       ) : (
-        <View style={{ borderWidth: 1, borderColor: '#e2e8f0', padding: 16, borderRadius: 16, gap: 12 }}>
-          <Text style={{ fontWeight: '700' }}>Completed Workouts</Text>
+        <View style={{ borderWidth: 1, borderColor: theme.colors.border, padding: 16, borderRadius: 16, gap: 12, backgroundColor: theme.colors.surface }}>
+          <Text style={{ fontWeight: '700', color: theme.colors.text }}>Completed Workouts</Text>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 4 }}>
             {groupedWorkouts.map((group) => {
@@ -196,14 +197,14 @@ export function HistoryScreen() {
                     paddingHorizontal: 14,
                     borderRadius: 999,
                     borderWidth: 1,
-                    borderColor: isSelected ? '#0f172a' : '#cbd5e1',
-                    backgroundColor: isSelected ? '#0f172a' : '#ffffff',
+                    borderColor: isSelected ? theme.colors.primary : theme.colors.border,
+                    backgroundColor: isSelected ? theme.colors.primary : theme.colors.background,
                   }}
                 >
-                  <Text style={{ fontWeight: '700', color: isSelected ? '#ffffff' : '#0f172a' }}>
+                  <Text style={{ fontWeight: '700', color: isSelected ? '#ffffff' : theme.colors.text }}>
                     {group.title}
                   </Text>
-                  <Text style={{ color: isSelected ? '#e2e8f0' : '#64748b', fontSize: 12 }}>
+                  <Text style={{ color: isSelected ? '#fed7aa' : theme.colors.textMuted, fontSize: 12 }}>
                     {group.sessions.length} {group.sessions.length === 1 ? 'session' : 'sessions'}
                   </Text>
                 </Pressable>
@@ -214,8 +215,8 @@ export function HistoryScreen() {
           {selectedGroup ? (
             <View style={{ gap: 12 }}>
               <View style={{ gap: 2 }}>
-                <Text style={{ fontSize: 18, fontWeight: '800' }}>{selectedGroup.title}</Text>
-                <Text style={{ color: '#64748b' }}>
+                <Text style={{ fontSize: 18, fontWeight: '800', color: theme.colors.text }}>{selectedGroup.title}</Text>
+                <Text style={{ color: theme.colors.textMuted }}>
                   {selectedGroup.sessions.length} completed {selectedGroup.sessions.length === 1 ? 'session' : 'sessions'}
                 </Text>
               </View>
@@ -240,14 +241,14 @@ export function HistoryScreen() {
                         gap: 10,
                         padding: 14,
                         borderWidth: 1,
-                        borderColor: '#e2e8f0',
+                        borderColor: theme.colors.border,
                         borderRadius: 14,
-                        backgroundColor: '#ffffff',
+                        backgroundColor: theme.colors.background,
                       }}
                     >
                       <View style={{ gap: 2 }}>
-                        <Text style={{ fontWeight: '700' }}>{getWorkoutTitle(workout)}</Text>
-                        <Text style={{ color: '#64748b' }}>
+                        <Text style={{ fontWeight: '700', color: theme.colors.text }}>{getWorkoutTitle(workout)}</Text>
+                        <Text style={{ color: theme.colors.textMuted }}>
                           {formatDate(workout.completedAt)}
                           {formatTime(workout.completedAt) ? ` • ${formatTime(workout.completedAt)}` : ''}
                         </Text>
@@ -262,8 +263,8 @@ export function HistoryScreen() {
 
                             return (
                               <View key={`${workout.id ?? workout.completedAt}-${exerciseName}`} style={{ gap: 4 }}>
-                                <Text style={{ fontWeight: '600' }}>{exerciseName}</Text>
-                                <Text style={{ color: '#475569' }}>
+                                <Text style={{ fontWeight: '600', color: theme.colors.text }}>{exerciseName}</Text>
+                                <Text style={{ color: theme.colors.textMuted }}>
                                   {setResult ? formatSet(setResult.weight, setResult.reps, groupedSets[exerciseName]?.length) : 'No recorded sets'}
                                 </Text>
                               </View>
@@ -271,7 +272,7 @@ export function HistoryScreen() {
                           })}
                         </View>
                       ) : (
-                        <Text style={{ color: '#64748b' }}>No set results recorded for this workout.</Text>
+                        <Text style={{ color: theme.colors.textMuted }}>No set results recorded for this workout.</Text>
                       )}
                     </View>
                   );
