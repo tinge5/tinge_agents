@@ -6,7 +6,17 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "jsEngine": "hermes",
-    "assetBundlePatterns": ["**/*"],
-    "platforms": ["ios", "android", "web"]
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
+    "plugins": [
+      "expo-image",
+      "expo-status-bar"
+    ]
   }
 }
