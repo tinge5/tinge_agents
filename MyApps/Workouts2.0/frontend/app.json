@@ -17,6 +17,18 @@
     "plugins": [
       "expo-image",
       "expo-status-bar"
-    ]
+    ],
+    "web": {
+      "name": "Workouts2.0",
+      "shortName": "Workouts2.0",
+      "backgroundColor": "#0f1115",
+      "themeColor": "#0f1115",
+      "display": "standalone",
+      "lang": "en",
+      "startUrl": "/",
+      "scope": "/",
+      "favicon": "./assets/workoutslogo.png",
+      "icon": "./assets/workoutslogo.png"
+    }
   }
 }
