@@ -215,7 +215,7 @@ function SuggestionInput({
         onBlur={() => setTimeout(() => setShowSuggestions(false), 350)}
         placeholder={placeholder}
         placeholderTextColor={theme.colors.textMuted}
-        style={{ borderWidth: 1, padding: 12, borderRadius: 10, borderColor: theme.colors.border, backgroundColor: theme.colors.background, color: theme.colors.text }}
+        style={{ borderWidth: 1, padding: 12, borderRadius: 10, borderColor: theme.colors.border, backgroundColor: theme.colors.background, color: theme.colors.text, fontSize: 16 }}
       />
       {showSuggestions && filtered.length > 0 ? (
         <View style={{ gap: 6, borderWidth: 1, borderColor: theme.colors.border, borderRadius: 10, padding: 8, backgroundColor: theme.colors.surface, zIndex: 30, elevation: 8 }}>
@@ -449,9 +449,9 @@ export function PlanEditorScreen() {
         {viewMode === 'edit' ? (
           <>
             <PlanFieldHelp text="Plan name: the label shown in the plans list and workout scheduling." />
-            <TextInput value={draft.name} onChangeText={(name) => setDraft((prev: any) => ({ ...prev, name }))} placeholder="Plan name" placeholderTextColor={theme.colors.textMuted} style={{ borderWidth: 1, padding: 14, borderRadius: 12, borderColor: theme.colors.border, backgroundColor: theme.colors.background, color: theme.colors.text }} />
+            <TextInput value={draft.name} onChangeText={(name) => setDraft((prev: any) => ({ ...prev, name }))} placeholder="Plan name" placeholderTextColor={theme.colors.textMuted} style={{ borderWidth: 1, padding: 14, borderRadius: 12, borderColor: theme.colors.border, backgroundColor: theme.colors.background, color: theme.colors.text, fontSize: 16 }} />
             <PlanFieldHelp text="Goals: comma-separated tags describing the plan's purpose. Example: strength, hypertrophy." />
-            <TextInput value={safeArray<string>(draft.goals).join(', ')} onChangeText={(text) => setDraft((prev: any) => ({ ...prev, goals: text.split(',').map((g) => g.trim()).filter(Boolean) }))} placeholder="Goals (comma separated)" placeholderTextColor={theme.colors.textMuted} style={{ borderWidth: 1, padding: 14, borderRadius: 12, borderColor: theme.colors.border, backgroundColor: theme.colors.background, color: theme.colors.text }} />
+            <TextInput value={safeArray<string>(draft.goals).join(', ')} onChangeText={(text) => setDraft((prev: any) => ({ ...prev, goals: text.split(',').map((g) => g.trim()).filter(Boolean) }))} placeholder="Goals (comma separated)" placeholderTextColor={theme.colors.textMuted} style={{ borderWidth: 1, padding: 14, borderRadius: 12, borderColor: theme.colors.border, backgroundColor: theme.colors.background, color: theme.colors.text, fontSize: 16 }} />
             <PlanFieldHelp text="Plan duration: choose how many weeks the plan should run before it ends." />
             <SelectField value={Number(draft.durationWeeks ?? 4)} onChangeValue={(value) => setDraft((prev: any) => ({ ...prev, durationWeeks: Number(value) }))} options={durationOptions.map((value) => ({ label: `${value} weeks`, value }))} />
             <PlanFieldHelp text="Progressive overload: choose True or False for whether the plan should use progressive overload tracking." />
@@ -518,7 +518,7 @@ export function PlanEditorScreen() {
               <SelectField value={normalizeDayOfWeek(draftDay.dayOfWeek, 1) as 0 | 1 | 2 | 3 | 4 | 5 | 6} onChangeValue={(value) => updateDay((day) => ({ ...day, dayOfWeek: Number(value) }))} options={DAY_OF_WEEK_OPTIONS as any} />
               <Text style={{ color: theme.colors.textMuted, fontSize: 12 }}>Selected: {DAY_LABELS[normalizeDayOfWeek(draftDay.dayOfWeek, 1)]}</Text>
               <PlanFieldHelp text="Workout title: optional short name for this scheduled workout day, such as Lower Body or Push Day." />
-              <TextInput value={String(draftDay.title ?? '')} onChangeText={(text) => updateDay((day) => ({ ...day, title: text }))} placeholder="Workout title" placeholderTextColor={theme.colors.textMuted} style={{ borderWidth: 1, padding: 14, borderRadius: 12, borderColor: theme.colors.border, backgroundColor: theme.colors.background, color: theme.colors.text }} />
+              <TextInput value={String(draftDay.title ?? '')} onChangeText={(text) => updateDay((day) => ({ ...day, title: text }))} placeholder="Workout title" placeholderTextColor={theme.colors.textMuted} style={{ borderWidth: 1, padding: 14, borderRadius: 12, borderColor: theme.colors.border, backgroundColor: theme.colors.background, color: theme.colors.text, fontSize: 16 }} />
               <Pressable onPress={() => updateDay((day) => ({ ...day, exercises: [...safeArray<PlanDayExercise>(day.exercises), { exerciseName: '', setsTarget: 3, repsTarget: 8, weightTarget: null }] }))} style={{ backgroundColor: theme.colors.surfaceAlt, padding: 12, borderRadius: 12 }}><Text style={{ textAlign: 'center', fontWeight: '700', color: theme.colors.text }}>Add Exercise</Text></Pressable>
               {safeArray<PlanDayExercise>(draftDay.exercises).map((exercise: any, exerciseIndex: number) => (
                 <View key={`${exerciseIndex}`} style={{ gap: 8, padding: 12, borderRadius: 12, backgroundColor: theme.colors.background }}>
@@ -541,7 +541,7 @@ export function PlanEditorScreen() {
                     </View>
                   </View>
                   <PlanFieldHelp text="Weight target: optional planned load. Leave empty if bodyweight or if you want to track the weight later." />
-                  <TextInput value={exercise.weightTarget === null || exercise.weightTarget === undefined ? '' : String(exercise.weightTarget)} onChangeText={(text) => updateDay((day) => { const exercises = safeArray<PlanDayExercise>(day.exercises).slice(); exercises[exerciseIndex] = { ...exercises[exerciseIndex], weightTarget: text === '' ? null : Number(text) }; return { ...day, exercises }; })} placeholder="Weight" placeholderTextColor={theme.colors.textMuted} keyboardType="numeric" style={{ borderWidth: 1, padding: 12, borderRadius: 10, borderColor: theme.colors.border, backgroundColor: theme.colors.background, color: theme.colors.text }} />
+                  <TextInput value={exercise.weightTarget === null || exercise.weightTarget === undefined ? '' : String(exercise.weightTarget)} onChangeText={(text) => updateDay((day) => { const exercises = safeArray<PlanDayExercise>(day.exercises).slice(); exercises[exerciseIndex] = { ...exercises[exerciseIndex], weightTarget: text === '' ? null : Number(text) }; return { ...day, exercises }; })} placeholder="Weight" placeholderTextColor={theme.colors.textMuted} keyboardType="numeric" style={{ borderWidth: 1, padding: 12, borderRadius: 10, borderColor: theme.colors.border, backgroundColor: theme.colors.background, color: theme.colors.text, fontSize: 16 }} />
                   <Pressable onPress={() => updateDay((day) => { const exercises = safeArray<PlanDayExercise>(day.exercises).slice(); exercises.splice(exerciseIndex, 1); return { ...day, exercises }; })} style={{ backgroundColor: '#3b1d1d', padding: 10, borderRadius: 10 }}><Text style={{ textAlign: 'center', fontWeight: '700', color: theme.colors.danger }}>Remove Exercise</Text></Pressable>
                 </View>
               ))}
