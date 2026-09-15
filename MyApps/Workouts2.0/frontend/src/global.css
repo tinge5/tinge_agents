@@ -1,0 +1,9 @@
+/* iPhone Safari focus zoom prevention: ensure editable controls are at least 16px on mobile */
+@media (max-width: 767px) {
+  input,
+  textarea,
+  select,
+  button {
+    font-size: 16px;
+  }
+}
