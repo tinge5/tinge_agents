@@ -20,7 +20,7 @@ export function WelcomeScreen() {
       <Text style={styles.subtitle}>Ready to pick up where you left off?</Text>
 
       <Pressable style={styles.button} onPress={() => navigation.navigate('MainFlow')}>
-        <Text style={styles.buttonText}>Begin</Text>
+        <Text style={styles.buttonText}>Enter</Text>
       </Pressable>
       
     </View>
