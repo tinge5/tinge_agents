@@ -546,7 +546,7 @@ export function PlanEditorScreen() {
                 </View>
               ))}
             </View>
-            <Pressable onPress={() => saveMutation.mutate()} style={{ backgroundColor: theme.colors.primary, padding: 14, borderRadius: 12 }}><Text style={{ color: 'white', textAlign: 'center', fontWeight: '700' }}>Save Plan</Text></Pressable>
+           <Pressable onPress={() => saveMutation.mutate()} style={({ pressed }) => ({ backgroundColor: pressed ? theme.colors.primaryDark : theme.colors.primary, padding: 14, borderRadius: 12 })}><Text style={{ color: 'white', textAlign: 'center', fontWeight: '700' }}>Save Plan</Text></Pressable>
           </>
         ) : (
           <>
