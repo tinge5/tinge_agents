@@ -31,18 +31,18 @@ export class WorkoutsController {
   }
 
   @Get('current')
-  current(@Req() req: any) {
-    return this.workoutsService.current(req.user.sub);
+  current(@Req() req: any, @Headers('x-device-timezone') deviceTimeZone?: string) {
+    return this.workoutsService.current(req.user.sub, deviceTimeZone);
   }
 
   @Post('start')
-  start(@Req() req: any) {
-    return this.workoutsService.start(req.user.sub);
+  start(@Req() req: any, @Headers('x-device-timezone') deviceTimeZone?: string) {
+    return this.workoutsService.start(req.user.sub, undefined, deviceTimeZone);
   }
 
   @Post(':workoutSessionId/start')
-  startExisting(@Req() req: any, @Param('workoutSessionId') id: string) {
-    return this.workoutsService.start(req.user.sub, id);
+  startExisting(@Req() req: any, @Param('workoutSessionId') id: string, @Headers('x-device-timezone') deviceTimeZone?: string) {
+    return this.workoutsService.start(req.user.sub, id, deviceTimeZone);
   }
 
   @Post(':workoutSessionId/set-results')

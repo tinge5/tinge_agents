@@ -105,9 +105,9 @@
     */
     {
       "name": "Plans Feature Integration",
-      "description": "Fix the iPhone Safari focus-zoom behavior in Workouts2.0. Inspect and modify only these files: ./MyApps/Workouts2.0/frontend/web/index.html and the relevant global/shared stylesheet or theme file used by the frontend under ./MyApps/Workouts2.0/frontend/src (identify the existing file rather than creating a new styling system). Ensure tapping an input, textarea, select, or other editable form control on iPhone does not automatically zoom the page by making the relevant form-control text at least 16px on mobile and preserving the existing viewport configuration. Do not redesign the UI or change colors, spacing, navigation, functionality, or unrelated components. Do not run npm, Expo, or build commands. Make only the minimal changes necessary and report the exact files modified and what was changed.",
-      "expected_output": "The iPhone Safari focus-zoom issue is fixed. The existing frontend viewport configuration is preserved and relevant form controls use at least 16px text on mobile to prevent automatic zoom. No unrelated UI or functionality was changed. Report the exact files modified and summarize each change.",
-      "agent": "frontend_agent"
+      "description": "Fix only MyApps/Workouts2.0/backend/src/modules/workouts/workouts.service.ts and MyApps/Workouts2.0/backend/src/modules/workouts/workouts.controller.ts. Make calculateWeekIndex() fully timezone-safe: calculate the current calendar date and plan start calendar date in the supplied IANA device timezone and compare those calendar dates without using Date.setHours() or the Render server timezone. Also pass x-device-timezone through the startExisting route. Keep the existing today workout logic and verification log unchanged. Do not hardcode a timezone, modify unrelated code, or run npm/Expo/build commands.",
+      "expected_output": "Only the two files changed, with week-index and workout-day calculations based entirely on the device timezone. Briefly explain the changes.",
+      "agent": "backend_agent"
     }
     
     

@@ -40,18 +40,37 @@ const DAY_LABELS: Record<number, string> = {
   6: 'Saturday',
 };
 
-function startOfDay(date: Date) {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d;
+function getCalendarDateParts(date: Date, deviceTimeZone?: string) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: deviceTimeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date).reduce<Record<string, string>>((acc, part) => {
+    if (part.type !== 'literal') acc[part.type] = part.value;
+    return acc;
+  }, {});
+
+  return {
+    year: Number(parts.year),
+    month: Number(parts.month),
+    day: Number(parts.day),
+  };
+}
+
+function calendarDateToUtcMs(parts: { year: number; month: number; day: number }) {
+  return Date.UTC(parts.year, parts.month - 1, parts.day);
 }
 
 function calculateWeekIndex(
   plan: { createdAt: Date; currentWeekIndex: number; startDate?: Date | null; durationWeeks?: number | null },
   today = new Date(),
+  deviceTimeZone?: string,
 ) {
   const anchor = plan.startDate ?? plan.createdAt;
-  const daysSinceStart = Math.floor((startOfDay(today).getTime() - startOfDay(anchor).getTime()) / MS_PER_DAY);
+  const currentDateParts = getCalendarDateParts(today, deviceTimeZone);
+  const anchorDateParts = getCalendarDateParts(anchor, deviceTimeZone);
+  const daysSinceStart = Math.floor((calendarDateToUtcMs(currentDateParts) - calendarDateToUtcMs(anchorDateParts)) / MS_PER_DAY);
   const weekIndex = Math.max(0, Math.floor(daysSinceStart / 7));
   const maxWeek = Math.max(0, Number(plan.durationWeeks ?? 1) - 1);
   return Math.min(weekIndex, maxWeek);
@@ -252,7 +271,7 @@ export class WorkoutsService {
 
     if (!plan) return { status: 'no_active_plan' };
 
-    const weekIndex = calculateWeekIndex(plan as any);
+    const weekIndex = calculateWeekIndex(plan as any, new Date(), deviceTimeZone);
     const { utcNow, deviceLocalTime, dayIndex } = getDeviceLocalDayInfo(deviceTimeZone);
     // Temporary verification log for Render logs
     // eslint-disable-next-line no-console
@@ -388,13 +407,13 @@ export class WorkoutsService {
     };
   }
 
-  async current(userId: string) {
-    return this.today(userId);
+  async current(userId: string, deviceTimeZone?: string) {
+    return this.today(userId, deviceTimeZone);
   }
 
-  async start(userId: string, workoutSessionId?: string) {
+  async start(userId: string, workoutSessionId?: string, deviceTimeZone?: string) {
     if (!workoutSessionId) {
-      const today = await this.today(userId);
+      const today = await this.today(userId, deviceTimeZone);
       if (!today || today.status !== 'scheduled' || !today.planId || !today.planDay?.id) {
         throw new NotFoundException('No workout session available to start');
       }
@@ -498,35 +517,31 @@ export class WorkoutsService {
     const summarySnapshot = {
       planId: plan.id,
       planName: plan.name,
-      durationWeeks: plan.durationWeeks,
-      completedWorkoutSessions: completedSessions.length,
-      totalScheduledWorkouts,
-      completedSessionIds: completedSessions.map((item) => item.id),
       completedAt: completedAt.toISOString(),
+      completedBySessionId: session.id,
+      totalScheduledWorkouts,
+      completedSessions: completedSessions.length,
     };
 
-    await tx.workoutPlan.update({
-      where: { id: plan.id },
-      data: { status: 'completed', isActive: false },
-    });
+    await tx.workoutPlan.update({ where: { id: plan.id }, data: { status: 'completed', completedAt } });
+    await tx.workoutPlanArchive.create({ data: { userId, planId: plan.id, snapshot: summarySnapshot as any } });
 
-    const existingArchive = await tx.planCompletionArchive.findFirst({
-      where: { userId, planId: plan.id },
-      select: { id: true },
-    });
+    return { planCompleted: true, archiveCreated: true };
+  }
 
-    if (!existingArchive) {
-      await tx.planCompletionArchive.create({
-        data: {
-          userId,
-          planId: plan.id,
-          completedAt,
-          summarySnapshot,
-        },
+  async complete(userId: string, workoutSessionId: string) {
+    const session = await this.prisma.workoutSession.findFirst({ where: { id: workoutSessionId, userId }, include: { plan: true } });
+    if (!session) throw new NotFoundException();
+    if (session.status === 'completed') return { success: true };
+
+    return this.prisma.$transaction(async (tx) => {
+      const completedSession = await tx.workoutSession.update({
+        where: { id: workoutSessionId },
+        data: { status: 'completed', completedAt: new Date(), actualDate: session.actualDate ?? new Date() },
       });
-      return { planCompleted: true, archiveCreated: true };
-    }
 
-    return { planCompleted: true, archiveCreated: false };
+      const planResult = session.planId ? await this.finalizePlanIfNeeded(tx, userId, completedSession as any) : { planCompleted: false, archiveCreated: false };
+      return { success: true, planResult };
+    });
   }
 }
