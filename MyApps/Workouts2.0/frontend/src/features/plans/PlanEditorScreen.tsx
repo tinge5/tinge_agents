@@ -465,7 +465,7 @@ export function PlanEditorScreen() {
                   <Pressable onPress={addDay} style={{ backgroundColor: theme.colors.surfaceAlt, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12 }}>
                     <Text style={{ fontWeight: '700', color: theme.colors.primary }}>Add Day</Text>
                   </Pressable>
-                  <Pressable
+                  <Pressable /*
                     onPress={() => {
                       if (!allDays.length) return;
                       const day = allDays[activeDayIndex] ?? allDays[0];
@@ -482,7 +482,8 @@ export function PlanEditorScreen() {
                           },
                         ],
                       );
-                    }}
+                    }}*/
+                    onPress={() => removeDayAtIndex(activeDayIndex)}
                     style={{ backgroundColor: '#3b1d1d', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12 }}
                   >
                     <Text style={{ fontWeight: '700', color: theme.colors.danger }}>Delete Day</Text>
@@ -547,6 +548,7 @@ export function PlanEditorScreen() {
               ))}
             </View>
            <Pressable onPress={() => saveMutation.mutate()} style={({ pressed }) => ({ backgroundColor: pressed ? theme.colors.primaryDark : theme.colors.primary, padding: 14, borderRadius: 12 })}><Text style={{ color: 'white', textAlign: 'center', fontWeight: '700' }}>Save Plan</Text></Pressable>
+
           </>
         ) : (
           <>
