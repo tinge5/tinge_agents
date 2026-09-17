@@ -18,6 +18,8 @@ import {
 } from '@/shared/api/client';
 import { theme } from '@/shared/theme';
 
+const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'day' | 'plan'; title: string; message: string } | null>(null);
+
 const DAYS_PER_WEEK = 7;
 const DAY_OF_WEEK_OPTIONS = [
   { label: 'Monday', value: 1 },
@@ -276,7 +278,13 @@ function PlanCard({
             <Text style={{ color: theme.colors.text, fontWeight: '700' }}>Deactivate</Text>
           </Pressable>
         )}
-        <Pressable onPress={() => onDelete(plan)} style={{ backgroundColor: '#3b1d1d', padding: 12, borderRadius: 12 }}>
+        <Pressable onPress={() => {
+          setDeleteConfirm({
+            type: 'plan',
+            title: 'Delete Plan?',
+            message: `This will permanently delete the entire plan "${plan.name}". This cannot be undone.`,
+          });
+        }} style={{ backgroundColor: '#3b1d1d', padding: 12, borderRadius: 12 }}>
           <Text style={{ color: theme.colors.danger, fontWeight: '700' }}>Delete</Text>
         </Pressable>
       </View>
@@ -483,9 +491,17 @@ export function PlanEditorScreen() {
                         ],
                       );
                     }}*/
-                    onPress={() => removeDayAtIndex(activeDayIndex)}
-                    style={{ backgroundColor: '#3b1d1d', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12 }}
-                  >
+                    onPress={() => {
+                            if (!allDays.length) return;
+                            const day = allDays[activeDayIndex] ?? allDays[0];
+                            const label = day.title?.trim() || `Day ${activeDayIndex + 1}`;
+                            setDeleteConfirm({
+                              type: 'day',
+                              title: 'Delete Day?',
+                              message: `This will permanently delete ${label} and all exercises in it. This cannot be undone.`,
+                            });
+                          }}
+                          >
                     <Text style={{ fontWeight: '700', color: theme.colors.danger }}>Delete Day</Text>
                   </Pressable>
                 </View>
