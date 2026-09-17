@@ -445,6 +445,7 @@ const [deleteConfirm, setDeleteConfirm] = useState<{
   const allDays = safeArray<PlanDay>(draft.days);
 
   return (
+    <>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 20, gap: 16, backgroundColor: theme.colors.background, flexGrow: 1 }}>
       <Text style={{ fontSize: 28, fontWeight: '800', color: theme.colors.text }}>Plans</Text>
       <Text style={{ color: theme.colors.textMuted }}>Use the New Plan action to start a fresh plan. Edit existing plans from the list below.</Text>
@@ -603,5 +604,96 @@ const [deleteConfirm, setDeleteConfirm] = useState<{
         )}
       </View>
     </ScrollView>
-  );
+
+    {deleteConfirm && (
+      <View
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.55)',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000,
+        }}
+      >
+        <View
+          style={{
+            width: '85%',
+            maxWidth: 420,
+            backgroundColor: theme.colors.surface,
+            borderRadius: 16,
+            padding: 24,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 20,
+              fontWeight: '700',
+              color: theme.colors.text,
+              marginBottom: 10,
+            }}
+          >
+            {deleteConfirm.title}
+          </Text>
+
+          <Text
+            style={{
+              fontSize: 15,
+              color: theme.colors.text,
+              marginBottom: 24,
+            }}
+          >
+            {deleteConfirm.message}
+          </Text>
+
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'flex-end',
+              gap: 12,
+            }}
+          >
+            <Pressable
+              onPress={() => setDeleteConfirm(null)}
+              style={{
+                padding: 12,
+                borderRadius: 10,
+                backgroundColor: theme.colors.surfaceAlt,
+              }}
+            >
+              <Text style={{ fontWeight: '700', color: theme.colors.text }}>
+                Cancel
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => {
+                if (deleteConfirm.type === 'day') {
+                  removeDayAtIndex(activeDayIndex);
+                } else if (deleteConfirm.type === 'plan' && deleteConfirm.planId) {
+                  deleteMutation.mutate(deleteConfirm.planId);
+                }
+
+                setDeleteConfirm(null);
+              }}
+              style={{
+                padding: 12,
+                borderRadius: 10,
+                backgroundColor: theme.colors.danger,
+              }}
+            >
+              <Text style={{ fontWeight: '700', color: 'white' }}>
+                Delete
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    )}
+
+  </>
+);
 }
