@@ -18,8 +18,6 @@ import {
 } from '@/shared/api/client';
 import { theme } from '@/shared/theme';
 
-const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'day' | 'plan'; title: string; message: string } | null>(null);
-
 const DAYS_PER_WEEK = 7;
 const DAY_OF_WEEK_OPTIONS = [
   { label: 'Monday', value: 1 },
@@ -278,13 +276,7 @@ function PlanCard({
             <Text style={{ color: theme.colors.text, fontWeight: '700' }}>Deactivate</Text>
           </Pressable>
         )}
-        <Pressable onPress={() => {
-          setDeleteConfirm({
-            type: 'plan',
-            title: 'Delete Plan?',
-            message: `This will permanently delete the entire plan "${plan.name}". This cannot be undone.`,
-          });
-        }} style={{ backgroundColor: '#3b1d1d', padding: 12, borderRadius: 12 }}>
+        <Pressable onPress={() => onDelete(plan)} style={{ backgroundColor: '#3b1d1d', padding: 12, borderRadius: 12 }}>
           <Text style={{ color: theme.colors.danger, fontWeight: '700' }}>Delete</Text>
         </Pressable>
       </View>
@@ -363,6 +355,12 @@ function getPreviewedDays(plan: any, weekIndex: number) {
 }
 
 export function PlanEditorScreen() {
+const [deleteConfirm, setDeleteConfirm] = useState<{
+  type: 'day' | 'plan';
+  title: string;
+  message: string;
+  planId?: string;
+} | null>(null);  // other hooks...
   const queryClient = useQueryClient();
   const { data, isLoading, isError, error } = useQuery({ queryKey: ['plans'], queryFn: getPlans });
   const [draft, setDraft] = useState<any>(defaultDraft());
@@ -451,7 +449,12 @@ export function PlanEditorScreen() {
       <Text style={{ fontSize: 28, fontWeight: '800', color: theme.colors.text }}>Plans</Text>
       <Text style={{ color: theme.colors.textMuted }}>Use the New Plan action to start a fresh plan. Edit existing plans from the list below.</Text>
       <Pressable onPress={resetDraft} style={{ backgroundColor: theme.colors.surfaceAlt, padding: 12, borderRadius: 12, alignSelf: 'flex-start' }}><Text style={{ fontWeight: '700', color: theme.colors.text }}>New Plan</Text></Pressable>
-      {isLoading ? <View style={{ paddingVertical: 40 }}><ActivityIndicator color={theme.colors.primary} /></View> : isError ? <Text style={{ color: theme.colors.danger }}>{(error as Error)?.message ?? 'Unable to load plans'}</Text> : plans.length === 0 ? <View style={{ backgroundColor: theme.colors.surface, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: theme.colors.border }}><Text style={{ fontWeight: '700', color: theme.colors.text }}>No plans yet</Text><Text style={{ color: theme.colors.text }}>Create your first workout plan below.</Text></View> : plans.map((plan) => <PlanCard key={plan.id} plan={plan} onView={startView} onEdit={startEdit} onActivate={(p) => activateMutation.mutate(p.id)} onDeactivate={(p) => deactivateMutation.mutate(p.id)} onDelete={(p) => Alert.alert('Delete plan?', `This will permanently delete "${p.name}" and all of its workout days. This cannot be undone.`, [{ text: 'Cancel', style: 'cancel' }, { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate(p.id) }])} />)}
+      {isLoading ? <View style={{ paddingVertical: 40 }}><ActivityIndicator color={theme.colors.primary} /></View> : isError ? <Text style={{ color: theme.colors.danger }}>{(error as Error)?.message ?? 'Unable to load plans'}</Text> : plans.length === 0 ? <View style={{ backgroundColor: theme.colors.surface, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: theme.colors.border }}><Text style={{ fontWeight: '700', color: theme.colors.text }}>No plans yet</Text><Text style={{ color: theme.colors.text }}>Create your first workout plan below.</Text></View> : plans.map((plan) => <PlanCard key={plan.id} plan={plan} onView={startView} onEdit={startEdit} onActivate={(p) => activateMutation.mutate(p.id)} onDeactivate={(p) => deactivateMutation.mutate(p.id)} onDelete={(p) => setDeleteConfirm({
+  type: 'plan',
+  title: 'Delete Plan?',
+  message: `This will permanently delete "${p.name}" and all of its workout days. This cannot be undone.`,
+  planId: p.id,
+})} />)}
       <View style={{ backgroundColor: theme.colors.surface, padding: 16, borderRadius: 16, gap: 12, borderWidth: 1, borderColor: theme.colors.border }}>
         <Text style={{ fontSize: 20, fontWeight: '700', color: theme.colors.text }}>{viewMode === 'view' ? 'View Plan' : title}</Text>
         {viewMode === 'edit' ? (
@@ -491,17 +494,20 @@ export function PlanEditorScreen() {
                         ],
                       );
                     }}*/
-                    onPress={() => {
-                            if (!allDays.length) return;
-                            const day = allDays[activeDayIndex] ?? allDays[0];
-                            const label = day.title?.trim() || `Day ${activeDayIndex + 1}`;
-                            setDeleteConfirm({
-                              type: 'day',
-                              title: 'Delete Day?',
-                              message: `This will permanently delete ${label} and all exercises in it. This cannot be undone.`,
-                            });
-                          }}
-                          >
+                      onPress={() => {
+                          if (!allDays.length) return;
+
+                          const day = allDays[activeDayIndex] ?? allDays[0];
+                          const label = day.title?.trim() || `Day ${activeDayIndex + 1}`;
+
+                          setDeleteConfirm({
+                            type: 'day',
+                            title: 'Delete Day?',
+                            message: `This will permanently delete ${label} and all exercises in it. This cannot be undone.`,
+                          });
+                        }}
+                      style={{ backgroundColor: '#3b1d1d', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12 }}
+                  >
                     <Text style={{ fontWeight: '700', color: theme.colors.danger }}>Delete Day</Text>
                   </Pressable>
                 </View>
