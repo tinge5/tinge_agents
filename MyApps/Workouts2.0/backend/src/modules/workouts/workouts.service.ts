@@ -120,6 +120,29 @@ function getScheduledWorkoutCount(plan: {
   }).length;
 }
 
+function getDeviceLocalDayInfo(deviceTimeZone?: string) {
+  const utcNow = new Date();
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: deviceTimeZone,
+    weekday: 'long',
+    hour12: false,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+  const parts = formatter.formatToParts(utcNow).reduce<Record<string, string>>((acc, part) => {
+    if (part.type !== 'literal') acc[part.type] = part.value;
+    return acc;
+  }, {});
+  const weekday = parts.weekday;
+  const dayIndex = weekday ? ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].indexOf(weekday) : utcNow.getDay();
+  const deviceLocalTime = formatter.format(utcNow);
+  return { utcNow, deviceLocalTime, dayIndex };
+}
+
 @Injectable()
 export class WorkoutsService {
   constructor(private prisma: PrismaService) {}
@@ -221,7 +244,7 @@ export class WorkoutsService {
     };
   }
 
-  async today(userId: string) {
+  async today(userId: string, deviceTimeZone?: string) {
     const plan = await this.prisma.workoutPlan.findFirst({
       where: { userId, isActive: true },
       include: { days: { include: { exercises: true } } },
@@ -230,10 +253,18 @@ export class WorkoutsService {
     if (!plan) return { status: 'no_active_plan' };
 
     const weekIndex = calculateWeekIndex(plan as any);
-    const dow = new Date().getDay();
+    const { utcNow, deviceLocalTime, dayIndex } = getDeviceLocalDayInfo(deviceTimeZone);
+    // Temporary verification log for Render logs
+    // eslint-disable-next-line no-console
+    console.log('[workouts.today timezone check]', {
+      deviceTimeZone: deviceTimeZone ?? null,
+      currentUtcTime: utcNow.toISOString(),
+      deviceLocalTime,
+      calculatedDayOfWeek: dayIndex,
+    });
     const day = plan.days
       .filter((d) => Number(d.weekIndex ?? 0) === 0 || Number(d.weekIndex ?? 0) === weekIndex)
-      .find((d) => Number(d.dayOfWeek) === dow);
+      .find((d) => Number(d.dayOfWeek) === dayIndex);
 
     if (!day) return { status: 'no_schedule', planId: plan.id, currentWeekIndex: weekIndex, plan };
 
@@ -497,65 +528,5 @@ export class WorkoutsService {
     }
 
     return { planCompleted: true, archiveCreated: false };
-  }
-
-  async complete(userId: string, workoutSessionId: string) {
-    const session = await this.prisma.workoutSession.findFirst({
-      where: { id: workoutSessionId, userId },
-      include: { setResults: true },
-    });
-    if (!session) throw new NotFoundException();
-    if (session.status === 'completed') return session;
-
-    const completedAt = new Date();
-    await this.prisma.$transaction(async (tx) => {
-      await tx.workoutSession.update({ where: { id: workoutSessionId }, data: { status: 'completed', completedAt, actualDate: session.actualDate || completedAt } });
-
-      const existingHistory = await tx.exerciseHistoryEntry.findMany({ where: { workoutSessionId } });
-      if (existingHistory.length > 0) return;
-
-      const setResultsByExercise = new Map<string, typeof session.setResults>();
-      for (const setResult of session.setResults) {
-        const key = `${normalizeExerciseCanonicalName(setResult.exerciseName)}::${setResult.exerciseId ?? ''}`;
-        const list = setResultsByExercise.get(key) ?? [];
-        list.push(setResult);
-        setResultsByExercise.set(key, list);
-      }
-
-      for (const [key, setResults] of setResultsByExercise.entries()) {
-        const [exerciseName, exerciseId] = key.split('::');
-        const sets = setResults.length;
-        const reps = setResults[0]?.reps ?? 0;
-        const weight = setResults[0]?.weight ?? 0;
-        const volume = setResults.reduce((sum, row) => sum + row.reps * row.weight, 0);
-        const avgRpe = null;
-
-        await tx.exerciseHistoryEntry.create({
-          data: {
-            userId,
-            planId: session.planId,
-            planDayId: session.planDayId,
-            exerciseName,
-            exerciseId: exerciseId || null,
-            workoutSessionId,
-            date: completedAt,
-            sets,
-            reps,
-            weight,
-            volume,
-            rpe: avgRpe,
-          },
-        });
-      }
-
-      await this.finalizePlanIfNeeded(tx, userId, {
-        id: session.id,
-        planId: session.planId,
-        planDayId: session.planDayId,
-        weekIndex: session.weekIndex,
-      });
-    });
-
-    return { success: true };
   }
 }

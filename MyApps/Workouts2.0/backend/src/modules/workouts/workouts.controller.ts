@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Param, Post, Req, UseGuards } from '@nestjs/common';
 import { IsNumber, IsString, Min } from 'class-validator';
 import { JwtAuthGuard } from '../../shared/auth/jwt-auth.guard';
 import { WorkoutsService } from './workouts.service';
@@ -26,8 +26,8 @@ export class WorkoutsController {
   constructor(private readonly workoutsService: WorkoutsService) {}
 
   @Get('today')
-  today(@Req() req: any) {
-    return this.workoutsService.today(req.user.sub);
+  today(@Req() req: any, @Headers('x-device-timezone') deviceTimeZone?: string) {
+    return this.workoutsService.today(req.user.sub, deviceTimeZone);
   }
 
   @Get('current')
