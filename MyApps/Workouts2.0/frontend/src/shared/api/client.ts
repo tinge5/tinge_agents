@@ -29,8 +29,7 @@ export async function restoreSessionFromStorage() { const raw = await AsyncStora
 export async function signOut() { try { const { refreshToken } = await readStoredTokens(); if (refreshToken) { await request('/auth/logout', { method: 'POST', body: JSON.stringify({ refreshToken }) }, false).catch(() => undefined); } } finally { await persistTokens(null); } }
 export async function getMe() { return request<MeProfile>('/me'); }
 export async function getTodayWorkout() { return request<TodayWorkout>('/workouts/today', { headers: { 'x-device-timezone': getDeviceTimeZone() } }); }
-export async function startWorkoutSession() { return request<TodayWorkout>('/workouts/start'); }
-export async function saveWorkoutSetResult(workoutSessionId: string, input: WorkoutSetResultInput) { return request<void>(`/workouts/${workoutSessionId}/set-results`, { method: 'POST', body: JSON.stringify(input) }); }
+export async function startWorkoutSession() { return request<TodayWorkout>('/workouts/start', { method: 'POST', headers: { 'x-device-timezone': Intl.DateTimeFormat().resolvedOptions().timeZone } }); }export async function saveWorkoutSetResult(workoutSessionId: string, input: WorkoutSetResultInput) { return request<void>(`/workouts/${workoutSessionId}/set-results`, { method: 'POST', body: JSON.stringify(input) }); }
 export async function completeWorkoutSession(workoutSessionId: string) { return request<void>(`/workouts/${workoutSessionId}/complete`, { method: 'POST' }); }
 export async function getPlans() { return request<Plan[]>('/plans'); }
 export async function createPlan(input: CreatePlanInput) { return request<Plan>('/plans', { method: 'POST', body: JSON.stringify(input) }); }
