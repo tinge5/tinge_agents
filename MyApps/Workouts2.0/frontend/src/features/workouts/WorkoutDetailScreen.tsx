@@ -224,27 +224,7 @@ export function WorkoutDetailScreen({ route, navigation }: any) {
                 </View>
               ) : null}
 
-              {exercise.previousPerformance ? (
-                <Text style={{ fontWeight: '700', color: theme.colors.text }}>Previous Performance</Text>
-                  ) : (
-                    <>
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
-                        <Text style={{ fontWeight: '600', color: theme.colors.text }}>Sets</Text>
-                        <Text style={{ color: theme.colors.text }}>{exercise.previousPerformance?.sets != null ? String(exercise.previousPerformance.sets) : '—'}</Text>
-                      </View>
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
-                        <Text style={{ fontWeight: '600', color: theme.colors.text }}>Reps</Text>
-                        <Text style={{ color: theme.colors.text }}>{exercise.previousPerformance?.reps != null ? String(exercise.previousPerformance.reps) : '—'}</Text>
-                      </View>
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
-                        <Text style={{ fontWeight: '600', color: theme.colors.text }}>Weight</Text>
-                        <Text style={{ color: theme.colors.text }}>{exercise.previousPerformance?.weight != null ? String(exercise.previousPerformance.weight) : '—'}</Text>
-                      </View>
-                    </>
-                  )}
-                </View>
-              ) : null}
-
+      
               {isExpanded && !completedState ? (
                 <View style={{ gap: 10 }}>
                   {Array.from({ length: plannedSets }, (_, index) => {
