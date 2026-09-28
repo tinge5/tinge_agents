@@ -10,10 +10,19 @@ type WorkoutExercise = {
   reps: number | null;
   weight: number | null;
   exerciseId?: string | null;
-  previousPerformance?: { sets?: number | null; reps?: number | null; weight?: number | null } | null;
+  previousPerformance?:
+    | {
+        sets?: number | null;
+        reps?: number | null;
+        weight?: number | null;
+        setResults?: Array<{ setNumber?: number | null; reps?: number | null; weight?: number | null }> | null;
+      }
+    | null;
+  suggestedTarget?: { sets: number | null; reps: number | null; weight: number | null } | null;
 };
 
-type WorkoutInputState = Record<string, { sets: string; reps: string; weight: string }>;
+type WorkoutInputState = Record<string, Array<{ reps: string; weight: string }>>;
+type ExpandedState = Record<string, boolean>;
 
 function toNumberOrNull(value: string) {
   const trimmed = value.trim();
@@ -24,15 +33,29 @@ function toNumberOrNull(value: string) {
 
 function buildInitialInputs(exercises: WorkoutExercise[]): WorkoutInputState {
   return Object.fromEntries(
-    exercises.map(exercise => [
-      exercise.name,
-      {
-        sets: exercise.sets != null ? String(exercise.sets) : '',
-        reps: exercise.reps != null ? String(exercise.reps) : '',
-        weight: exercise.weight != null ? String(exercise.weight) : '',
-      },
-    ])
+    exercises.map(exercise => {
+      const plannedSets = Math.max(0, exercise.sets ?? 0);
+      const previousSetResults = exercise.previousPerformance?.setResults ?? [];
+      const nextValues = Array.from({ length: plannedSets }, (_, index) => {
+        const previousSet = previousSetResults[index];
+        return {
+          reps: previousSet?.reps != null ? String(previousSet.reps) : exercise.previousPerformance?.reps != null ? String(exercise.previousPerformance.reps) : exercise.reps != null ? String(exercise.reps) : '',
+          weight: previousSet?.weight != null ? String(previousSet.weight) : exercise.previousPerformance?.weight != null ? String(exercise.previousPerformance.weight) : exercise.weight != null ? String(exercise.weight) : '',
+        };
+      });
+      return [exercise.name, nextValues];
+    })
   );
+}
+
+function buildInitialExpandedState(exercises: WorkoutExercise[]): ExpandedState {
+  return Object.fromEntries(exercises.map(exercise => [exercise.name, false]));
+}
+
+function formatExerciseHeader(exercise: WorkoutExercise) {
+  const sets = exercise.sets != null ? String(exercise.sets) : '—';
+  const reps = exercise.reps != null ? String(exercise.reps) : '—';
+  return `${exercise.name} — ${sets} × ${reps}`;
 }
 
 export function WorkoutDetailScreen({ route, navigation }: any) {
@@ -42,6 +65,7 @@ export function WorkoutDetailScreen({ route, navigation }: any) {
   const routeSessionId: string | undefined = route?.params?.workoutSessionId ?? workout?.workoutSessionId;
   const exercises = useMemo<WorkoutExercise[]>(() => workout?.exercises ?? [], [workout?.exercises]);
   const [inputs, setInputs] = useState<WorkoutInputState>(() => buildInitialInputs(exercises));
+  const [expanded, setExpanded] = useState<ExpandedState>(() => buildInitialExpandedState(exercises));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompleted, setIsCompleted] = useState(workout?.status === 'completed');
   const [activeSessionId, setActiveSessionId] = useState<string | undefined>(routeSessionId);
@@ -57,17 +81,17 @@ export function WorkoutDetailScreen({ route, navigation }: any) {
   }, [reviewOnly, workout?.status]);
 
   useEffect(() => {
-    const next = buildInitialInputs(exercises);
     setInputs(prev => {
+      const next = buildInitialInputs(exercises);
       const prevKeys = Object.keys(prev);
       const nextKeys = Object.keys(next);
       const sameLength = prevKeys.length === nextKeys.length;
-      const sameValues = sameLength && nextKeys.every(key => {
-        const current = prev[key];
-        const incoming = next[key];
-        return current?.sets === incoming.sets && current?.reps === incoming.reps && current?.weight === incoming.weight;
-      });
+      const sameValues = sameLength && nextKeys.every(key => JSON.stringify(prev[key]) === JSON.stringify(next[key]));
       return sameValues ? prev : next;
+    });
+    setExpanded(prev => {
+      const next = buildInitialExpandedState(exercises);
+      return Object.keys(prev).length === Object.keys(next).length ? { ...next, ...prev } : next;
     });
   }, [exercises]);
 
@@ -92,13 +116,18 @@ export function WorkoutDetailScreen({ route, navigation }: any) {
       }
 
       for (const exercise of exercises) {
-        const input = inputs[exercise.name] ?? { sets: '', reps: '', weight: '' };
-        await saveWorkoutSetResult(resolvedSessionId, {
-          exerciseName: exercise.name,
-          sets: toNumberOrNull(input.sets),
-          reps: toNumberOrNull(input.reps),
-          weight: toNumberOrNull(input.weight),
-        });
+        const plannedSets = Math.max(0, exercise.sets ?? 0);
+        const exerciseInputs = inputs[exercise.name] ?? [];
+        for (let index = 0; index < plannedSets; index += 1) {
+          const input = exerciseInputs[index] ?? { reps: '', weight: '' };
+          await saveWorkoutSetResult(resolvedSessionId, {
+            exerciseName: exercise.name,
+            exerciseId: exercise.exerciseId ?? null,
+            setNumber: index + 1,
+            reps: toNumberOrNull(input.reps),
+            weight: toNumberOrNull(input.weight),
+          });
+        }
       }
 
       return completeWorkoutSession(resolvedSessionId);
@@ -139,36 +168,114 @@ export function WorkoutDetailScreen({ route, navigation }: any) {
 
       <View style={{ gap: 10 }}>
         {exercises.map(exercise => {
-          const value = inputs[exercise.name] ?? { sets: '', reps: '', weight: '' };
-          const displaySets = completedState ? exercise.previousPerformance?.sets ?? null : null;
-          const displayReps = completedState ? exercise.previousPerformance?.reps ?? null : null;
-          const displayWeight = completedState ? exercise.previousPerformance?.weight ?? null : null;
+          const value = inputs[exercise.name] ?? [];
+          const isExpanded = expanded[exercise.name] ?? false;
+          const previousPerformance = exercise.previousPerformance;
+          const previousSetResults = previousPerformance?.setResults ?? [];
+          const plannedSets = Math.max(0, exercise.sets ?? 0);
+          const displayPreviousSets = previousSetResults.length > 0
+            ? previousSetResults
+            : plannedSets > 0
+              ? Array.from({ length: plannedSets }, (_, index) => ({
+                  setNumber: index + 1,
+                  reps: previousPerformance?.reps ?? null,
+                  weight: previousPerformance?.weight ?? null,
+                }))
+              : [];
 
           return (
-            <View key={exercise.name} style={{ borderWidth: 1, borderColor: theme.colors.border, padding: 14, borderRadius: 16, gap: 8, backgroundColor: theme.colors.surface }}>
-              <Text style={{ fontSize: 18, fontWeight: '700', color: theme.colors.text }}>{exercise.name}</Text>
-              {completedState ? (
-                <View style={{ gap: 8 }}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
-                    <Text style={{ fontWeight: '600', color: theme.colors.text }}>Sets</Text>
-                    <Text style={{ color: theme.colors.text }}>{displaySets != null ? String(displaySets) : '—'}</Text>
-                  </View>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
-                    <Text style={{ fontWeight: '600', color: theme.colors.text }}>Reps</Text>
-                    <Text style={{ color: theme.colors.text }}>{displayReps != null ? String(displayReps) : '—'}</Text>
-                  </View>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
-                    <Text style={{ fontWeight: '600', color: theme.colors.text }}>Weight</Text>
-                    <Text style={{ color: theme.colors.text }}>{displayWeight != null ? String(displayWeight) : '—'}</Text>
-                  </View>
+            <View key={exercise.name} style={{ borderWidth: 1, borderColor: theme.colors.border, padding: 14, borderRadius: 16, gap: 10, backgroundColor: theme.colors.surface }}>
+              <Pressable onPress={() => setExpanded(prev => ({ ...prev, [exercise.name]: !isExpanded }))} style={{ gap: 6 }}>
+                <Text style={{ fontSize: 18, fontWeight: '700', color: theme.colors.text }}>{formatExerciseHeader(exercise)}</Text>
+                <Text style={{ color: theme.colors.textMuted }}>{isExpanded ? 'Tap to collapse' : 'Tap to expand sets'}</Text>
+              </Pressable>
+
+              {exercise.suggestedTarget ? (
+                <View style={{ gap: 4 }}>
+                  <Text style={{ fontWeight: '700', color: theme.colors.text }}>Suggested Target</Text>
+                  <Text style={{ color: theme.colors.text }}>{`${exercise.suggestedTarget.sets ?? '—'} × ${exercise.suggestedTarget.reps ?? '—'}${exercise.suggestedTarget.weight != null ? ` @ ${exercise.suggestedTarget.weight}` : ''}`}</Text>
                 </View>
-              ) : (
-                <>
-                  <TextInput value={value.sets} onChangeText={text => setInputs(prev => ({ ...prev, [exercise.name]: { ...prev[exercise.name], sets: text } }))} placeholder='Sets' placeholderTextColor={theme.colors.textMuted} keyboardType='numeric' style={{ borderWidth: 1, padding: 12, borderRadius: 12, borderColor: theme.colors.border, backgroundColor: theme.colors.background, color: theme.colors.text, fontSize: 16 }} />
-                  <TextInput value={value.reps} onChangeText={text => setInputs(prev => ({ ...prev, [exercise.name]: { ...prev[exercise.name], reps: text } }))} placeholder='Reps' placeholderTextColor={theme.colors.textMuted} keyboardType='numeric' style={{ borderWidth: 1, padding: 12, borderRadius: 12, borderColor: theme.colors.border, backgroundColor: theme.colors.background, color: theme.colors.text, fontSize: 16 }} />
-                  <TextInput value={value.weight} onChangeText={text => setInputs(prev => ({ ...prev, [exercise.name]: { ...prev[exercise.name], weight: text } }))} placeholder='Weight' placeholderTextColor={theme.colors.textMuted} keyboardType='numeric' style={{ borderWidth: 1, padding: 12, borderRadius: 12, borderColor: theme.colors.border, backgroundColor: theme.colors.background, color: theme.colors.text, fontSize: 16 }} />
-                </>
-              )}
+              ) : null}
+
+              {previousSetResults.length > 0 || previousPerformance ? (
+                <View style={{ gap: 8 }}>
+                  <Text style={{ fontWeight: '700', color: theme.colors.text }}>Previous Performance</Text>
+                  {displayPreviousSets.length > 0 ? (
+                    displayPreviousSets.map((set, index) => (
+                      <View key={`${exercise.name}-previous-${set.setNumber ?? index + 1}`} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
+                        <Text style={{ fontWeight: '600', color: theme.colors.text }}>Set {set.setNumber ?? index + 1}</Text>
+                        <Text style={{ color: theme.colors.text }}>
+                          {set.reps != null || set.weight != null
+                            ? `${set.reps != null ? String(set.reps) : '—'} reps${set.weight != null ? `, ${String(set.weight)}` : ''}`
+                            : '—'}
+                        </Text>
+                      </View>
+                    ))
+                  ) : (
+                    <>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
+                        <Text style={{ fontWeight: '600', color: theme.colors.text }}>Sets</Text>
+                        <Text style={{ color: theme.colors.text }}>{previousPerformance?.sets != null ? String(previousPerformance.sets) : '—'}</Text>
+                      </View>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
+                        <Text style={{ fontWeight: '600', color: theme.colors.text }}>Reps</Text>
+                        <Text style={{ color: theme.colors.text }}>{previousPerformance?.reps != null ? String(previousPerformance.reps) : '—'}</Text>
+                      </View>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
+                        <Text style={{ fontWeight: '600', color: theme.colors.text }}>Weight</Text>
+                        <Text style={{ color: theme.colors.text }}>{previousPerformance?.weight != null ? String(previousPerformance.weight) : '—'}</Text>
+                      </View>
+                    </>
+                  )}
+                </View>
+              ) : null}
+
+              {isExpanded && !completedState ? (
+                <View style={{ gap: 10 }}>
+                  {Array.from({ length: plannedSets }, (_, index) => {
+                    const setValue = value[index] ?? { reps: '', weight: '' };
+                    return (
+                      <View key={`${exercise.name}-set-${index + 1}`} style={{ borderWidth: 1, borderColor: theme.colors.border, borderRadius: 12, padding: 12, gap: 8, backgroundColor: theme.colors.background }}>
+                        <Text style={{ fontWeight: '700', color: theme.colors.text }}>Set {index + 1}</Text>
+                        <View style={{ flexDirection: 'row', gap: 10 }}>
+                          <TextInput
+                            value={setValue.reps}
+                            onChangeText={text =>
+                              setInputs(prev => ({
+                                ...prev,
+                                [exercise.name]: Array.from({ length: plannedSets }, (_, setIndex) => prev[exercise.name]?.[setIndex] ?? { reps: '', weight: '' }).map((item, setIndex) =>
+                                  setIndex === index ? { ...item, reps: text } : item
+                                ),
+                              }))
+                            }
+                            placeholder='Reps'
+                            placeholderTextColor={theme.colors.textMuted}
+                            keyboardType='numeric'
+                            style={{ flex: 1, borderWidth: 1, padding: 12, borderRadius: 12, borderColor: theme.colors.border, backgroundColor: theme.colors.surface, color: theme.colors.text, fontSize: 16 }}
+                          />
+                          <TextInput
+                            value={setValue.weight}
+                            onChangeText={text =>
+                              setInputs(prev => ({
+                                ...prev,
+                                [exercise.name]: Array.from({ length: plannedSets }, (_, setIndex) => prev[exercise.name]?.[setIndex] ?? { reps: '', weight: '' }).map((item, setIndex) =>
+                                  setIndex === index ? { ...item, weight: text } : item
+                                ),
+                              }))
+                            }
+                            placeholder='Weight'
+                            placeholderTextColor={theme.colors.textMuted}
+                            keyboardType='numeric'
+                            style={{ flex: 1, borderWidth: 1, padding: 12, borderRadius: 12, borderColor: theme.colors.border, backgroundColor: theme.colors.surface, color: theme.colors.text, fontSize: 16 }}
+                          />
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              ) : null}
+
+              {completedState ? <Text style={{ color: theme.colors.textMuted }}>Workout completed. Set inputs are locked for review.</Text> : null}
             </View>
           );
         })}

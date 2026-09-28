@@ -51,6 +51,16 @@ export type Plan = {
 };
 export type CreatePlanInput = { name: string; goals: string[]; progressiveOverloadEnabled: boolean; isActive?: boolean; durationWeeks?: number; startDate?: string | null; days: PlanDay[] };
 export type UpdatePlanInput = Partial<CreatePlanInput>;
+export type WorkoutSetResultInput = { exerciseName: string; exerciseId?: string | null; setNumber: number; reps: number | null; weight: number | null };
+export type WorkoutSetResultHistory = {
+  id: string;
+  exerciseName: string;
+  exerciseId?: string | null;
+  setNumber: number;
+  reps: number;
+  weight: number;
+  completed: boolean;
+};
 export type TodayWorkout = {
   status: 'scheduled' | 'no_schedule' | 'in_progress' | 'completed' | 'no_active_plan';
   workoutSessionId?: string;
@@ -61,16 +71,22 @@ export type TodayWorkout = {
   planId?: string;
   plan?: Plan;
   planDay?: PlanDay;
-  exercises?: Array<{ name: string; sets: number | null; reps: number | null; weight: number | null; previousPerformance?: { sets: number | null; reps: number | null; weight: number | null } | null; suggestedTarget?: { sets: number | null; reps: number | null; weight: number | null } | null }>; };
-export type WorkoutSetResultInput = { exerciseName: string; sets: number | null; reps: number | null; weight: number | null };
-export type WorkoutHistorySetResult = {
-  id: string;
-  exerciseName: string;
-  exerciseId?: string | null;
-  setNumber: number;
-  reps: number;
-  weight: number;
-  completed: boolean;
+  exercises?: Array<{
+    name: string;
+    exerciseId?: string | null;
+    sets: number | null;
+    reps: number | null;
+    weight: number | null;
+    previousPerformance?:
+      | {
+          sets: number | null;
+          reps: number | null;
+          weight: number | null;
+          setResults?: Array<{ setNumber?: number | null; reps?: number | null; weight?: number | null }> | null;
+        }
+      | null;
+    suggestedTarget?: { sets: number | null; reps: number | null; weight: number | null } | null;
+  }>;
 };
 export type WorkoutHistorySession = {
   id: string;
@@ -82,7 +98,7 @@ export type WorkoutHistorySession = {
   weekIndex?: number | null;
   dayOfWeek?: number | null;
   completedAt: string;
-  setResults: WorkoutHistorySetResult[];
+  setResults: WorkoutSetResultHistory[];
 };
 
 async function readStoredTokens() { const [accessToken, refreshToken] = await Promise.all([AsyncStorage.getItem(ACCESS_TOKEN_KEY), AsyncStorage.getItem(REFRESH_TOKEN_KEY)]); return { accessToken, refreshToken }; }

@@ -134,7 +134,6 @@ export function HistoryScreen() {
             <View style={{ gap: 12 }}>
               <View style={{ gap: 2 }}>
                 <Text style={{ fontSize: 18, fontWeight: '800', color: theme.colors.text }}>{selectedGroup.title}</Text>
-                <Text style={{ color: theme.colors.textMuted }}>Unique history entry: {selectedGroup.key}</Text>
               </View>
 
               <View style={{ gap: 12 }}>
