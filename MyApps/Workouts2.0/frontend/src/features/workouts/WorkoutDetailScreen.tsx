@@ -39,8 +39,22 @@ function buildInitialInputs(exercises: WorkoutExercise[]): WorkoutInputState {
       const nextValues = Array.from({ length: plannedSets }, (_, index) => {
         const previousSet = previousSetResults[index];
         return {
-          reps: previousSet?.reps != null ? String(previousSet.reps) : exercise.previousPerformance?.reps != null ? String(exercise.previousPerformance.reps) : exercise.reps != null ? String(exercise.reps) : '',
-          weight: previousSet?.weight != null ? String(previousSet.weight) : exercise.previousPerformance?.weight != null ? String(exercise.previousPerformance.weight) : exercise.weight != null ? String(exercise.weight) : '',
+          reps:
+            previousSet?.reps != null
+              ? String(previousSet.reps)
+              : exercise.previousPerformance?.reps != null
+                ? String(exercise.previousPerformance.reps)
+                : exercise.reps != null
+                  ? String(exercise.reps)
+                  : '',
+          weight:
+            previousSet?.weight != null
+              ? String(previousSet.weight)
+              : exercise.previousPerformance?.weight != null
+                ? String(exercise.previousPerformance.weight)
+                : exercise.weight != null
+                  ? String(exercise.weight)
+                  : '',
         };
       });
       return [exercise.name, nextValues];
@@ -56,6 +70,29 @@ function formatExerciseHeader(exercise: WorkoutExercise) {
   const sets = exercise.sets != null ? String(exercise.sets) : '—';
   const reps = exercise.reps != null ? String(exercise.reps) : '—';
   return `${exercise.name} — ${sets} × ${reps}`;
+}
+
+function formatPreviousPerformanceSummary(exercise: WorkoutExercise) {
+  const previousPerformance = exercise.previousPerformance;
+  if (!previousPerformance) return null;
+
+  const previousSetResults = previousPerformance.setResults ?? [];
+  if (previousSetResults.length > 0) {
+    return previousSetResults.map((set, index) => ({
+      setNumber: set.setNumber ?? index + 1,
+      reps: set.reps,
+      weight: set.weight,
+    }));
+  }
+
+  const plannedSets = Math.max(0, exercise.sets ?? 0);
+  if (plannedSets <= 0) return [];
+
+  return Array.from({ length: plannedSets }, (_, index) => ({
+    setNumber: index + 1,
+    reps: previousPerformance.reps ?? null,
+    weight: previousPerformance.weight ?? null,
+  }));
 }
 
 export function WorkoutDetailScreen({ route, navigation }: any) {
@@ -170,18 +207,8 @@ export function WorkoutDetailScreen({ route, navigation }: any) {
         {exercises.map(exercise => {
           const value = inputs[exercise.name] ?? [];
           const isExpanded = expanded[exercise.name] ?? false;
-          const previousPerformance = exercise.previousPerformance;
-          const previousSetResults = previousPerformance?.setResults ?? [];
+          const previousSetResults = formatPreviousPerformanceSummary(exercise) ?? [];
           const plannedSets = Math.max(0, exercise.sets ?? 0);
-          const displayPreviousSets = previousSetResults.length > 0
-            ? previousSetResults
-            : plannedSets > 0
-              ? Array.from({ length: plannedSets }, (_, index) => ({
-                  setNumber: index + 1,
-                  reps: previousPerformance?.reps ?? null,
-                  weight: previousPerformance?.weight ?? null,
-                }))
-              : [];
 
           return (
             <View key={exercise.name} style={{ borderWidth: 1, borderColor: theme.colors.border, padding: 14, borderRadius: 16, gap: 10, backgroundColor: theme.colors.surface }}>
@@ -197,11 +224,11 @@ export function WorkoutDetailScreen({ route, navigation }: any) {
                 </View>
               ) : null}
 
-              {previousSetResults.length > 0 || previousPerformance ? (
+              {exercise.previousPerformance ? (
                 <View style={{ gap: 8 }}>
                   <Text style={{ fontWeight: '700', color: theme.colors.text }}>Previous Performance</Text>
-                  {displayPreviousSets.length > 0 ? (
-                    displayPreviousSets.map((set, index) => (
+                  {previousSetResults.length > 0 ? (
+                    previousSetResults.map((set, index) => (
                       <View key={`${exercise.name}-previous-${set.setNumber ?? index + 1}`} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
                         <Text style={{ fontWeight: '600', color: theme.colors.text }}>Set {set.setNumber ?? index + 1}</Text>
                         <Text style={{ color: theme.colors.text }}>
@@ -215,15 +242,15 @@ export function WorkoutDetailScreen({ route, navigation }: any) {
                     <>
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
                         <Text style={{ fontWeight: '600', color: theme.colors.text }}>Sets</Text>
-                        <Text style={{ color: theme.colors.text }}>{previousPerformance?.sets != null ? String(previousPerformance.sets) : '—'}</Text>
+                        <Text style={{ color: theme.colors.text }}>{exercise.previousPerformance?.sets != null ? String(exercise.previousPerformance.sets) : '—'}</Text>
                       </View>
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
                         <Text style={{ fontWeight: '600', color: theme.colors.text }}>Reps</Text>
-                        <Text style={{ color: theme.colors.text }}>{previousPerformance?.reps != null ? String(previousPerformance.reps) : '—'}</Text>
+                        <Text style={{ color: theme.colors.text }}>{exercise.previousPerformance?.reps != null ? String(exercise.previousPerformance.reps) : '—'}</Text>
                       </View>
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
                         <Text style={{ fontWeight: '600', color: theme.colors.text }}>Weight</Text>
-                        <Text style={{ color: theme.colors.text }}>{previousPerformance?.weight != null ? String(previousPerformance.weight) : '—'}</Text>
+                        <Text style={{ color: theme.colors.text }}>{exercise.previousPerformance?.weight != null ? String(exercise.previousPerformance.weight) : '—'}</Text>
                       </View>
                     </>
                   )}
