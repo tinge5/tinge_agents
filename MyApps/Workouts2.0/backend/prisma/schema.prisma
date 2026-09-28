@@ -44,51 +44,52 @@ model User {
 }
 
 model Session {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String
   tokenHash String
   expiresAt DateTime
   revokedAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
 
 model WorkoutPlan {
-  id                        String              @id @default(cuid())
-  userId                    String
-  name                      String
-  goals                     String[]
-  isActive                  Boolean             @default(false)
-  progressiveOverloadEnabled Boolean             @default(false)
-  status                    PlanStatus          @default(draft)
-  currentWeekIndex          Int                 @default(0)
-  durationWeeks             Int                 @default(4)
-  startDate                 DateTime?
-  createdAt                 DateTime            @default(now())
-  updatedAt                 DateTime            @updatedAt
-  user                      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  days                      WorkoutPlanDay[]
-  sessions                  WorkoutSession[]
-  archives                  PlanCompletionArchive[]
-  exerciseHistory           ExerciseHistoryEntry[]
+  id                         String                  @id @default(cuid())
+  userId                     String
+  name                       String
+  goals                      String[]
+  isActive                   Boolean                 @default(false)
+  progressiveOverloadEnabled Boolean                 @default(false)
+  status                     PlanStatus              @default(draft)
+  currentWeekIndex           Int                     @default(0)
+  durationWeeks              Int                     @default(4)
+  startDate                  DateTime?
+  createdAt                  DateTime                @default(now())
+  updatedAt                  DateTime                @updatedAt
+  user                       User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  days                       WorkoutPlanDay[]
+  sessions                   WorkoutSession[]
+  archives                   PlanCompletionArchive[]
+  exerciseHistory            ExerciseHistoryEntry[]
 
   @@index([userId, isActive])
 }
 
 model WorkoutPlanDay {
-  id         String              @id @default(cuid())
-  planId     String
-  dayOfWeek  Int
-  weekIndex  Int                 @default(0)
-  title      String
-  position   Int                 @default(0)
-  plan       WorkoutPlan         @relation(fields: [planId], references: [id], onDelete: Cascade)
-  exercises  WorkoutPlanExercise[]
-  sessions   WorkoutSession[]
-  exerciseHistory      ExerciseHistoryEntry[]
+  id              String                 @id @default(cuid())
+  planId          String
+  dayOfWeek       Int
+  weekIndex       Int                    @default(0)
+  title           String
+  position        Int                    @default(0)
+  plan            WorkoutPlan            @relation(fields: [planId], references: [id], onDelete: Cascade)
+  exercises       WorkoutPlanExercise[]
+  sessions        WorkoutSession[]
+  exerciseHistory ExerciseHistoryEntry[]
+
   @@index([planId, weekIndex, dayOfWeek])
 }
 
@@ -102,29 +103,28 @@ model WorkoutPlanExercise {
   weightTarget Float?
   order        Int            @default(0)
   notes        String?
-  planDay      WorkoutPlanDay  @relation(fields: [planDayId], references: [id], onDelete: Cascade)
+  planDay      WorkoutPlanDay @relation(fields: [planDayId], references: [id], onDelete: Cascade)
 
   @@index([planDayId])
 }
 
 model WorkoutSession {
-  id               String            @id @default(cuid())
-  userId           String
-  planId           String
-  planDayId        String
-  scheduledDate    DateTime
-  actualDate       DateTime?
-  weekIndex        Int
-  status           SessionStatus     @default(scheduled)
-  completedAt      DateTime?
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan             WorkoutPlan       @relation(fields: [planId], references: [id], onDelete: Cascade)
-  planDay          WorkoutPlanDay    @relation(fields: [planDayId], references: [id], onDelete: Cascade)
-  setResults       WorkoutSetResult[]
-  exerciseHistory  ExerciseHistoryEntry[]
-  history          WorkoutHistoryEntry[]
+  id              String                 @id @default(cuid())
+  userId          String
+  planId          String
+  planDayId       String
+  scheduledDate   DateTime
+  actualDate      DateTime?
+  weekIndex       Int
+  status          SessionStatus          @default(scheduled)
+  completedAt     DateTime?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  user            User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan            WorkoutPlan            @relation(fields: [planId], references: [id], onDelete: Cascade)
+  planDay         WorkoutPlanDay         @relation(fields: [planDayId], references: [id], onDelete: Cascade)
+  setResults      WorkoutSetResult[]
+  exerciseHistory ExerciseHistoryEntry[]
 
   @@index([userId, status])
 }
@@ -144,9 +144,9 @@ model WorkoutSetResult {
 }
 
 model WorkoutHistoryEntry {
-  id               String                 @id @default(cuid())
+  id               String                    @id @default(cuid())
   userId           String
-  workoutSessionId String                 @unique
+  workoutSessionId String                    @unique
   originalPlanId   String?
   planName         String
   workoutName      String
@@ -154,9 +154,8 @@ model WorkoutHistoryEntry {
   weekIndex        Int?
   dayOfWeek        Int?
   completedAt      DateTime
-  createdAt        DateTime               @default(now())
-  user             User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  workoutSession   WorkoutSession         @relation(fields: [workoutSessionId], references: [id], onDelete: Cascade)
+  createdAt        DateTime                  @default(now())
+  user             User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
   setResults       WorkoutHistorySetResult[]
 
   @@index([userId, completedAt])
@@ -164,14 +163,14 @@ model WorkoutHistoryEntry {
 }
 
 model WorkoutHistorySetResult {
-  id               String             @id @default(cuid())
+  id               String              @id @default(cuid())
   workoutHistoryId String
   exerciseName     String
   exerciseId       String?
   setNumber        Int
   reps             Int
   weight           Float
-  completed        Boolean            @default(true)
+  completed        Boolean             @default(true)
   workoutHistory   WorkoutHistoryEntry @relation(fields: [workoutHistoryId], references: [id], onDelete: Cascade)
 
   @@index([workoutHistoryId])
@@ -193,7 +192,7 @@ model ExerciseHistoryEntry {
   rpe              Float?
   user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   plan             WorkoutPlan    @relation(fields: [planId], references: [id], onDelete: Cascade)
-  planDay          WorkoutPlanDay  @relation(fields: [planDayId], references: [id], onDelete: Cascade)
+  planDay          WorkoutPlanDay @relation(fields: [planDayId], references: [id], onDelete: Cascade)
   workoutSession   WorkoutSession @relation(fields: [workoutSessionId], references: [id], onDelete: Cascade)
 
   @@index([userId, planId, planDayId, exerciseName])
@@ -201,25 +200,25 @@ model ExerciseHistoryEntry {
 }
 
 model PlanCompletionArchive {
-  id             String      @id @default(cuid())
-  userId         String
-  planId         String
-  completedAt    DateTime    @default(now())
+  id              String      @id @default(cuid())
+  userId          String
+  planId          String
+  completedAt     DateTime    @default(now())
   summarySnapshot Json
-  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan           WorkoutPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan            WorkoutPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
 
   @@index([userId, planId])
 }
 
 model RecommendationSnapshot {
-  id            String                 @id @default(cuid())
-  userId        String
-  planId        String?
-  contextType   RecommendationContextType
-  payload       Json
-  generatedAt   DateTime               @default(now())
-  user          User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String                    @id @default(cuid())
+  userId      String
+  planId      String?
+  contextType RecommendationContextType
+  payload     Json
+  generatedAt DateTime                  @default(now())
+  user        User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, contextType])
 }
