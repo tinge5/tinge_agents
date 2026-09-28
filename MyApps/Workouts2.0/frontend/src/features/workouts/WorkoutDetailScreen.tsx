@@ -214,7 +214,7 @@ export function WorkoutDetailScreen({ route, navigation }: any) {
             <View key={exercise.name} style={{ borderWidth: 1, borderColor: theme.colors.border, padding: 14, borderRadius: 16, gap: 10, backgroundColor: theme.colors.surface }}>
               <Pressable onPress={() => setExpanded(prev => ({ ...prev, [exercise.name]: !isExpanded }))} style={{ gap: 6 }}>
                 <Text style={{ fontSize: 18, fontWeight: '700', color: theme.colors.text }}>{formatExerciseHeader(exercise)}</Text>
-                <Text style={{ color: theme.colors.textMuted }}>{isExpanded ? 'Tap to collapse' : 'Tap to expand sets'}</Text>
+                <Text style={{ color: theme.colors.textMuted, backgroundColor: '#ff9102' }}>{isExpanded ? 'Tap to collapse' : 'Tap to expand sets'}</Text>
               </Pressable>
 
               {exercise.suggestedTarget ? (
@@ -225,19 +225,7 @@ export function WorkoutDetailScreen({ route, navigation }: any) {
               ) : null}
 
               {exercise.previousPerformance ? (
-                <View style={{ gap: 8 }}>
-                  <Text style={{ fontWeight: '700', color: theme.colors.text }}>Previous Performance</Text>
-                  {previousSetResults.length > 0 ? (
-                    previousSetResults.map((set, index) => (
-                      <View key={`${exercise.name}-previous-${set.setNumber ?? index + 1}`} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
-                        <Text style={{ fontWeight: '600', color: theme.colors.text }}>Set {set.setNumber ?? index + 1}</Text>
-                        <Text style={{ color: theme.colors.text }}>
-                          {set.reps != null || set.weight != null
-                            ? `${set.reps != null ? String(set.reps) : '—'} reps${set.weight != null ? `, ${String(set.weight)}` : ''}`
-                            : '—'}
-                        </Text>
-                      </View>
-                    ))
+                <Text style={{ fontWeight: '700', color: theme.colors.text }}>Previous Performance</Text>
                   ) : (
                     <>
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
