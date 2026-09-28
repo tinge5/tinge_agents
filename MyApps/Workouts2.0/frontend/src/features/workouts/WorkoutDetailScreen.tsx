@@ -131,6 +131,9 @@ export function WorkoutDetailScreen({ route, navigation }: any) {
     });
   }, [exercises]);
 
+  const completedState = reviewOnly || isCompleted || workout?.status === 'completed';
+
+
   const completedWorkoutQuery = useQuery({
     queryKey: ['workouts', 'completed-review', activeSessionId ?? routeSessionId],
     enabled: completedState && Boolean(activeSessionId ?? routeSessionId),
@@ -224,7 +227,6 @@ export function WorkoutDetailScreen({ route, navigation }: any) {
     }
   };
 
-  const completedState = reviewOnly || isCompleted || workout?.status === 'completed';
 
   return (
     <ScrollView contentContainerStyle={{ padding: 20, gap: 12, backgroundColor: theme.colors.background, flexGrow: 1 }}>
