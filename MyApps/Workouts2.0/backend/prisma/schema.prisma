@@ -37,6 +37,7 @@ model User {
   sessions                Session[]
   workoutPlans            WorkoutPlan[]
   workoutSessions         WorkoutSession[]
+  workoutHistory          WorkoutHistoryEntry[]
   exerciseHistory         ExerciseHistoryEntry[]
   planArchives            PlanCompletionArchive[]
   recommendationSnapshots RecommendationSnapshot[]
@@ -123,6 +124,7 @@ model WorkoutSession {
   planDay          WorkoutPlanDay    @relation(fields: [planDayId], references: [id], onDelete: Cascade)
   setResults       WorkoutSetResult[]
   exerciseHistory  ExerciseHistoryEntry[]
+  history          WorkoutHistoryEntry[]
 
   @@index([userId, status])
 }
@@ -139,6 +141,40 @@ model WorkoutSetResult {
   workoutSession   WorkoutSession @relation(fields: [workoutSessionId], references: [id], onDelete: Cascade)
 
   @@index([workoutSessionId])
+}
+
+model WorkoutHistoryEntry {
+  id               String                 @id @default(cuid())
+  userId           String
+  workoutSessionId String                 @unique
+  originalPlanId   String?
+  planName         String
+  workoutName      String
+  dayName          String
+  weekIndex        Int?
+  dayOfWeek        Int?
+  completedAt      DateTime
+  createdAt        DateTime               @default(now())
+  user             User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workoutSession   WorkoutSession         @relation(fields: [workoutSessionId], references: [id], onDelete: Cascade)
+  setResults       WorkoutHistorySetResult[]
+
+  @@index([userId, completedAt])
+  @@index([userId, originalPlanId])
+}
+
+model WorkoutHistorySetResult {
+  id               String             @id @default(cuid())
+  workoutHistoryId String
+  exerciseName     String
+  exerciseId       String?
+  setNumber        Int
+  reps             Int
+  weight           Float
+  completed        Boolean            @default(true)
+  workoutHistory   WorkoutHistoryEntry @relation(fields: [workoutHistoryId], references: [id], onDelete: Cascade)
+
+  @@index([workoutHistoryId])
 }
 
 model ExerciseHistoryEntry {

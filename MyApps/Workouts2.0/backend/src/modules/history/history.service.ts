@@ -6,40 +6,24 @@ export class HistoryService {
   constructor(private prisma: PrismaService) {}
 
   async workouts(userId: string) {
-    return this.prisma.workoutSession.findMany({
-      where: { userId, status: 'completed' },
+    return this.prisma.workoutHistoryEntry.findMany({
+      where: { userId },
       orderBy: { completedAt: 'desc' },
       include: {
         setResults: {
-          orderBy: [{ exerciseName: 'asc' }, { setNumber: 'asc' }],
+          orderBy: [{ setNumber: 'asc' }, { id: 'asc' }],
         },
-        planDay: {
-          include: {
-            exercises: {
-              orderBy: { order: 'asc' },
-            },
-          },
-        },
-        plan: true,
       },
     });
   }
 
   async workout(userId: string, id: string) {
-    const session = await this.prisma.workoutSession.findFirst({
-      where: { id, userId, status: 'completed' },
+    const session = await this.prisma.workoutHistoryEntry.findFirst({
+      where: { id, userId },
       include: {
         setResults: {
-          orderBy: [{ exerciseName: 'asc' }, { setNumber: 'asc' }],
+          orderBy: [{ setNumber: 'asc' }, { id: 'asc' }],
         },
-        planDay: {
-          include: {
-            exercises: {
-              orderBy: { order: 'asc' },
-            },
-          },
-        },
-        plan: true,
       },
     });
 

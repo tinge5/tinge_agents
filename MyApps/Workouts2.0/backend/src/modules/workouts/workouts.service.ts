@@ -540,6 +540,67 @@ export class WorkoutsService {
         data: { status: 'completed', completedAt: new Date(), actualDate: session.actualDate ?? new Date() },
       });
 
+      const historyEntry = await tx.workoutHistoryEntry.findUnique({
+        where: { workoutSessionId },
+      });
+
+      if (!historyEntry) {
+        const setResults = await tx.workoutSetResult.findMany({
+          where: { workoutSessionId },
+          orderBy: [{ setNumber: 'asc' }, { id: 'asc' }],
+        });
+
+        const completedAt = completedSession.completedAt ?? new Date();
+        const planDay = await tx.workoutPlanDay.findUnique({
+          where: { id: session.planDayId },
+          select: {
+            title: true,
+            dayOfWeek: true,
+            weekIndex: true,
+          },
+        });
+
+        const plan = await tx.workoutPlan.findUnique({
+          where: { id: session.planId },
+          select: {
+            name: true,
+          },
+        });
+
+        if (!planDay || !plan) {
+          throw new NotFoundException();
+        }
+
+        const createdHistory = await tx.workoutHistoryEntry.create({
+          data: {
+            userId,
+            workoutSessionId: completedSession.id,
+            originalPlanId: session.planId,
+            planName: plan.name,
+            workoutName: planDay.title,
+            dayName: `Day ${planDay.dayOfWeek + 1}`,
+            weekIndex: planDay.weekIndex,
+            dayOfWeek: planDay.dayOfWeek,
+            completedAt,
+            setResults: {
+              create: setResults.map((setResult) => ({
+                exerciseName: setResult.exerciseName,
+                exerciseId: setResult.exerciseId,
+                setNumber: setResult.setNumber,
+                reps: setResult.reps,
+                weight: setResult.weight,
+                completed: setResult.completed,
+              })),
+            },
+          },
+          include: {
+            setResults: true,
+          },
+        });
+
+        return { success: true, planResult: session.planId ? await this.finalizePlanIfNeeded(tx, userId, completedSession as any) : { planCompleted: false, archiveCreated: false }, history: createdHistory };
+      }
+
       const planResult = session.planId ? await this.finalizePlanIfNeeded(tx, userId, completedSession as any) : { planCompleted: false, archiveCreated: false };
       return { success: true, planResult };
     });
