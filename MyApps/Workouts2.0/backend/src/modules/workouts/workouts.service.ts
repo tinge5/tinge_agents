@@ -166,42 +166,67 @@ function getDeviceLocalDayInfo(deviceTimeZone?: string) {
 export class WorkoutsService {
   constructor(private prisma: PrismaService) {}
 
-  async saveWorkoutSetResult(userId: string, workoutSessionId: string, input: { exerciseName: string; sets: number; reps: number; weight: number }) {
-    const session = await this.prisma.workoutSession.findFirst({ where: { id: workoutSessionId, userId } });
-    if (!session) throw new NotFoundException('Workout session not found');
-    if (session.status === 'completed') return { success: true };
+ async saveWorkoutSetResult(
+  userId: string,
+  workoutSessionId: string,
+  input: {
+    exerciseName: string;
+    exerciseId?: string | null;
+    setNumber: number;
+    reps: number;
+    weight: number;
+  },
+) {
+  const session = await this.prisma.workoutSession.findFirst({
+    where: { id: workoutSessionId, userId },
+  });
 
-    const canonicalExerciseName = normalizeExerciseCanonicalName(input.exerciseName);
-    const desiredSets = Math.max(0, Math.floor(Number(input.sets) || 0));
-    if (desiredSets === 0) return { success: true };
+  if (!session) {
+    throw new NotFoundException('Workout session not found');
+  }
 
-    const existing = await this.prisma.workoutSetResult.findMany({
-      where: { workoutSessionId, exerciseName: canonicalExerciseName, completed: true },
-      orderBy: [{ setNumber: 'asc' }, { id: 'asc' }],
+  if (session.status === 'completed') {
+    return { success: true };
+  }
+
+  const canonicalExerciseName = normalizeExerciseCanonicalName(
+    input.exerciseName,
+  );
+
+  const setNumber = Math.max(1, Math.floor(Number(input.setNumber) || 1));
+
+  const existing = await this.prisma.workoutSetResult.findFirst({
+    where: {
+      workoutSessionId,
+      exerciseName: canonicalExerciseName,
+      setNumber,
+    },
+  });
+
+  if (existing) {
+    await this.prisma.workoutSetResult.update({
+      where: { id: existing.id },
+      data: {
+        reps: Number(input.reps),
+        weight: Number(input.weight),
+        completed: true,
+      },
     });
-
-    const missingSetNumbers = new Set<number>();
-    for (let i = 1; i <= desiredSets; i += 1) missingSetNumbers.add(i);
-    for (const row of existing) missingSetNumbers.delete(row.setNumber);
-
-    const rowsToCreate = Array.from(missingSetNumbers)
-      .sort((a, b) => a - b)
-      .map((setNumber) => ({
+  } else {
+    await this.prisma.workoutSetResult.create({
+      data: {
         workoutSessionId,
         exerciseName: canonicalExerciseName,
         setNumber,
         reps: Number(input.reps),
         weight: Number(input.weight),
         completed: true,
-      }));
-
-    if (rowsToCreate.length > 0) {
-      await this.prisma.workoutSetResult.createMany({ data: rowsToCreate });
-    }
-
-    return { success: true };
+      },
+    });
   }
 
+  return { success: true };
+}
   private async getPreviousPerformance(userId: string, exercise: WorkoutPlanExerciseLike, planId?: string | null, planDayId?: string | null): Promise<PreviousPerformance | null> {
     const progressionWhere = buildProgressionWhere({
       userId,

@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Headers, Param, Post, Req, UseGuards } from '@nestjs/common';
-import { IsNumber, IsString, Min } from 'class-validator';
+import { IsNumber, IsString, Min, IsOptional } from 'class-validator';
 import { JwtAuthGuard } from '../../shared/auth/jwt-auth.guard';
 import { WorkoutsService } from './workouts.service';
 
@@ -7,9 +7,13 @@ class SaveWorkoutSetResultBody {
   @IsString()
   exerciseName!: string;
 
+  @IsOptional()
+  @IsString()
+  exerciseId?: string | null;
+
   @IsNumber()
-  @Min(0)
-  sets!: number;
+  @Min(1)
+  setNumber!: number;
 
   @IsNumber()
   @Min(0)
@@ -19,7 +23,6 @@ class SaveWorkoutSetResultBody {
   @Min(0)
   weight!: number;
 }
-
 @UseGuards(JwtAuthGuard)
 @Controller('workouts')
 export class WorkoutsController {
