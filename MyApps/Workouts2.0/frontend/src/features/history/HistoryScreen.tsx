@@ -11,6 +11,11 @@ type WorkoutGroup = {
   sessions: WorkoutHistorySession[];
 };
 
+type GroupedHistorySet = {
+  exerciseName: string;
+  setResults: WorkoutHistorySession['setResults'];
+};
+
 function formatDate(value?: string) {
   if (!value) return 'Unknown date';
   const date = new Date(value);
@@ -23,21 +28,38 @@ function formatTime(value?: string) {
   return Number.isNaN(date.getTime()) ? '' : date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 }
 
-function formatSetResult(setResult: WorkoutHistorySession['setResults'][number]) {
-  const status = setResult.completed ? 'completed' : 'not completed';
-  const reps = `${setResult.reps} reps`;
-  const weight = `${setResult.weight} lbs`;
-  return `Set ${setResult.setNumber}: ${reps} × ${weight} • ${status}`;
-}
-
 function getWorkoutTitle(workout: WorkoutHistorySession) {
   return workout.workoutName || workout.dayName || 'Completed workout';
 }
 
 function groupWorkouts(workouts: WorkoutHistorySession[]) {
   return workouts
-    .map((workout) => ({ key: workout.id, title: getWorkoutTitle(workout), sessions: [workout] }))
+    .map(workout => ({ key: workout.id, title: getWorkoutTitle(workout), sessions: [workout] }))
     .sort((a, b) => new Date(b.sessions[0]?.completedAt ?? 0).getTime() - new Date(a.sessions[0]?.completedAt ?? 0).getTime());
+}
+
+function groupHistorySetResults(setResults: WorkoutHistorySession['setResults'] = []): GroupedHistorySet[] {
+  const map = new Map<string, GroupedHistorySet>();
+
+  for (const setResult of setResults.slice().sort((a, b) => {
+    if (a.exerciseName === b.exerciseName) return a.setNumber - b.setNumber;
+    return a.exerciseName.localeCompare(b.exerciseName);
+  })) {
+    const existing = map.get(setResult.exerciseName);
+    if (existing) {
+      existing.setResults = [...existing.setResults, setResult].sort((a, b) => a.setNumber - b.setNumber);
+    } else {
+      map.set(setResult.exerciseName, { exerciseName: setResult.exerciseName, setResults: [setResult] });
+    }
+  }
+
+  return Array.from(map.values());
+}
+
+function formatSetLine(setResult: WorkoutHistorySession['setResults'][number], index: number) {
+  const reps = `${setResult.reps} reps`;
+  const weight = `${setResult.weight} lbs`;
+  return `Set ${index + 1}: ${reps} × ${weight}`;
 }
 
 export function HistoryScreen() {
@@ -77,12 +99,12 @@ export function HistoryScreen() {
 
   const workouts = useMemo(() => history.workouts ?? [], [history]);
   const groupedWorkouts = useMemo(() => groupWorkouts(workouts), [workouts]);
-  const selectedGroup = useMemo(() => groupedWorkouts.find((group) => group.key === selectedGroupKey) ?? groupedWorkouts[0] ?? null, [groupedWorkouts, selectedGroupKey]);
+  const selectedGroup = useMemo(() => groupedWorkouts.find(group => group.key === selectedGroupKey) ?? groupedWorkouts[0] ?? null, [groupedWorkouts, selectedGroupKey]);
 
   useEffect(() => {
     if (!selectedGroupKey && groupedWorkouts.length > 0) {
       setSelectedGroupKey(groupedWorkouts[0].key);
-    } else if (selectedGroupKey && !groupedWorkouts.some((group) => group.key === selectedGroupKey)) {
+    } else if (selectedGroupKey && !groupedWorkouts.some(group => group.key === selectedGroupKey)) {
       setSelectedGroupKey(groupedWorkouts[0]?.key ?? null);
     }
   }, [groupedWorkouts, selectedGroupKey]);
@@ -119,7 +141,7 @@ export function HistoryScreen() {
           <Text style={{ fontWeight: '700', color: theme.colors.text }}>Completed Workouts</Text>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 4 }}>
-            {groupedWorkouts.map((group) => {
+            {groupedWorkouts.map(group => {
               const isSelected = group.key === selectedGroup?.key;
               return (
                 <Pressable key={group.key} onPress={() => setSelectedGroupKey(group.key)} style={{ paddingVertical: 10, paddingHorizontal: 14, borderRadius: 999, borderWidth: 1, borderColor: isSelected ? theme.colors.primary : theme.colors.border, backgroundColor: isSelected ? theme.colors.primary : theme.colors.background }}>
@@ -137,24 +159,31 @@ export function HistoryScreen() {
               </View>
 
               <View style={{ gap: 12 }}>
-                {selectedGroup.sessions.map((workout) => (
-                  <View key={workout.id} style={{ gap: 10, padding: 14, borderWidth: 1, borderColor: theme.colors.border, borderRadius: 14, backgroundColor: theme.colors.background }}>
-                    <View style={{ gap: 2 }}>
-                      <Text style={{ fontWeight: '700', color: theme.colors.text }}>{workout.workoutName}</Text>
-                      <Text style={{ color: theme.colors.textMuted }}>{workout.planName}{workout.weekIndex != null ? ` • Week ${workout.weekIndex + 1}` : ''}{workout.dayOfWeek != null ? ` • Day ${workout.dayOfWeek + 1}` : ''}</Text>
-                      <Text style={{ color: theme.colors.textMuted }}>{formatDate(workout.completedAt)}{formatTime(workout.completedAt) ? ` • ${formatTime(workout.completedAt)}` : ''}</Text>
-                    </View>
+                {selectedGroup.sessions.map(workout => {
+                  const groupedSetResults = groupHistorySetResults(workout.setResults);
+                  return (
+                    <View key={workout.id} style={{ gap: 10, padding: 14, borderWidth: 1, borderColor: theme.colors.border, borderRadius: 14, backgroundColor: theme.colors.background }}>
+                      <View style={{ gap: 2 }}>
+                        <Text style={{ fontWeight: '700', color: theme.colors.text }}>{workout.workoutName}</Text>
+                        <Text style={{ color: theme.colors.textMuted }}>{workout.planName}{workout.weekIndex != null ? ` • Week ${workout.weekIndex + 1}` : ''}{workout.dayOfWeek != null ? ` • Day ${workout.dayOfWeek + 1}` : ''}</Text>
+                        <Text style={{ color: theme.colors.textMuted }}>{formatDate(workout.completedAt)}{formatTime(workout.completedAt) ? ` • ${formatTime(workout.completedAt)}` : ''}</Text>
+                      </View>
 
-                    <View style={{ gap: 10 }}>
-                      {workout.setResults.length ? workout.setResults.slice().sort((a, b) => a.setNumber - b.setNumber).map((setResult) => (
-                        <View key={setResult.id} style={{ gap: 2 }}>
-                          <Text style={{ fontWeight: '600', color: theme.colors.text }}>{setResult.exerciseName}</Text>
-                          <Text style={{ color: theme.colors.textMuted }}>{formatSetResult(setResult)}</Text>
-                        </View>
-                      )) : <Text style={{ color: theme.colors.textMuted }}>No set results recorded for this workout.</Text>}
+                      <View style={{ gap: 10 }}>
+                        {groupedSetResults.length ? groupedSetResults.map(group => (
+                          <View key={`${workout.id}-${group.exerciseName}`} style={{ gap: 4 }}>
+                            <Text style={{ fontWeight: '600', color: theme.colors.text }}>{group.exerciseName}</Text>
+                            <View style={{ gap: 2 }}>
+                              {group.setResults.map((setResult, index) => (
+                                <Text key={setResult.id} style={{ color: theme.colors.textMuted }}>{formatSetLine(setResult, index)}</Text>
+                              ))}
+                            </View>
+                          </View>
+                        )) : <Text style={{ color: theme.colors.textMuted }}>No set results recorded for this workout.</Text>}
+                      </View>
                     </View>
-                  </View>
-                ))}
+                  );
+                })}
               </View>
             </View>
           ) : null}
