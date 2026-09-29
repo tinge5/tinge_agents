@@ -295,7 +295,7 @@ export function WorkoutDetailScreen({ route, navigation }: any) {
                       return (
                         <View key={`${exercise.name}-set-${index + 1}`} style={{ borderWidth: 1, borderColor: theme.colors.border, borderRadius: 12, padding: 12, gap: 8, backgroundColor: theme.colors.background }}>
                           <Text style={{ fontWeight: '700', color: theme.colors.text }}>Set {index + 1}</Text>
-                          <View style={{ flexDirection: 'row', gap: 10 }}>
+                          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
                             <TextInput
                               value={setValue.reps}
                               onChangeText={text =>
@@ -309,7 +309,7 @@ export function WorkoutDetailScreen({ route, navigation }: any) {
                               placeholder='Reps'
                               placeholderTextColor={theme.colors.textMuted}
                               keyboardType='numeric'
-                              style={{ flex: 1, borderWidth: 1, padding: 12, borderRadius: 12, borderColor: theme.colors.border, backgroundColor: theme.colors.surface, color: theme.colors.text, fontSize: 16 }}
+                              style={{ flex: 1, minWidth: 0, borderWidth: 1, padding: 12, borderRadius: 12, borderColor: theme.colors.border, backgroundColor: theme.colors.surface, color: theme.colors.text, fontSize: 16 }}
                             />
                             <TextInput
                               value={setValue.weight}
@@ -324,7 +324,7 @@ export function WorkoutDetailScreen({ route, navigation }: any) {
                               placeholder='Weight'
                               placeholderTextColor={theme.colors.textMuted}
                               keyboardType='numeric'
-                              style={{ flex: 1, borderWidth: 1, padding: 12, borderRadius: 12, borderColor: theme.colors.border, backgroundColor: theme.colors.surface, color: theme.colors.text, fontSize: 16 }}
+                              style={{ flex: 1, minWidth: 0, borderWidth: 1, padding: 12, borderRadius: 12, borderColor: theme.colors.border, backgroundColor: theme.colors.surface, color: theme.colors.text, fontSize: 16 }}
                             />
                           </View>
                         </View>
