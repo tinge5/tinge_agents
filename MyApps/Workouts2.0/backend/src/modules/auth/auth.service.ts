@@ -127,6 +127,8 @@ export class AuthService {
       process.env.WEB_APP_URL ||
       '';    
     const resetUrl = frontendUrl ? `${frontendUrl.replace(/\/$/, '')}/reset-password?token=${encodeURIComponent(token)}` : `reset-password?token=${encodeURIComponent(token)}`;
+    console.log('FRONTEND_ORIGIN:', process.env.FRONTEND_ORIGIN);
+    console.log('Resolved frontendUrl:', frontendUrl);
     const subject = 'Workouts2.0 Password Reset';
     const text = `Hi ${displayName},\n\nWe received a request to reset your password. Use the link below to set a new password:\n${resetUrl}\n\nThis link expires in 1 hour and can only be used once. If you did not request this, you can ignore this email.`;
     const html = `<p>Hi ${displayName},</p><p>We received a request to reset your password. Use the link below to set a new password:</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>This link expires in 1 hour and can only be used once. If you did not request this, you can ignore this email.</p>`;
