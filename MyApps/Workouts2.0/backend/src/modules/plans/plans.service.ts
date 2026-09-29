@@ -202,7 +202,6 @@ export class PlansService {
         startDate: now,
         isActive: true,
         status: 'active',
-        completedAt: null,
       },
       include: { days: { include: { exercises: true } } },
     });
