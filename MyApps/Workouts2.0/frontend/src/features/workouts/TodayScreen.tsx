@@ -107,7 +107,6 @@ export function TodayScreen({ navigation }: any) {
       ) : workout ? (
         <>
           <View style={{ backgroundColor: theme.colors.surface, padding: 16, borderRadius: 16, gap: 8 }}>
-            
             <Text style={{ fontSize: 22, fontWeight: '700', color: theme.colors.text }}>{workout.title ?? 'Scheduled Workout'}</Text>
             <Text style={{ color: theme.colors.text }}>{workout.day ?? 'Today'}</Text>
             <Text style={{ color: theme.colors.textMuted }}>Week {workout.weekIndex != null ? Number(workout.weekIndex) + 1 : 1}</Text>
@@ -115,16 +114,16 @@ export function TodayScreen({ navigation }: any) {
             {isInProgressWorkout ? <Text style={{ color: theme.colors.warning, fontWeight: '700' }}>Workout in progress</Text> : null}
             {isCompletedWorkout ? <Text style={{ color: theme.colors.success, fontWeight: '700' }}>Workout completed</Text> : null}
           </View>
-          <Text style={{ color: 'white', textAlign: 'center', fontWeight: '800' }}>{workoutButtonLabel}</Text>
-
-          {exercises.map((exercise: TodayExercise) => (
-            <ExerciseCard key={exercise.name} exercise={exercise} />
-          ))}
-          <Pressable
+                   <Pressable
             onPress={() => navigation.navigate('Workout', { workout, reviewOnly: isReviewMode })}
             style={{ backgroundColor: isReviewMode ? theme.colors.success : theme.colors.primary, padding: 18, borderRadius: 16 }}
           >
+            <Text style={{ color: 'white', textAlign: 'center', fontWeight: '800' }}>{workoutButtonLabel}</Text>
           </Pressable>
+          {exercises.map((exercise: TodayExercise) => (
+            <ExerciseCard key={exercise.name} exercise={exercise} />
+          ))}
+ 
         </>
       ) : null}
     </ScrollView>

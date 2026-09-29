@@ -571,7 +571,7 @@ export function PlanEditorScreen() {
               <TextInput value={String(draftDay.title ?? '')} onChangeText={(text) => updateDay((day) => ({ ...day, title: text }))} placeholder="Workout title" placeholderTextColor={theme.colors.textMuted} style={{ borderWidth: 1, padding: 14, borderRadius: 12, borderColor: theme.colors.border, backgroundColor: theme.colors.background, color: theme.colors.text, fontSize: 16 }} />
               <Pressable onPress={() => updateDay((day) => ({ ...day, exercises: [...safeArray<PlanDayExercise>(day.exercises), { exerciseName: '', setsTarget: 3, repsTarget: 8, weightTarget: null }] }))} style={{ backgroundColor: theme.colors.surfaceAlt, padding: 12, borderRadius: 12 }}><Text style={{ textAlign: 'center', fontWeight: '700', color: theme.colors.text }}>Add Exercise</Text></Pressable>
               {safeArray<PlanDayExercise>(draftDay.exercises).map((exercise: any, exerciseIndex: number) => (
-                <View key={`${exerciseIndex}`} style={{ gap: 8, padding: 12, borderRadius: 12, backgroundColor: theme.colors.background, position: 'absolute' }}>
+                <View key={`${exerciseIndex}`} style={{ gap: 8, padding: 12, borderRadius: 12, backgroundColor: theme.colors.background }}>
                   <PlanFieldHelp text="Exercise name: choose from suggested exercises when available, or type a custom exercise name if it is not listed." />
                   <SuggestionInput
                     value={String(exercise.exerciseName ?? '')}
