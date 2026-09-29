@@ -303,6 +303,7 @@ export class WorkoutsService {
     console.log('[workouts.today timezone check]', {
       deviceTimeZone: deviceTimeZone ?? null,
       currentUtcTime: utcNow.toISOString(),
+        displayedWeek: weekIndex + 1,
       deviceLocalTime,
       calculatedDayOfWeek: dayIndex,
     });

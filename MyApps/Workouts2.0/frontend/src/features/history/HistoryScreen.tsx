@@ -38,8 +38,6 @@ function groupWorkouts(workouts: WorkoutHistorySession[]): WorkoutGroup[] {
   for (const workout of workouts) {
     const key = [
       workout.planName ?? '',
-      workout.weekIndex ?? '',
-      workout.dayName ?? '',
       workout.workoutName ?? '',
     ].join('||');
 
