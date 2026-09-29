@@ -54,6 +54,12 @@ function RootNavigator() {
   }, [dispatch]);
 
   const initialRouteName = useMemo(() => {
+    if (
+      typeof window !== 'undefined' &&
+      window.location.pathname === '/reset-password'
+    ) {
+      return 'ResetPassword';
+    }
     if (!isAuthenticated) return 'SignIn';
     return restoredSession ? 'Welcome' : 'MainFlow';
   }, [isAuthenticated, restoredSession]);
