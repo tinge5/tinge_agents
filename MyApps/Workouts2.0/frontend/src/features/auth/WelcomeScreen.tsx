@@ -39,10 +39,12 @@ const styles = StyleSheet.create({
     width: 220,
     height: 220,
     marginBottom: 24,
+    /*
     shadowColor: '#FF5005', // Put your glow color here (e.g., cyan)
     shadowOffset: { width: 0, height: 0 }, // Center the glow around the image
     shadowOpacity: 0.8, // Intensity of the glow (0 to 1)
     shadowRadius: 15, // Blur radius (higher numbers = softer, wider glow)
+    */
   },
   title: {
     fontSize: 28,
