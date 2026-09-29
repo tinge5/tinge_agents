@@ -157,4 +157,4 @@ private async sendEmail(
   });
 
   console.log(`Email sent successfully: ${result.messageId}`);
-}
+}}
