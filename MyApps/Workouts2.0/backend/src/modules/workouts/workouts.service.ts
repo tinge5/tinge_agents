@@ -174,7 +174,7 @@ export class WorkoutsService {
     exerciseId?: string | null;
     setNumber: number;
     reps: number;
-    weight: number;
+    weight?: number | null;
   },
 ) {
   const session = await this.prisma.workoutSession.findFirst({
