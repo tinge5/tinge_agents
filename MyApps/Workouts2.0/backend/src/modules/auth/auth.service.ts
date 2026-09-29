@@ -121,7 +121,11 @@ export class AuthService {
   }
 
   private async sendPasswordResetEmail(email: string, displayName: string, token: string) {
-    const frontendUrl = process.env.FRONTEND_URL || process.env.WEB_APP_URL || '';
+    const frontendUrl =
+      process.env.FRONTEND_ORIGIN ||
+      process.env.FRONTEND_URL ||
+      process.env.WEB_APP_URL ||
+      '';    
     const resetUrl = frontendUrl ? `${frontendUrl.replace(/\/$/, '')}/reset-password?token=${encodeURIComponent(token)}` : `reset-password?token=${encodeURIComponent(token)}`;
     const subject = 'Workouts2.0 Password Reset';
     const text = `Hi ${displayName},\n\nWe received a request to reset your password. Use the link below to set a new password:\n${resetUrl}\n\nThis link expires in 1 hour and can only be used once. If you did not request this, you can ignore this email.`;
