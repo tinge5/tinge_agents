@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import * as crypto from 'crypto';
 import { PrismaService } from '../../shared/prisma/prisma.service';
+import { Resend } from 'resend';
 
 const PASSWORD_MIN_LENGTH = 8;
 const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -128,18 +129,25 @@ export class AuthService {
     await this.sendEmail(email, subject, text, html);
   }
 
-  private async sendEmail(to: string, subject: string, text: string, html: string) {
-    const host = process.env.SMTP_HOST;
-    const port = Number(process.env.SMTP_PORT || '587');
-    const secure = String(process.env.SMTP_SECURE || 'false') === 'true';
-    const user = process.env.SMTP_USER;
-    const pass = process.env.SMTP_PASS;
-    const from = process.env.SMTP_FROM || user;
+private async sendEmail(
+  to: string,
+  subject: string,
+  text: string,
+  html: string,
+) {
+  const resend = new Resend(process.env.RESEND_API_KEY);
 
-    if (!host || !from) return;
+  const { data, error } = await resend.emails.send({
+    from: 'Workouts2.0 <onboarding@resend.dev>',
+    to: [to],
+    subject,
+    text,
+    html,
+  });
 
-    const nodemailer = await import('nodemailer');
-    const transporter = nodemailer.createTransport({ host, port, secure, auth: user && pass ? { user, pass } : undefined });
-    await transporter.sendMail({ from, to, subject, text, html });
+  if (error) {
+    throw new Error(`Failed to send email: ${error.message}`);
   }
-}
+
+  console.log(`Password reset email sent: ${data?.id}`);
+}}
