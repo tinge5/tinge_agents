@@ -193,4 +193,18 @@ export class PlansService {
   async remove(userId: string, planId: string) { await this.get(userId, planId); await this.prisma.workoutPlan.delete({ where: { id: planId } }); return { success: true }; }
   async activate(userId: string, planId: string) { await this.get(userId, planId); await this.prisma.$transaction([this.prisma.workoutPlan.updateMany({ where: { userId, isActive: true, id: { not: planId } }, data: { isActive: false, status: 'draft' } }), this.prisma.workoutPlan.update({ where: { id: planId }, data: { isActive: true, status: 'active' } })]); return this.get(userId, planId); }
   async deactivate(userId: string, planId: string) { await this.get(userId, planId); return this.prisma.workoutPlan.update({ where: { id: planId }, data: { isActive: false, status: 'draft' } }); }
+  async restart(userId: string, planId: string) {
+    await this.get(userId, planId);
+    const now = new Date();
+    return this.prisma.workoutPlan.update({
+      where: { id: planId },
+      data: {
+        startDate: now,
+        isActive: true,
+        status: 'active',
+        completedAt: null,
+      },
+      include: { days: { include: { exercises: true } } },
+    });
+  }
 }

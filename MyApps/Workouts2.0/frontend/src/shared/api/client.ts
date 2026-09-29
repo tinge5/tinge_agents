@@ -122,6 +122,7 @@ export async function updatePlan(planId: string, input: UpdatePlanInput) { retur
 export async function deletePlan(planId: string) { return request<void>(`/plans/${planId}`, { method: 'DELETE' }); }
 export async function activatePlan(planId: string) { return request<Plan>(`/plans/${planId}/activate`, { method: 'POST' }); }
 export async function deactivatePlan(planId: string) { return request<Plan>(`/plans/${planId}/deactivate`, { method: 'POST' }); }
+export async function restartPlan(planId: string) { return request<Plan>(`/plans/${planId}/restart`, { method: 'POST' }); }
 export async function getCompletedPlans() { return request<any[]>('/me/completed-plans'); }
 export async function getWorkoutHistory() { return request<WorkoutHistorySession[]>('/history/workouts'); }
 export async function getExerciseHistory(exerciseName: string) { return request<any[]>(`/me/exercises/${encodeURIComponent(exerciseName)}/history`); }

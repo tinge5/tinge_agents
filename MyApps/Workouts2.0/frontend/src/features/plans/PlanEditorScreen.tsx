@@ -11,6 +11,7 @@ import {
   deactivatePlan,
   deletePlan,
   getPlans,
+  restartPlan,
   type Plan,
   type PlanDay,
   type PlanDayExercise,
@@ -241,6 +242,7 @@ function PlanCard({
   onActivate,
   onDeactivate,
   onDelete,
+  onRestart,
 }: {
   plan: Plan;
   onView: (plan: Plan) => void;
@@ -248,6 +250,7 @@ function PlanCard({
   onActivate: (plan: Plan) => void;
   onDeactivate: (plan: Plan) => void;
   onDelete: (plan: Plan) => void;
+  onRestart: (plan: Plan) => void;
 }) {
   const goals = safeArray<string>(plan.goals);
   const days = safeArray<PlanDay>(plan.days);
@@ -276,6 +279,9 @@ function PlanCard({
             <Text style={{ color: theme.colors.text, fontWeight: '700' }}>Deactivate</Text>
           </Pressable>
         )}
+        <Pressable onPress={() => onRestart(plan)} style={{ backgroundColor: '#1d4ed8', padding: 12, borderRadius: 12 }}>
+          <Text style={{ color: 'white', fontWeight: '700' }}>Restart Plan</Text>
+        </Pressable>
         <Pressable onPress={() => onDelete(plan)} style={{ backgroundColor: '#3b1d1d', padding: 12, borderRadius: 12 }}>
           <Text style={{ color: theme.colors.danger, fontWeight: '700' }}>Delete</Text>
         </Pressable>
@@ -355,12 +361,17 @@ function getPreviewedDays(plan: any, weekIndex: number) {
 }
 
 export function PlanEditorScreen() {
-const [deleteConfirm, setDeleteConfirm] = useState<{
-  type: 'day' | 'plan';
-  title: string;
-  message: string;
-  planId?: string;
-} | null>(null);  // other hooks...
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    type: 'day' | 'plan';
+    title: string;
+    message: string;
+    planId?: string;
+  } | null>(null);
+  const [restartConfirm, setRestartConfirm] = useState<{
+    planId: string;
+    title: string;
+    message: string;
+  } | null>(null);
   const queryClient = useQueryClient();
   const { data, isLoading, isError, error } = useQuery({ queryKey: ['plans'], queryFn: getPlans });
   const [draft, setDraft] = useState<any>(defaultDraft());
@@ -417,6 +428,21 @@ const [deleteConfirm, setDeleteConfirm] = useState<{
   const activateMutation = useMutation({ mutationFn: activatePlan, onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ['plans'] }); await queryClient.invalidateQueries({ queryKey: ['workouts', 'today'] }); }, onError: (err: any) => Alert.alert('Activation failed', err?.message ?? 'Unable to activate plan') });
   const deactivateMutation = useMutation({ mutationFn: deactivatePlan, onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ['plans'] }); await queryClient.invalidateQueries({ queryKey: ['workouts', 'today'] }); }, onError: (err: any) => Alert.alert('Deactivation failed', err?.message ?? 'Unable to deactivate plan') });
   const deleteMutation = useMutation({ mutationFn: deletePlan, onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ['plans'] }); await queryClient.invalidateQueries({ queryKey: ['workouts', 'today'] }); resetDraft(); Alert.alert('Deleted', 'Plan has been deleted successfully.'); }, onError: (err: any) => Alert.alert('Delete failed', err?.message ?? 'Unable to delete plan') });
+  const restartMutation = useMutation({
+    mutationFn: restartPlan,
+    onSuccess: async (savedPlan) => {
+      await queryClient.invalidateQueries({ queryKey: ['plans'] });
+      await queryClient.invalidateQueries({ queryKey: ['workouts', 'today'] });
+      if (editingPlanId === savedPlan.id) {
+        setDraft(toDraftPlan(savedPlan));
+        setSelectedPreviewWeek(1);
+        setViewMode('view');
+      }
+      setRestartConfirm(null);
+      Alert.alert('Plan restarted', 'The plan has been restarted to Week 1 starting today.');
+    },
+    onError: (err: any) => Alert.alert('Restart failed', err?.message ?? 'Unable to restart plan'),
+  });
 
   const startEdit = (plan: Plan) => { setEditingPlanId(plan.id); setDraft(toDraftPlan(plan)); setActiveDayIndex(0); setSelectedPreviewWeek(1); setViewMode('edit'); };
   const startView = (plan: Plan) => { setEditingPlanId(plan.id); setDraft(toDraftPlan(plan)); setActiveDayIndex(0); setSelectedPreviewWeek(1); setViewMode('view'); };
@@ -450,7 +476,7 @@ const [deleteConfirm, setDeleteConfirm] = useState<{
       <Text style={{ fontSize: 28, fontWeight: '800', color: theme.colors.text }}>Plans</Text>
       <Text style={{ color: theme.colors.textMuted }}>Use the New Plan action to start a fresh plan. Edit existing plans from the list below.</Text>
       <Pressable onPress={resetDraft} style={{ backgroundColor: theme.colors.surfaceAlt, padding: 12, borderRadius: 12, alignSelf: 'flex-start' }}><Text style={{ fontWeight: '700', color: theme.colors.text }}>New Plan</Text></Pressable>
-      {isLoading ? <View style={{ paddingVertical: 40 }}><ActivityIndicator color={theme.colors.primary} /></View> : isError ? <Text style={{ color: theme.colors.danger }}>{(error as Error)?.message ?? 'Unable to load plans'}</Text> : plans.length === 0 ? <View style={{ backgroundColor: theme.colors.surface, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: theme.colors.border }}><Text style={{ fontWeight: '700', color: theme.colors.text }}>No plans yet</Text><Text style={{ color: theme.colors.text }}>Create your first workout plan below.</Text></View> : plans.map((plan) => <PlanCard key={plan.id} plan={plan} onView={startView} onEdit={startEdit} onActivate={(p) => activateMutation.mutate(p.id)} onDeactivate={(p) => deactivateMutation.mutate(p.id)} onDelete={(p) => setDeleteConfirm({
+      {isLoading ? <View style={{ paddingVertical: 40 }}><ActivityIndicator color={theme.colors.primary} /></View> : isError ? <Text style={{ color: theme.colors.danger }}>{(error as Error)?.message ?? 'Unable to load plans'}</Text> : plans.length === 0 ? <View style={{ backgroundColor: theme.colors.surface, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: theme.colors.border }}><Text style={{ fontWeight: '700', color: theme.colors.text }}>No plans yet</Text><Text style={{ color: theme.colors.text }}>Create your first workout plan below.</Text></View> : plans.map((plan) => <PlanCard key={plan.id} plan={plan} onView={startView} onEdit={startEdit} onActivate={(p) => activateMutation.mutate(p.id)} onDeactivate={(p) => deactivateMutation.mutate(p.id)} onRestart={(p) => setRestartConfirm({ planId: p.id, title: 'Restart Plan?', message: 'This will restart the plan at Week 1 starting today. Completed workout history will not be deleted or changed. The plan configuration, days, exercises, sets, reps, weights, and other settings will remain unchanged. Do you want to continue?' })} onDelete={(p) => setDeleteConfirm({
   type: 'plan',
   title: 'Delete Plan?',
   message: `This will permanently delete "${p.name}" and all of its workout days. This cannot be undone.`,
@@ -687,6 +713,91 @@ const [deleteConfirm, setDeleteConfirm] = useState<{
             >
               <Text style={{ fontWeight: '700', color: 'white' }}>
                 Delete
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    )}
+
+    {restartConfirm && (
+      <View
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.55)',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000,
+        }}
+      >
+        <View
+          style={{
+            width: '85%',
+            maxWidth: 420,
+            backgroundColor: theme.colors.surface,
+            borderRadius: 16,
+            padding: 24,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 20,
+              fontWeight: '700',
+              color: theme.colors.text,
+              marginBottom: 10,
+            }}
+          >
+            {restartConfirm.title}
+          </Text>
+
+          <Text
+            style={{
+              fontSize: 15,
+              color: theme.colors.text,
+              marginBottom: 24,
+            }}
+          >
+            {restartConfirm.message}
+          </Text>
+
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'flex-end',
+              gap: 12,
+            }}
+          >
+            <Pressable
+              onPress={() => setRestartConfirm(null)}
+              style={{
+                padding: 12,
+                borderRadius: 10,
+                backgroundColor: theme.colors.surfaceAlt,
+              }}
+            >
+              <Text style={{ fontWeight: '700', color: theme.colors.text }}>
+                Cancel
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => {
+                if (restartConfirm.planId) {
+                  restartMutation.mutate(restartConfirm.planId);
+                }
+              }}
+              style={{
+                padding: 12,
+                borderRadius: 10,
+                backgroundColor: theme.colors.primary,
+              }}
+            >
+              <Text style={{ fontWeight: '700', color: 'white' }}>
+                Restart
               </Text>
             </Pressable>
           </View>
