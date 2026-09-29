@@ -98,6 +98,7 @@ export type WorkoutHistorySession = {
   weekIndex?: number | null;
   dayOfWeek?: number | null;
   completedAt: string;
+  workoutSessionId: string;
   setResults: WorkoutSetResultHistory[];
 };
 

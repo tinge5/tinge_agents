@@ -141,8 +141,7 @@ export function WorkoutDetailScreen({ route, navigation }: any) {
       const data = await getWorkoutHistory();
       const sessions = Array.isArray(data) ? (data as WorkoutHistorySession[]) : [];
       const sessionId = activeSessionId ?? routeSessionId;
-      return sessions.find(session => session.id === sessionId) ?? null;
-    },
+    return sessions.find(session => session.workoutSessionId === sessionId) ?? null;    },
   });
 
   const reviewSetResults = useMemo(() => {
