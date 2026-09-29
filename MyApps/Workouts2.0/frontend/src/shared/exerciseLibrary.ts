@@ -509,6 +509,345 @@ export const EXERCISE_LIBRARY: Record<string, ExerciseProgressionRule> = {
     notes:
       'Loaded carry emphasizing grip, core, and full-body stability; gradually increase load while preserving programmed distance or duration.',
   },
+    'Trap Bar Deadlift': {
+    canonicalName: 'Trap Bar Deadlift',
+    strategy: 'weight',
+    weight: { type: 'increment', value: 10, decimals: 1 },
+    reps: { type: 'increment', value: 0, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes:
+      'Full-body compound deadlift variation; use a controlled 10 lb weekly increase while preserving programmed volume.',
+  },
+
+  'Sumo Deadlift': {
+    canonicalName: 'Sumo Deadlift',
+    strategy: 'weight',
+    weight: { type: 'increment', value: 10, decimals: 1 },
+    reps: { type: 'increment', value: 0, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes:
+      'Hip-dominant compound movement emphasizing the glutes, hamstrings, and adductors; progress load gradually.',
+  },
+
+  'Good Morning': {
+    canonicalName: 'Good Morning',
+    strategy: 'weight',
+    weight: { type: 'increment', value: 5, decimals: 1 },
+    reps: { type: 'increment', value: 0, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes:
+      'Posterior-chain movement emphasizing the hamstrings, glutes, and lower back; use controlled loading.',
+  },
+
+  'Reverse Lunge': {
+    canonicalName: 'Reverse Lunge',
+    strategy: 'hybrid',
+    weight: { type: 'increment', value: 5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes:
+      'Unilateral lower-body movement; gradually increase load while adding reps with consistent technique.',
+  },
+
+  'Walking Lunge': {
+    canonicalName: 'Walking Lunge',
+    strategy: 'hybrid',
+    weight: { type: 'increment', value: 5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes:
+      'Dynamic unilateral lower-body movement; progress load and reps gradually while maintaining balance.',
+  },
+
+  'Reverse Hack Squat': {
+    canonicalName: 'Reverse Hack Squat',
+    strategy: 'weight',
+    weight: { type: 'increment', value: 10, decimals: 1 },
+    reps: { type: 'increment', value: 0, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes:
+      'Machine-based posterior-chain squat variation; increase load gradually while maintaining controlled depth.',
+  },
+
+  'Smith Machine Squat': {
+    canonicalName: 'Smith Machine Squat',
+    strategy: 'weight',
+    weight: { type: 'increment', value: 10, decimals: 1 },
+    reps: { type: 'increment', value: 0, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes:
+      'Machine-assisted squat variation; use a controlled 10 lb progression while maintaining programmed volume.',
+  },
+
+  'Single-Leg Press': {
+    canonicalName: 'Single-Leg Press',
+    strategy: 'hybrid',
+    weight: { type: 'increment', value: 5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes:
+      'Unilateral machine-based lower-body movement; progress load and reps gradually while maintaining symmetry.',
+  },
+
+  'Glute Bridge': {
+    canonicalName: 'Glute Bridge',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes:
+      'Glute-focused movement; prioritize controlled repetitions and strong hip extension.',
+  },
+
+  'Cable Pull-Through': {
+    canonicalName: 'Cable Pull-Through',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes:
+      'Cable-based hip-hinge movement emphasizing the glutes and hamstrings; progress gradually.',
+  },
+
+  'Nordic Hamstring Curl': {
+    canonicalName: 'Nordic Hamstring Curl',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 0, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes:
+      'Bodyweight hamstring movement emphasizing eccentric strength; progress repetitions with strict control.',
+  },
+
+  'Seated Leg Press': {
+    canonicalName: 'Seated Leg Press',
+    strategy: 'weight',
+    weight: { type: 'increment', value: 10, decimals: 1 },
+    reps: { type: 'increment', value: 0, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes:
+      'Machine-based lower-body compound movement; gradually increase load while maintaining range of motion.',
+  },
+
+  'Machine Chest Press': {
+    canonicalName: 'Machine Chest Press',
+    strategy: 'weight',
+    weight: { type: 'increment', value: 5, decimals: 1 },
+    reps: { type: 'increment', value: 0, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes:
+      'Machine-based horizontal pressing movement; progress load gradually while maintaining controlled repetitions.',
+  },
+
+  'Incline Barbell Bench Press': {
+    canonicalName: 'Incline Barbell Bench Press',
+    strategy: 'weight',
+    weight: { type: 'increment', value: 5, decimals: 1 },
+    reps: { type: 'increment', value: 0, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes:
+      'Upper-chest focused compound press; use a gradual 5 lb progression while maintaining programmed volume.',
+  },
+
+  'Decline Bench Press': {
+    canonicalName: 'Decline Bench Press',
+    strategy: 'weight',
+    weight: { type: 'increment', value: 5, decimals: 1 },
+    reps: { type: 'increment', value: 0, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes:
+      'Compound chest pressing movement emphasizing the lower chest; progress load gradually.',
+  },
+
+  'Dumbbell Fly': {
+    canonicalName: 'Dumbbell Fly',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 2.5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes:
+      'Chest isolation movement; prioritize controlled range of motion before increasing load.',
+  },
+
+  'Cable Chest Press': {
+    canonicalName: 'Cable Chest Press',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 2.5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes:
+      'Cable-based horizontal pressing movement; use controlled repetitions and gradual load increases.',
+  },
+
+  'Arnold Press': {
+    canonicalName: 'Arnold Press',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 2.5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes:
+      'Dumbbell shoulder pressing variation; prioritize controlled repetitions and gradual load progression.',
+  },
+
+  'Machine Shoulder Press': {
+    canonicalName: 'Machine Shoulder Press',
+    strategy: 'weight',
+    weight: { type: 'increment', value: 5, decimals: 1 },
+    reps: { type: 'increment', value: 0, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes:
+      'Machine-based vertical pressing movement; increase load gradually while maintaining controlled technique.',
+  },
+
+  'Cable Lateral Raise': {
+    canonicalName: 'Cable Lateral Raise',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 2.5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes:
+      'Cable shoulder isolation movement; prioritize strict technique and controlled repetitions.',
+  },
+
+  'Cable Rear Delt Fly': {
+    canonicalName: 'Cable Rear Delt Fly',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 2.5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes:
+      'Rear-shoulder isolation movement; use controlled repetitions and gradual load progression.',
+  },
+
+  'Lat Pullover': {
+    canonicalName: 'Lat Pullover',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes:
+      'Lat-focused isolation movement; prioritize controlled range of motion and gradual progression.',
+  },
+
+  'Machine Row': {
+    canonicalName: 'Machine Row',
+    strategy: 'weight',
+    weight: { type: 'increment', value: 5, decimals: 1 },
+    reps: { type: 'increment', value: 0, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes:
+      'Machine-based horizontal pulling movement; gradually increase load while maintaining controlled technique.',
+  },
+
+  'Assisted Pull-Up': {
+    canonicalName: 'Assisted Pull-Up',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes:
+      'Assisted vertical pulling movement; gradually increase repetitions while reducing assistance when appropriate.',
+  },
+
+  'Cable Curl': {
+    canonicalName: 'Cable Curl',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 2.5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes:
+      'Cable biceps isolation movement; prioritize controlled repetitions and gradual load increases.',
+  },
+
+  'Incline Dumbbell Curl': {
+    canonicalName: 'Incline Dumbbell Curl',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 2.5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes:
+      'Biceps isolation movement with a lengthened position; use strict technique and gradual progression.',
+  },
+
+  'Rope Tricep Pushdown': {
+    canonicalName: 'Rope Tricep Pushdown',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 2.5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes:
+      'Cable triceps isolation movement; prioritize controlled repetitions and gradual load progression.',
+  },
+
+  'Tricep Dip Machine': {
+    canonicalName: 'Tricep Dip Machine',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes:
+      'Machine-based triceps pressing movement; progress repetitions and load gradually.',
+  },
+
+  'Ab Wheel Rollout': {
+    canonicalName: 'Ab Wheel Rollout',
+    strategy: 'bodyweight',
+    weight: { type: 'increment', value: 0, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes:
+      'Anti-extension core movement; gradually increase repetitions while maintaining a stable trunk.',
+  },
+
+  'Pallof Press': {
+    canonicalName: 'Pallof Press',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 2.5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes:
+      'Anti-rotation core movement; progress resistance gradually while maintaining a stable torso.',
+  },
+
+  'Russian Twist': {
+    canonicalName: 'Russian Twist',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes:
+      'Rotational core movement; progress repetitions and resistance while maintaining controlled movement.',
+  },
+
+  'Dead Bug': {
+    canonicalName: 'Dead Bug',
+    strategy: 'bodyweight',
+    weight: { type: 'increment', value: 0, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes:
+      'Core stability movement emphasizing trunk control; gradually increase repetitions while maintaining position.',
+  },
+
+  'Side Plank': {
+    canonicalName: 'Side Plank',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 0, decimals: 1 },
+    reps: { type: 'increment', value: 5, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes:
+      'Lateral core stability movement; gradually increase hold duration while maintaining alignment.',
+  },
+
+  'Suitcase Carry': {
+    canonicalName: 'Suitcase Carry',
+    strategy: 'weight',
+    weight: { type: 'increment', value: 5, decimals: 1 },
+    reps: { type: 'increment', value: 0, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes:
+      'Unilateral loaded carry emphasizing grip, obliques, and trunk stability; gradually increase load.',
+  },
 };
 
 export const GENERIC_PROGRESSIVE_OVERLOAD_RULE: ExerciseProgressionRule = {
