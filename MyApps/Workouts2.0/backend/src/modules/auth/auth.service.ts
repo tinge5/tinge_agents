@@ -135,19 +135,26 @@ private async sendEmail(
   text: string,
   html: string,
 ) {
-  const resend = new Resend(process.env.RESEND_API_KEY);
+  const { BrevoClient } = await import('@getbrevo/brevo');
 
-  const { data, error } = await resend.emails.send({
-    from: 'Workouts2.0 <onboarding@resend.dev>',
-    to: [to],
-    subject,
-    text,
-    html,
+  const client = new BrevoClient({
+    apiKey: process.env.BREVO_API_KEY!,
   });
 
-  if (error) {
-    throw new Error(`Failed to send email: ${error.message}`);
-  }
+  const result = await client.transactionalEmails.sendTransacEmail({
+    sender: {
+      name: 'Workouts2.0',
+      email: process.env.BREVO_FROM_EMAIL!,
+    },
+    to: [
+      {
+        email: to,
+      },
+    ],
+    subject,
+    textContent: text,
+    htmlContent: html,
+  });
 
-  console.log(`Password reset email sent: ${data?.id}`);
-}}
+  console.log(`Email sent successfully: ${result.messageId}`);
+}
