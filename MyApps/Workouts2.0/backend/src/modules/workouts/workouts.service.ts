@@ -605,7 +605,7 @@ export class WorkoutsService {
             planName: plan.name,
             workoutName: planDay.title,
             dayName: `Day ${planDay.dayOfWeek + 1}`,
-            weekIndex: planDay.weekIndex,
+            weekIndex: completedSession.weekIndex,
             dayOfWeek: planDay.dayOfWeek,
             completedAt,
             setResults: {
