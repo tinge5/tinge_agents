@@ -17,7 +17,9 @@ import { PlanEditorScreen } from '@/features/plans/PlanEditorScreen';
 import { ProfileScreen } from '@/features/profile/ProfileScreen';
 import { HistoryScreen } from '@/features/history/HistoryScreen';
 import { WorkoutDetailScreen } from '@/features/workouts/WorkoutDetailScreen';
+import { ForgotPasswordScreen } from '@/features/auth/ForgotPasswordScreen';
 import { theme } from '@/shared/theme';
+import { ResetPasswordScreen } from '@/features/auth/ResetPasswordScreen';
 
 const queryClient = new QueryClient();
 const Stack = createNativeStackNavigator();
@@ -71,6 +73,8 @@ function RootNavigator() {
           <>
             <Stack.Screen name="SignIn" component={AuthScreen} options={{ title: 'Sign In' }} />
             <Stack.Screen name="Register" component={RegisterScreen} options={{ title: 'Create Account' }} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ title: 'Forgot Password' }} />
+            <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} options={{ title: 'Reset Password' }} />
           </>
         ) : (
           <>

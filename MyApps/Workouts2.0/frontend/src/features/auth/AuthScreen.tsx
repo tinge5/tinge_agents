@@ -26,6 +26,9 @@ export function AuthScreen({ navigation }: any) {
       <Pressable onPress={onSubmit} disabled={loading} style={{ backgroundColor: theme.colors.primaryDark, padding: 16, borderRadius: 14, opacity: loading ? 0.6 : 1 }}>
         <Text style={{ color: 'white', textAlign: 'center', fontWeight: '700' }}>{loading ? 'Signing In...' : 'Continue'}</Text>
       </Pressable>
+      <Pressable onPress={() => navigation.navigate('ForgotPassword')}>
+        <Text style={{ textAlign: 'center', color: theme.colors.primary }}>Forgot password?</Text>
+      </Pressable>
       <Pressable onPress={() => navigation.navigate('Register')}>
         <Text style={{ textAlign: 'center', color: theme.colors.primary }}>Create an account</Text>
       </Pressable>
