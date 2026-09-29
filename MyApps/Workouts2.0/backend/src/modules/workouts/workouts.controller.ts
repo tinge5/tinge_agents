@@ -20,8 +20,9 @@ class SaveWorkoutSetResultBody {
   reps!: number;
 
   @IsNumber()
+  @IsOptional()
   @Min(0)
-  weight!: number;
+  weight?: number | null;
 }
 @UseGuards(JwtAuthGuard)
 @Controller('workouts')
