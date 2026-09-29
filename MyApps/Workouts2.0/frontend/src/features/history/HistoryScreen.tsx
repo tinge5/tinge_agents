@@ -32,10 +32,44 @@ function getWorkoutTitle(workout: WorkoutHistorySession) {
   return workout.workoutName || workout.dayName || 'Completed workout';
 }
 
-function groupWorkouts(workouts: WorkoutHistorySession[]) {
-  return workouts
-    .map(workout => ({ key: workout.id, title: getWorkoutTitle(workout), sessions: [workout] }))
-    .sort((a, b) => new Date(b.sessions[0]?.completedAt ?? 0).getTime() - new Date(a.sessions[0]?.completedAt ?? 0).getTime());
+function groupWorkouts(workouts: WorkoutHistorySession[]): WorkoutGroup[] {
+  const grouped = new Map<string, WorkoutGroup>();
+
+  for (const workout of workouts) {
+    const key = [
+      workout.planName ?? '',
+      workout.weekIndex ?? '',
+      workout.dayName ?? '',
+      workout.workoutName ?? '',
+    ].join('||');
+
+    const existing = grouped.get(key);
+
+    if (existing) {
+      existing.sessions.push(workout);
+    } else {
+      grouped.set(key, {
+        key,
+        title: getWorkoutTitle(workout),
+        sessions: [workout],
+      });
+    }
+  }
+
+  return Array.from(grouped.values())
+    .map(group => ({
+      ...group,
+      sessions: [...group.sessions].sort(
+        (a, b) =>
+          new Date(b.completedAt ?? 0).getTime() -
+          new Date(a.completedAt ?? 0).getTime()
+      ),
+    }))
+    .sort(
+      (a, b) =>
+        new Date(b.sessions[0]?.completedAt ?? 0).getTime() -
+        new Date(a.sessions[0]?.completedAt ?? 0).getTime()
+    );
 }
 
 function groupHistorySetResults(setResults: WorkoutHistorySession['setResults'] = []): GroupedHistorySet[] {
