@@ -91,7 +91,7 @@ function groupHistorySetResults(setResults: WorkoutHistorySession['setResults'] 
 function formatSetLine(setResult: WorkoutHistorySession['setResults'][number], index: number) {
   const reps = `${setResult.reps} reps`;
   const weight = `${setResult.weight} lbs`;
-  return `Set ${index + 1}: ${reps} × ${weight}`;
+  return `Set ${index + 1}: ${reps} ${setResult.weight > 0 ? ` × ${weight}lbs` : ''}`;
 }
 
 export function HistoryScreen() {
