@@ -9,11 +9,6 @@ export function WelcomeScreen() {
 
   return (
     <View style={styles.container}>
-       <Image
-          source={require('./workoutslogo.svg')}
-          style={[styles.logo, styles.logoGlow]}
-          contentFit="contain"
-        />
       <Image
         source={require('./workoutslogo.svg')}
                 
