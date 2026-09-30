@@ -261,11 +261,11 @@ function PlanCard({
       <Text style={{ color: theme.colors.text }}>Progressive overload: {plan.progressiveOverloadEnabled ? 'enabled' : 'disabled'}</Text>
       <Text style={{ color: theme.colors.text }}>Status: {plan.status}{plan.isActive ? ' (active)' : ''}</Text>
       <Text style={{ color: theme.colors.text }}>Duration: {plan.durationWeeks ?? 4} weeks</Text>
-      <Text style={{ color: theme.colors.text }}>Start date: {plan.startDate ? new Date(plan.startDate).toLocaleDateString() : 'Not set'}</Text>
+      <Text style={{ color: theme.colors.text }}>Start date: {plan.startDate ? new Date(plan.startDate).toLocaleDateString() : plan.createdAt ? new Date(plan.createdAt).toLocaleDateString() : 'Not set'}</Text>
       <Text style={{ color: theme.colors.text }}>Schedule: {days.length ? days.map((day) => `${typeof day.title === 'string' && day.title.trim() ? day.title : `Day ${Number(day.dayOfWeek) + 1}`} (${DAY_LABELS[normalizeDayOfWeek(day.dayOfWeek)]})`).join(', ') : 'No days configured'}</Text>
       <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
         <Pressable onPress={() => onView(plan)} style={{ backgroundColor: '#0f766e', padding: 12, borderRadius: 12 }}>
-          <Text style={{ color: 'white', fontWeight: '700', textShadowColor: '#0f766e', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 6  }}>View Plan</Text>
+          <Text style={{ color: 'white', fontWeight: '700', textShadowColor: '#e5ebea', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 10  }}>View Plan</Text>
         </Pressable>
         <Pressable onPress={() => onEdit(plan)} style={{ backgroundColor: theme.colors.primaryDark, padding: 12, borderRadius: 12 }}>
           <Text style={{ color: 'white', fontWeight: '700', textShadowColor: theme.colors.primaryDark, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 6  }}>Edit</Text>
