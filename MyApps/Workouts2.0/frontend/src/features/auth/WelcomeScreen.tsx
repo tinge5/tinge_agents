@@ -9,6 +9,11 @@ export function WelcomeScreen() {
 
   return (
     <View style={styles.container}>
+       <Image
+          source={require('./workoutslogo.svg')}
+          style={[styles.logo, styles.logoGlow]}
+          contentFit="contain"
+        />
       <Image
         source={require('./workoutslogo.svg')}
                 
@@ -46,6 +51,12 @@ const styles = StyleSheet.create({
     shadowRadius: 15, // Blur radius (higher numbers = softer, wider glow)
     */
   },
+  logoGlow: {
+  position: 'absolute',
+  opacity: 0.8,
+  transform: [{ scale: 1.08 }],
+  tintColor: '#FF5005',
+},
   title: {
     fontSize: 28,
     fontWeight: '700',

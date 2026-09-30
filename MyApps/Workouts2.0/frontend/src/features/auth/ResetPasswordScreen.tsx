@@ -38,7 +38,6 @@ export function ResetPasswordScreen({ navigation, route }: any) {
     <View style={{ padding: 20, gap: 12, backgroundColor: theme.colors.background, flex: 1 }}>
       <Text style={{ fontSize: 28, fontWeight: '700', color: theme.colors.text }}>Reset Password</Text>
       <Text style={{ color: theme.colors.textMuted }}>Enter the reset token from your email and choose a new password.</Text>
-      <TextInput value={token} onChangeText={setToken} placeholder="Reset token" placeholderTextColor={theme.colors.textMuted} autoCapitalize="none" style={{ borderWidth: 1, padding: 14, borderRadius: 12, borderColor: theme.colors.border, backgroundColor: theme.colors.surface, color: theme.colors.text, fontSize: 16 }} />
       <TextInput value={password} onChangeText={setPassword} placeholder="New password" placeholderTextColor={theme.colors.textMuted} secureTextEntry style={{ borderWidth: 1, padding: 14, borderRadius: 12, borderColor: theme.colors.border, backgroundColor: theme.colors.surface, color: theme.colors.text, fontSize: 16 }} />
       <Pressable onPress={onSubmit} disabled={loading} style={{ backgroundColor: theme.colors.primaryDark, padding: 16, borderRadius: 14, opacity: loading ? 0.6 : 1 }}>
         <Text style={{ color: 'white', textAlign: 'center', fontWeight: '700' }}>{loading ? 'Updating...' : 'Reset Password'}</Text>
