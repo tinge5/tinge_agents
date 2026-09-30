@@ -272,7 +272,7 @@ function PlanCard({
         </Pressable>
         {!plan.isActive ? (
           <Pressable onPress={() => onActivate(plan)} style={{ backgroundColor: theme.colors.primary, padding: 12, borderRadius: 12 }}>
-            <Text style={{ color: 'white', fontWeight: '700', textShadowColor: theme.colors.primary, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 6  }}>Activate</Text>
+            <Text style={{ color: 'white', fontWeight: '700', textShadowColor: theme.colors.primary, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 12  }}>Activate</Text>
           </Pressable>
         ) : (
           <Pressable onPress={() => onDeactivate(plan)} style={{ backgroundColor: theme.colors.surfaceAlt, padding: 12, borderRadius: 12 }}>
