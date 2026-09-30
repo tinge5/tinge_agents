@@ -283,7 +283,7 @@ function PlanCard({
           <Text style={{ color: 'white', fontWeight: '700', textShadowColor: '#e5ebea', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 10  }}>Restart Plan</Text>
         </Pressable>
         <Pressable onPress={() => onDelete(plan)} style={{ backgroundColor: '#3b1d1d', padding: 12, borderRadius: 12 }}>
-          <Text style={{ color: theme.colors.danger, fontWeight: '700', textShadowColor: themes.colors.danger, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 10  }}>Delete</Text>
+          <Text style={{ color: theme.colors.danger, fontWeight: '700', textShadowColor: theme.colors.danger, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 10  }}>Delete</Text>
         </Pressable>
       </View>
     </View>
