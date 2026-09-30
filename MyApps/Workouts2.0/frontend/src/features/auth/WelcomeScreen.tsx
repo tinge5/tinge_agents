@@ -20,7 +20,7 @@ export function WelcomeScreen() {
       <Text style={styles.subtitle}>Ready to pick up where you left off?</Text>
 
       <Pressable style={styles.button} onPress={() => navigation.navigate('MainFlow')}>
-        <Text style={styles.buttonText}>Enter</Text>
+        <Text style={[styles.buttonText, { textShadowColor: '#e5ebea', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 10 }]}>Enter</Text>
       </Pressable>
       
     </View>
@@ -76,5 +76,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '700',
+
   },
 });
