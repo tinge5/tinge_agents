@@ -265,25 +265,25 @@ function PlanCard({
       <Text style={{ color: theme.colors.text }}>Schedule: {days.length ? days.map((day) => `${typeof day.title === 'string' && day.title.trim() ? day.title : `Day ${Number(day.dayOfWeek) + 1}`} (${DAY_LABELS[normalizeDayOfWeek(day.dayOfWeek)]})`).join(', ') : 'No days configured'}</Text>
       <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
         <Pressable onPress={() => onView(plan)} style={{ backgroundColor: '#0f766e', padding: 12, borderRadius: 12 }}>
-          <Text style={{ color: 'white', fontWeight: '700', textShadowColor: '#e5ebea', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 10  }}>View Plan</Text>
+          <Text style={{ color: 'white', fontWeight: '700', textShadowColor: '#e5ebea', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 5  }}>View Plan</Text>
         </Pressable>
         <Pressable onPress={() => onEdit(plan)} style={{ backgroundColor: theme.colors.primaryDark, padding: 12, borderRadius: 12 }}>
-          <Text style={{ color: 'white', fontWeight: '700', textShadowColor: '#e5ebea', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 10  }}>Edit</Text>
+          <Text style={{ color: 'white', fontWeight: '700', textShadowColor: '#e5ebea', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 5  }}>Edit</Text>
         </Pressable>
         {!plan.isActive ? (
           <Pressable onPress={() => onActivate(plan)} style={{ backgroundColor: theme.colors.primary, padding: 12, borderRadius: 12 }}>
-            <Text style={{ color: 'white', fontWeight: '700', textShadowColor: '#e5ebea', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 10 }}>Activate</Text>
+            <Text style={{ color: 'white', fontWeight: '700', textShadowColor: '#e5ebea', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 5 }}>Activate</Text>
           </Pressable>
         ) : (
           <Pressable onPress={() => onDeactivate(plan)} style={{ backgroundColor: theme.colors.surfaceAlt, padding: 12, borderRadius: 12 }}>
-            <Text style={{ color: theme.colors.text, fontWeight: '700', textShadowColor: '#e5ebea', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 10  }}>Deactivate</Text>
+            <Text style={{ color: theme.colors.text, fontWeight: '700', textShadowColor: '#e5ebea', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 5  }}>Deactivate</Text>
           </Pressable>
         )}
         <Pressable onPress={() => onRestart(plan)} style={{ backgroundColor: '#1d4ed8', padding: 12, borderRadius: 12 }}>
-          <Text style={{ color: 'white', fontWeight: '700', textShadowColor: '#e5ebea', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 10  }}>Restart Plan</Text>
+          <Text style={{ color: 'white', fontWeight: '700', textShadowColor: '#e5ebea', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 5  }}>Restart Plan</Text>
         </Pressable>
         <Pressable onPress={() => onDelete(plan)} style={{ backgroundColor: '#3b1d1d', padding: 12, borderRadius: 12 }}>
-          <Text style={{ color: theme.colors.danger, fontWeight: '700', textShadowColor: theme.colors.danger, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 10  }}>Delete</Text>
+          <Text style={{ color: theme.colors.danger, fontWeight: '700', textShadowColor: theme.colors.danger, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 5  }}>Delete</Text>
         </Pressable>
       </View>
     </View>
