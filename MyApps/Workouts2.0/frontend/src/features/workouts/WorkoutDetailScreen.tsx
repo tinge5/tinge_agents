@@ -278,7 +278,7 @@ export function WorkoutDetailScreen({ route, navigation }: any) {
               <View key={exercise.name} style={{ borderWidth: 1, borderColor: theme.colors.border, padding: 14, borderRadius: 16, gap: 10, backgroundColor: theme.colors.surface }}>
                 <Pressable onPress={() => setExpanded(prev => ({ ...prev, [exercise.name]: !isExpanded }))} style={{ gap: 6 }}>
                   <Text style={{ fontSize: 18, fontWeight: '700', color: theme.colors.text }}>{formatExerciseHeader(exercise)}</Text>
-                  <Text style={{ color: theme.colors.primaryDark, textShadowColor: theme.colors.textMuted, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 6 }}>{isExpanded ? 'Tap to collapse' : 'Tap to expand sets'}</Text>
+                  <Text style={{ color: theme.colors.primaryDark, textShadowColor: theme.colors.primaryDark, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 6 }}>{isExpanded ? 'Tap to collapse' : 'Tap to expand sets'}</Text>
                 </Pressable>
 
                 {exercise.suggestedTarget ? (
