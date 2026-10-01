@@ -7,7 +7,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "web:export": "expo export --platform web --output-dir dist",
+    "web:export": "expo export --platform web --output-dir dist && node add-apple-icon.js",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
