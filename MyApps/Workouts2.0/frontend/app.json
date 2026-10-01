@@ -27,8 +27,8 @@
       "lang": "en",
       "startUrl": "/",
       "scope": "/",
-      "favicon": "./assets/workoutslogo.png",
-      "icon": "./assets/workoutslogo.png"
+      "favicon": "./web/Profile.png",
+      "icon": "./web/Profile.png"
     }
   }
 }
