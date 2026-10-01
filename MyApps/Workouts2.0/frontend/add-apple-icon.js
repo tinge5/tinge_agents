@@ -6,7 +6,7 @@ let html = fs.readFileSync(file, "utf8");
 
 html = html.replace(
   '</head>',
-  '<link rel="apple-touch-icon" href="/favicon.ico"></head>'
+  '<link rel="apple-touch-icon" href="/favicons.ico"></head>'
 );
 
 fs.writeFileSync(file, html);
