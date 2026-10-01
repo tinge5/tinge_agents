@@ -27,8 +27,8 @@
       "lang": "en",
       "startUrl": "/",
       "scope": "/",
-      "favicon": "./web/Profile.png",
-      "icon": "./web/Profile.png"
+      "favicon": "./assets/Profile.png",
+      "icon": "./assets/Profile.png"
     }
   }
 }
