@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, ScrollView, ActivityIndicator, RefreshControl, Pressable } from 'react-native';
 import { getWorkoutHistory, WorkoutHistorySession } from '@/shared/api/client';
 import { theme } from '@/shared/theme';
@@ -111,23 +112,40 @@ export function HistoryScreen() {
     }
   };
 
-  useEffect(() => {
+ useFocusEffect(
+  useCallback(() => {
     let active = true;
-    (async () => {
+
+    const load = async () => {
       try {
         setError(null);
         const data = await getWorkoutHistory();
-        if (active) setHistory({ workouts: Array.isArray(data) ? data : [] });
+
+        if (active) {
+          setHistory({
+            workouts: Array.isArray(data) ? data : [],
+          });
+        }
       } catch (e) {
-        if (active) setError(e instanceof Error ? e.message : 'Failed to load history');
+        if (active) {
+          setError(
+            e instanceof Error ? e.message : 'Failed to load history'
+          );
+        }
       } finally {
-        if (active) setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       }
-    })();
+    };
+
+    load();
+
     return () => {
       active = false;
     };
-  }, []);
+  }, [])
+);
 
   const workouts = useMemo(() => history.workouts ?? [], [history]);
   const groupedWorkouts = useMemo(() => groupWorkouts(workouts), [workouts]);
