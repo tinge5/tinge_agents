@@ -13,22 +13,22 @@ type TodayExercise = {
     sets?: number | null;
     reps?: number | null;
     weight?: number | null;
-    bestReps?: number | null;
-    bestWeight?: number | null;
+    prevReps?: number | null;
+    prevWeight?: number | null;
   } | null;
   suggestedTarget?: {
     sets?: number | null;
     reps?: number | null;
     weight?: number | null;
-    bestReps?: number | null;
-    bestWeight?: number | null;
+    prevReps?: number | null;
+    prevWeight?: number | null;
   } | null;
   startingTarget?: {
     sets?: number | null;
     reps?: number | null;
     weight?: number | null;
-    bestReps?: number | null;
-    bestWeight?: number | null;
+    prevReps?: number | null;
+    prevWeight?: number | null;
   } | null;
 };
 
@@ -42,8 +42,8 @@ function ExerciseCard({ exercise }: { exercise: TodayExercise }) {
     sets: exercise.sets,
     reps: exercise.reps,
     weight: exercise.weight,
-    bestReps: exercise.previousPerformance?.bestReps ?? null,
-    bestWeight: exercise.previousPerformance?.bestWeight ?? null,
+    prevReps: exercise.previousPerformance?.prevReps ?? null,
+    prevWeight: exercise.previousPerformance?.prevWeight ?? null,
 
   };
 
@@ -55,10 +55,9 @@ function ExerciseCard({ exercise }: { exercise: TodayExercise }) {
         <Text style={{ fontSize: 13, fontWeight: '700', color: theme.colors.textMuted, textTransform: 'uppercase' }}>Previous Performance</Text>
         <View style={{ backgroundColor: theme.colors.surfaceAlt, borderRadius: 12, padding: 12, gap: 4 }}>
           <Text style={{ color: theme.colors.text }}>Sets: {formatValue(exercise.previousPerformance?.sets ?? null)}</Text>
-          <Text style={{ fontSize: 11, fontWeight: '500', color: theme.colors.textMuted }}>Previous First set</Text>      
-          <Text style={{ color: theme.colors.text }}>Reps: {formatValue(exercise.previousPerformance?.bestReps ?? null)}</Text>
-          <Text style={{ color: theme.colors.text }}>Weight: {formatValue(exercise.previousPerformance?.bestWeight ?? null, ' lb')}</Text>
-          {exercise.previousPerformance?.bestReps != null && exercise.previousPerformance?.bestWeight != null ? (
+          <Text style={{ color: theme.colors.text }}>Reps: {formatValue(exercise.previousPerformance?.prevReps ?? null)}</Text>
+          <Text style={{ color: theme.colors.text }}>First Weight: {formatValue(exercise.previousPerformance?.prevWeight ?? null, ' lb')}</Text>
+          {exercise.previousPerformance?.prevReps != null && exercise.previousPerformance?.prevWeight != null ? (
             <Text style={{ color: theme.colors.text }}>Previous Best Set: {formatValue(exercise.previousPerformance?.reps ?? null)} x {formatValue(exercise.previousPerformance?.weight ?? null, ' lb')}</Text>
           ) : null}
 
@@ -69,8 +68,8 @@ function ExerciseCard({ exercise }: { exercise: TodayExercise }) {
       <View style={{ gap: 8 }}>
         <Text style={{ fontSize: 13, fontWeight: '700', color: theme.colors.textMuted, textTransform: 'uppercase' }}>Suggested Target for Top set</Text>
         <View style={{ backgroundColor: '#2a1a0d', borderRadius: 12, padding: 12, gap: 4 }}>
-          <Text style={{ color: theme.colors.text }}>Reps: {formatValue(displaySuggested.bestReps ?? displaySuggested.reps ?? null)}</Text>
-          <Text style={{ color: theme.colors.text }}>Weight: {formatValue(displaySuggested.bestWeight ?? displaySuggested.weight ?? null, ' lb')}</Text>
+          <Text style={{ color: theme.colors.text }}>Reps: {formatValue(displaySuggested.prevReps ?? displaySuggested.reps ?? null)}</Text>
+          <Text style={{ color: theme.colors.text }}>Weight: {formatValue(displaySuggested.prevWeight ?? displaySuggested.weight ?? null, ' lb')}</Text>
         </View>
       </View>
     </View>
@@ -98,7 +97,7 @@ export function TodayScreen({ navigation }: any) {
   return (
     <ScrollView contentContainerStyle={{ padding: 20, gap: 12, backgroundColor: theme.colors.background, flexGrow: 1 }}>
       <Text style={{ fontSize: 30, fontWeight: '800', color: theme.colors.text }}>Today</Text>
-      <Text style={{ color: theme.colors.textMuted }}>Your active plan workout and the backend&apos;s progression guidance</Text>
+      <Text style={{ color: theme.colors.textMuted }}>Your active plan's workout of the day</Text>
 
       {isLoading ? (
         <View style={{ paddingVertical: 40 }}>
