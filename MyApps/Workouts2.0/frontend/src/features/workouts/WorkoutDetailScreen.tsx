@@ -68,7 +68,7 @@ function buildInitialExpandedState(exercises: WorkoutExercise[]): ExpandedState 
 }
 
 function formatExerciseHeader(exercise: WorkoutExercise) {
-  const sets = exercise.setsTarget != null ? String(exercise.setsTarget) : '—';
+  const sets = exercise.sets != null ? String(exercise.sets) : '—';
   const reps = exercise.repsTarget != null ? String(exercise.repsTarget) : exercise.reps != null ? String(exercise.reps) : '—';
   return `${exercise.name} — ${sets} × ${reps}`;
 }

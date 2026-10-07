@@ -404,6 +404,8 @@ export class WorkoutsService {
           sets: suggestedTarget.sets,
           reps: suggestedTarget.reps,
           weight: suggestedTarget.weight,
+          setsTarget: exercise.setsTarget,
+          repsTarget: exercise.repsTarget,
         };
       }),
     );
