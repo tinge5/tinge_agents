@@ -58,7 +58,7 @@ function ExerciseCard({ exercise }: { exercise: TodayExercise }) {
           <Text style={{ color: theme.colors.text }}>Reps: {formatValue(exercise.previousPerformance?.prevReps ?? null)}</Text>
           <Text style={{ color: theme.colors.text }}>First Weight: {formatValue(exercise.previousPerformance?.prevWeight ?? null, ' lb')}</Text>
           {exercise.previousPerformance?.prevReps != null && exercise.previousPerformance?.prevWeight != null ? (
-            <Text style={{ color: theme.colors.text }}>Previous Best Set: {formatValue(exercise.previousPerformance?.reps ?? null)} x {formatValue(exercise.previousPerformance?.weight ?? null, ' lb')}</Text>
+            <Text style={{ color: theme.colors.text }}>Previous Best Set: {formatValue(exercise.previousPerformance?.reps ?? null)} {exercise.previousPerformance.weight != 0 ? `x ${formatValue(exercise.previousPerformance?.weight ?? null, ' lb')}` : ''}</Text>
           ) : null}
 
           {!exercise.previousPerformance ? <Text style={{ color: theme.colors.textMuted }}>No completed history for this exercise yet.</Text> : null}
