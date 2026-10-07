@@ -45,7 +45,7 @@ function ExerciseCard({ exercise }: { exercise: TodayExercise }) {
       <View style={{ gap: 8 }}>
         <Text style={{ fontSize: 13, fontWeight: '700', color: theme.colors.textMuted, textTransform: 'uppercase' }}>Previous Performance Best Set</Text>
         <View style={{ backgroundColor: theme.colors.surfaceAlt, borderRadius: 12, padding: 12, gap: 4 }}>
-          <Text style={{ color: theme.colors.text }}>Sets: {formatValue(exercise.previousPerformance?.sets ?? null)}</Text>
+          <Text style={{ color: theme.colors.text }}>Set: {formatValue(exercise.previousPerformance?.sets ?? null)}</Text>
           <Text style={{ color: theme.colors.text }}>Reps: {formatValue(exercise.previousPerformance?.reps ?? null)}</Text>
           <Text style={{ color: theme.colors.text }}>Weight: {formatValue(exercise.previousPerformance?.weight ?? null, ' lb')}</Text>
           {!exercise.previousPerformance ? <Text style={{ color: theme.colors.textMuted }}>No completed history for this exercise yet.</Text> : null}
@@ -55,7 +55,7 @@ function ExerciseCard({ exercise }: { exercise: TodayExercise }) {
       <View style={{ gap: 8 }}>
         <Text style={{ fontSize: 13, fontWeight: '700', color: theme.colors.textMuted, textTransform: 'uppercase' }}>Suggested Target</Text>
         <View style={{ backgroundColor: '#2a1a0d', borderRadius: 12, padding: 12, gap: 4 }}>
-          <Text style={{ color: theme.colors.text }}>Sets: {formatValue(displaySuggested.sets ?? null)}</Text>
+          <Text style={{ color: theme.colors.text }}>Set: {formatValue(displaySuggested.sets ?? null)}</Text>
           <Text style={{ color: theme.colors.text }}>Reps: {formatValue(displaySuggested.reps ?? null)}</Text>
           <Text style={{ color: theme.colors.text }}>Weight: {formatValue(displaySuggested.weight ?? null, ' lb')}</Text>
         </View>
