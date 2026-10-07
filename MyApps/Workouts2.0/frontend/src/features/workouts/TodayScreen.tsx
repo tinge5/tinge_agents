@@ -55,6 +55,7 @@ function ExerciseCard({ exercise }: { exercise: TodayExercise }) {
         <Text style={{ fontSize: 13, fontWeight: '700', color: theme.colors.textMuted, textTransform: 'uppercase' }}>Previous Performance</Text>
         <View style={{ backgroundColor: theme.colors.surfaceAlt, borderRadius: 12, padding: 12, gap: 4 }}>
           <Text style={{ color: theme.colors.text }}>Sets: {formatValue(exercise.previousPerformance?.sets ?? null)}</Text>
+          <Text style={{ fontSize: 11, fontWeight: '500', color: theme.colors.textMuted }}>Previous First set</Text>      
           <Text style={{ color: theme.colors.text }}>Reps: {formatValue(exercise.previousPerformance?.bestReps ?? null)}</Text>
           <Text style={{ color: theme.colors.text }}>Weight: {formatValue(exercise.previousPerformance?.bestWeight ?? null, ' lb')}</Text>
           {exercise.previousPerformance?.bestReps != null && exercise.previousPerformance?.bestWeight != null ? (

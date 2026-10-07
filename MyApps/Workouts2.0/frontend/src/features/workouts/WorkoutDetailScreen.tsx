@@ -9,6 +9,8 @@ type WorkoutExercise = {
   sets: number | null;
   reps: number | null;
   weight: number | null;
+  bestReps?: number | null;
+  bestWeight?: number | null;
   exerciseId?: string | null;
   previousPerformance?:
     | {
@@ -65,7 +67,7 @@ function buildInitialExpandedState(exercises: WorkoutExercise[]): ExpandedState 
 
 function formatExerciseHeader(exercise: WorkoutExercise) {
   const sets = exercise.sets != null ? String(exercise.sets) : '—';
-  const reps = exercise.reps != null ? String(exercise.reps) : '—';
+  const reps = exercise.bestReps != null ? String(exercise.bestReps) : exercise.reps != null ? String(exercise.reps) : '—';
   return `${exercise.name} — ${sets} × ${reps}`;
 }
 
@@ -279,7 +281,7 @@ export function WorkoutDetailScreen({ route, navigation }: any) {
 
                 {exercise.suggestedTarget ? (
                   <View style={{ gap: 4 }}>
-                    <Text style={{ fontWeight: '700', color: theme.colors.text }}>Suggested Target</Text>
+                    <Text style={{ fontWeight: '700', color: theme.colors.text }}>Suggested Targeted Top Set</Text>
                     <Text style={{ color: theme.colors.text }}>{`${exercise.suggestedTarget.sets ?? '—'} × ${exercise.suggestedTarget.reps ?? '—'}${exercise.suggestedTarget.weight != null ? ` @ ${exercise.suggestedTarget.weight}` : ''}`}</Text>
                   </View>
                 ) : null}
