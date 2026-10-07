@@ -43,7 +43,7 @@ function ExerciseCard({ exercise }: { exercise: TodayExercise }) {
       <Text style={{ fontSize: 18, fontWeight: '700', color: theme.colors.text }}>{exercise.name}</Text>
 
       <View style={{ gap: 8 }}>
-        <Text style={{ fontSize: 13, fontWeight: '700', color: theme.colors.textMuted, textTransform: 'uppercase' }}>Previous Performance</Text>
+        <Text style={{ fontSize: 13, fontWeight: '700', color: theme.colors.textMuted, textTransform: 'uppercase' }}>Previous Performance Best Set</Text>
         <View style={{ backgroundColor: theme.colors.surfaceAlt, borderRadius: 12, padding: 12, gap: 4 }}>
           <Text style={{ color: theme.colors.text }}>Sets: {formatValue(exercise.previousPerformance?.sets ?? null)}</Text>
           <Text style={{ color: theme.colors.text }}>Reps: {formatValue(exercise.previousPerformance?.reps ?? null)}</Text>

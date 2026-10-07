@@ -108,9 +108,14 @@ function toNullableNumber(value: unknown) {
 
 function aggregateSetResults(setResults: { setNumber: number; reps: number; weight: number }[]) {
   if (setResults.length === 0) return null;
-  const bestSet = setResults.reduce((best, current) =>
-  current.weight > best.weight ? current : best
-  );
+  const hasWeights = setResults.some(set => set.weight != null);
+  const bestSet = hasWeights
+    ? setResults.reduce((best, current) =>
+        (current.weight ?? 0) > (best.weight ?? 0) ? current : best
+      )
+    : setResults.reduce((best, current) =>
+        current.reps > best.reps ? current : best
+      );
   const sets = setResults.length;
   const reps = bestSet.reps;
   const weight = bestSet.weight;
