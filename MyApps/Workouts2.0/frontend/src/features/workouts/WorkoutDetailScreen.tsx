@@ -9,8 +9,8 @@ type WorkoutExercise = {
   sets: number | null;
   reps: number | null;
   weight: number | null;
-  prevReps?: number | null;
-  prevWeight?: number | null;
+  setsTarget?: number | null;
+  repsTarget?: number | null;
   exerciseId?: string | null;
   previousPerformance?:
     | {
@@ -68,8 +68,8 @@ function buildInitialExpandedState(exercises: WorkoutExercise[]): ExpandedState 
 }
 
 function formatExerciseHeader(exercise: WorkoutExercise) {
-  const sets = exercise.sets != null ? String(exercise.sets) : '—';
-  const reps = exercise.reps != null ? String(exercise.reps) : exercise.prevReps != null ? String(exercise.prevReps) : '—';
+  const sets = exercise.setsTarget != null ? String(exercise.setsTarget) : '—';
+  const reps = exercise.repsTarget != null ? String(exercise.repsTarget) : exercise.reps != null ? String(exercise.reps) : '—';
   return `${exercise.name} — ${sets} × ${reps}`;
 }
 
