@@ -13,16 +13,22 @@ type TodayExercise = {
     sets?: number | null;
     reps?: number | null;
     weight?: number | null;
+    bestReps?: number | null;
+    bestWeight?: number | null;
   } | null;
   suggestedTarget?: {
     sets?: number | null;
     reps?: number | null;
     weight?: number | null;
+    bestReps?: number | null;
+    bestWeight?: number | null;
   } | null;
   startingTarget?: {
     sets?: number | null;
     reps?: number | null;
     weight?: number | null;
+    bestReps?: number | null;
+    bestWeight?: number | null;
   } | null;
 };
 
@@ -36,6 +42,9 @@ function ExerciseCard({ exercise }: { exercise: TodayExercise }) {
     sets: exercise.sets,
     reps: exercise.reps,
     weight: exercise.weight,
+    bestReps: exercise.previousPerformance?.bestReps ?? null,
+    bestWeight: exercise.previousPerformance?.bestWeight ?? null,
+
   };
 
   return (
@@ -43,21 +52,24 @@ function ExerciseCard({ exercise }: { exercise: TodayExercise }) {
       <Text style={{ fontSize: 18, fontWeight: '700', color: theme.colors.text }}>{exercise.name}</Text>
 
       <View style={{ gap: 8 }}>
-        <Text style={{ fontSize: 13, fontWeight: '700', color: theme.colors.textMuted, textTransform: 'uppercase' }}>Previous Performance Best Set</Text>
+        <Text style={{ fontSize: 13, fontWeight: '700', color: theme.colors.textMuted, textTransform: 'uppercase' }}>Previous Performance</Text>
         <View style={{ backgroundColor: theme.colors.surfaceAlt, borderRadius: 12, padding: 12, gap: 4 }}>
-          <Text style={{ color: theme.colors.text }}>Set: {formatValue(exercise.previousPerformance?.sets ?? null)}</Text>
+          <Text style={{ color: theme.colors.text }}>Sets: {formatValue(exercise.previousPerformance?.sets ?? null)}</Text>
           <Text style={{ color: theme.colors.text }}>Reps: {formatValue(exercise.previousPerformance?.reps ?? null)}</Text>
           <Text style={{ color: theme.colors.text }}>Weight: {formatValue(exercise.previousPerformance?.weight ?? null, ' lb')}</Text>
+          {exercise.previousPerformance?.bestReps != null && exercise.previousPerformance?.bestWeight != null ? (
+            <Text style={{ color: theme.colors.text }}>Previous Best Set: {formatValue(exercise.previousPerformance?.bestReps ?? null)} x {formatValue(exercise.previousPerformance?.bestWeight ?? null, ' lb')}</Text>
+          ) : null}
+
           {!exercise.previousPerformance ? <Text style={{ color: theme.colors.textMuted }}>No completed history for this exercise yet.</Text> : null}
         </View>
       </View>
 
       <View style={{ gap: 8 }}>
-        <Text style={{ fontSize: 13, fontWeight: '700', color: theme.colors.textMuted, textTransform: 'uppercase' }}>Suggested Target</Text>
+        <Text style={{ fontSize: 13, fontWeight: '700', color: theme.colors.textMuted, textTransform: 'uppercase' }}>Suggested Target for Top set</Text>
         <View style={{ backgroundColor: '#2a1a0d', borderRadius: 12, padding: 12, gap: 4 }}>
-          <Text style={{ color: theme.colors.text }}>Set: {formatValue(displaySuggested.sets ?? null)}</Text>
-          <Text style={{ color: theme.colors.text }}>Reps: {formatValue(displaySuggested.reps ?? null)}</Text>
-          <Text style={{ color: theme.colors.text }}>Weight: {formatValue(displaySuggested.weight ?? null, ' lb')}</Text>
+          <Text style={{ color: theme.colors.text }}>Reps: {formatValue(displaySuggested.bestReps ?? displaySuggested.reps ?? null)}</Text>
+          <Text style={{ color: theme.colors.text }}>Weight: {formatValue(displaySuggested.bestWeight ?? displaySuggested.weight ?? null, ' lb')}</Text>
         </View>
       </View>
     </View>

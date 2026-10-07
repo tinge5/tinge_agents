@@ -117,9 +117,11 @@ function aggregateSetResults(setResults: { setNumber: number; reps: number; weig
         current.reps > best.reps ? current : best
       );
   const sets = setResults.length;
-  const reps = bestSet.reps;
-  const weight = bestSet.weight;
-  return { sets, reps, weight, setResults };
+  const reps = setResults[0].reps;
+  const weight = setResults[0].weight;
+  const bestReps = bestSet.reps;
+  const bestWeight = bestSet.weight ?? null;
+  return { sets, reps, weight, bestWeight, bestReps, setResults };
 }
 
 function getPerformanceFromHistory(history: {
