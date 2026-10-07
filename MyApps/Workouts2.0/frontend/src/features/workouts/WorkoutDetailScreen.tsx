@@ -38,24 +38,20 @@ function buildInitialInputs(exercises: WorkoutExercise[]): WorkoutInputState {
       const plannedSets = Math.max(0, exercise.sets ?? 0);
       const previousSetResults = exercise.previousPerformance?.setResults ?? [];
       const nextValues = Array.from({ length: plannedSets }, (_, index) => {
-        const previousSet = previousSetResults[index];
+        const previousSet = previousSetResults.find(set => set.setNumber === index + 1);
         return {
           reps:
             previousSet?.reps != null
               ? String(previousSet.reps)
-              : exercise.previousPerformance?.reps != null
-                ? String(exercise.previousPerformance.reps)
-                : exercise.reps != null
-                  ? String(exercise.reps)
-                  : '',
+              : exercise.reps != null
+                ? String(exercise.reps)
+                : '',
           weight:
             previousSet?.weight != null
               ? String(previousSet.weight)
-              : exercise.previousPerformance?.weight != null
-                ? String(exercise.previousPerformance.weight)
-                : exercise.weight != null
-                  ? String(exercise.weight)
-                  : '',
+              : exercise.weight != null
+                ? String(exercise.weight)
+                : '',
         };
       });
       return [exercise.name, nextValues];

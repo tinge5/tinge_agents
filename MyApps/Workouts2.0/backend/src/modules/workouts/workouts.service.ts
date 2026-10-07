@@ -22,6 +22,11 @@ type PreviousPerformance = {
   workoutSessionId?: string;
   completedAt?: Date | null;
   rpe?: number | null;
+  setResults?: Array<{
+    setNumber: number;
+    reps: number | null;
+    weight: number | null;
+  }>;
 };
 
 type PlanCompletionResult = {
@@ -103,10 +108,13 @@ function toNullableNumber(value: unknown) {
 
 function aggregateSetResults(setResults: { setNumber: number; reps: number; weight: number }[]) {
   if (setResults.length === 0) return null;
+  const bestSet = setResults.reduce((best, current) =>
+  current.weight > best.weight ? current : best
+  );
   const sets = setResults.length;
-  const reps = setResults[0].reps;
-  const weight = setResults[0].weight;
-  return { sets, reps, weight };
+  const reps = bestSet.reps;
+  const weight = bestSet.weight;
+  return { sets, reps, weight, setResults };
 }
 
 function getPerformanceFromHistory(history: {
