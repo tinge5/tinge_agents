@@ -16,6 +16,7 @@ class SaveWorkoutSetResultBody {
   setNumber!: number;
 
   @IsNumber()
+  @IsOptional()
   @Min(0)
   reps!: number;
 
