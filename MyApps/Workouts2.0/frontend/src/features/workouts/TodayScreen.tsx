@@ -9,6 +9,8 @@ type TodayExercise = {
   sets: number | null;
   reps: number | null;
   weight: number | null;
+  repsTarget?: number | null;
+  setsTarget?: number | null;
   previousPerformance?: {
     sets?: number | null;
     reps?: number | null;
@@ -31,6 +33,12 @@ type TodayExercise = {
     prevWeight?: number | null;
   } | null;
 };
+function formatExerciseHeader(exercise: TodayExercise) {
+  const sets = exercise.sets != null ? String(exercise.sets) : '—';
+  const reps = exercise.repsTarget != null ? String(exercise.repsTarget) : exercise.reps != null ? String(exercise.reps) : '—';
+  return `${exercise.name} — ${sets} × ${reps}`;
+}
+
 
 function formatValue(value: number | null | undefined, suffix = '') {
   if (value === null || value === undefined) return '—';
@@ -47,9 +55,10 @@ function ExerciseCard({ exercise }: { exercise: TodayExercise }) {
 
   };
 
+
   return (
     <View style={{ borderWidth: 1, borderColor: theme.colors.border, padding: 16, borderRadius: 16, gap: 14, backgroundColor: theme.colors.surface }}>
-      <Text style={{ fontSize: 18, fontWeight: '700', color: theme.colors.text }}>{exercise.name}</Text>
+      <Text style={{ fontSize: 18, fontWeight: '700', color: theme.colors.text }}>{exercise.name} {formatExerciseHeader(exercise)}</Text>
 
       <View style={{ gap: 8 }}>
         <Text style={{ fontSize: 13, fontWeight: '700', color: theme.colors.textMuted, textTransform: 'uppercase' }}>Previous Performance</Text>
