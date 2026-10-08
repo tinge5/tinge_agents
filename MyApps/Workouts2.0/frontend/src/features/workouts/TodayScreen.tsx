@@ -58,7 +58,7 @@ function ExerciseCard({ exercise }: { exercise: TodayExercise }) {
 
   return (
     <View style={{ borderWidth: 1, borderColor: theme.colors.border, padding: 16, borderRadius: 16, gap: 14, backgroundColor: theme.colors.surface }}>
-      <Text style={{ fontSize: 18, fontWeight: '700', color: theme.colors.text }}>{exercise.name} {formatExerciseHeader(exercise)}</Text>
+      <Text style={{ fontSize: 18, fontWeight: '700', color: theme.colors.text }}>{formatExerciseHeader(exercise)}</Text>
 
       <View style={{ gap: 8 }}>
         <Text style={{ fontSize: 13, fontWeight: '700', color: theme.colors.textMuted, textTransform: 'uppercase' }}>Previous Performance</Text>
