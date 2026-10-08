@@ -290,7 +290,7 @@ export function WorkoutDetailScreen({ route, navigation }: any) {
 
                 {isExpanded && !completedState ? (
                   <View style={{ gap: 10 }}>
-                  <Text style={{ fontSize: 12, fontWeight: '500', color: theme.colors.textMuted }}>Autofilled with Previous Performance</Text>
+                  {exercise.previousPerformance ? <Text style={{ fontSize: 12, fontWeight: '500', color: theme.colors.textMuted }}>Autofilled with Previous Performance</Text> : null}
                     {Array.from({ length: plannedSets }, (_, index) => {
                       const setValue = value[index] ?? { reps: '', weight: '' };
                       return (
