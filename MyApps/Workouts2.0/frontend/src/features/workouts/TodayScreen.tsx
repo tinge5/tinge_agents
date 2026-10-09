@@ -97,7 +97,7 @@ export function TodayScreen({ navigation }: any) {
   }, [navigation, queryClient]);
 
   const workout = data;
-  console.log(workout);
+  //console.log(workout);
   const exercises = workout?.exercises ?? [];
   const isCompletedWorkout = workout?.status === 'completed';
   const isInProgressWorkout = workout?.status === 'in_progress';
