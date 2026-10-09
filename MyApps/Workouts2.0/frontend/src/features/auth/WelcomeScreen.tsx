@@ -25,7 +25,7 @@ export function WelcomeScreen() {
       />
 
       <Text style={styles.title}>Welcome back</Text>
-      <Text style={styles.title}>{displayUser?.displayName ?? ''}!</Text>
+      <Text style={styles.username}>{displayUser?.displayName ?? ''}</Text>
       <Text style={styles.subtitle}>Ready to pick up where you left off?</Text>
 
       <Pressable style={styles.button} onPress={() => navigation.navigate('MainFlow')}>
@@ -72,6 +72,15 @@ const styles = StyleSheet.create({
     color: theme.colors.textMuted,
     textAlign: 'center',
     marginBottom: 28,
+  },
+  username: {
+    fontSize: 22,
+    color: theme.colors.text,
+    textAlign: 'center',
+    marginBottom: 28,
+    textShadowColor: theme.colors.primaryDark, 
+    textShadowOffset: { width: 0, height: 0 }, 
+    textShadowRadius: 6 
   },
   button: {
     minWidth: 160,
