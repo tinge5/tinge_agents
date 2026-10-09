@@ -1,11 +1,19 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet} from 'react-native';
+import { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { Image } from 'expo-image';
+import { useAppSelector } from '@/shared/store';
+import { MeProfile } from '@/shared/api/client';
 import { theme } from '@/shared/theme';
 
 export function WelcomeScreen() {
   const navigation = useNavigation<any>();
+  const user = useAppSelector((s) => s.auth.user);
+  const [profile, setProfile] = useState<MeProfile | null>(null);
+  const displayUser = profile ?? user;
+
+  
 
   return (
     <View style={styles.container}>
@@ -17,6 +25,7 @@ export function WelcomeScreen() {
       />
 
       <Text style={styles.title}>Welcome back</Text>
+      <Text style={styles.title}>{displayUser?.displayName ?? ''}!</Text>
       <Text style={styles.subtitle}>Ready to pick up where you left off?</Text>
 
       <Pressable style={styles.button} onPress={() => navigation.navigate('MainFlow')}>
