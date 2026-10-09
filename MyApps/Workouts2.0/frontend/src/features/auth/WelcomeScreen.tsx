@@ -74,6 +74,7 @@ const styles = StyleSheet.create({
   },
   username: {
     fontSize: 26,
+    fontWeight: '600',
     color: theme.colors.text,
     textAlign: 'center',
     marginBottom: 8,
