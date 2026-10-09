@@ -103,6 +103,16 @@ export function TodayScreen({ navigation }: any) {
   const isInProgressWorkout = workout?.status === 'in_progress';
   const isReviewMode = isCompletedWorkout;
   const workoutButtonLabel = isReviewMode ? 'Review Workout' : 'Start Workout';
+  const DAY_LABELS: Record<number, string> = {
+  0: 'Sunday',
+  1: 'Monday',
+  2: 'Tuesday',
+  3: 'Wednesday',
+  4: 'Thursday',
+  5: 'Friday',
+  6: 'Saturday',
+};
+
 
   return (
     <ScrollView contentContainerStyle={{ padding: 20, gap: 12, backgroundColor: theme.colors.background, flexGrow: 1 }}>
@@ -130,7 +140,7 @@ export function TodayScreen({ navigation }: any) {
         <>
           <View style={{ backgroundColor: theme.colors.surface, padding: 16, borderRadius: 16, gap: 8 }}>
             <Text style={{ fontSize: 22, fontWeight: '700', color: theme.colors.text }}>{workout.title ?? 'Scheduled Workout'}</Text>
-            <Text style={{ color: theme.colors.text }}>{workout.day ?? 'Today'}</Text>
+            <Text style={{ color: theme.colors.text }}>{workout.planDay?.dayOfWeek != null ? DAY_LABELS[workout.planDay.dayOfWeek] : 'Today'}</Text>
             <Text style={{ color: theme.colors.textMuted }}>Week {workout.weekIndex != null ? Number(workout.weekIndex) + 1 : 1}</Text>
             {workout.note ? <Text style={{ color: theme.colors.text }}>{workout.note}</Text> : null}
             {isInProgressWorkout ? <Text style={{ color: theme.colors.warning, fontWeight: '700' }}>Workout in progress</Text> : null}
