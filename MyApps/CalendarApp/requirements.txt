@@ -1,0 +1,205 @@
+SOCIAL CALENDAR PROTOTYPE — REQUIREMENTS Version: 1.0 Purpose: Input for
+the CrewAI Architect agent to produce an architecture document.
+
+1.  PROJECT OVERVIEW Build a small React Native frontend prototype for
+    Social Calendar. The prototype tests whether the application can:
+
+-   Identify overlapping availability across a selected group of
+    fictional friends.
+-   Recommend activities based on shared availability and group
+    preferences.
+-   Let a user create an event invitation, send it to a fictional friend
+    in the prototype, accept or decline it, and add an accepted event to
+    the relevant schedule.
+
+This is a frontend-only proof of concept. The goal is to validate the
+core workflow and architecture, not to build the full Social Calendar
+product.
+
+2.  TECHNOLOGY AND IMPLEMENTATION CONSTRAINTS
+
+-   Use React Native. Prefer Expo if appropriate for a simple prototype
+    that can be run and tested locally.
+-   The only CrewAI development agents in scope are Architect and
+    Frontend Developer.
+-   The Architect agent should produce an architecture document before
+    implementation.
+-   The Frontend Developer agent will implement the UI and client-side
+    behavior based on that document.
+-   Use local, mock/sample data for users, friends, calendars, events,
+    interests, locations, and budgets.
+-   Do not require a backend, database, live API, or external service.
+-   Do not implement real authentication. A simple demo-user selection
+    or mock login screen may be used to establish which fictional user
+    is using the app.
+-   Do not run or claim to have run build/test commands unless
+    explicitly requested. The project owner will run the app and verify
+    it.
+-   Keep the implementation small, easy to understand, and suitable for
+    a course prototype.
+
+3.  USERS AND DEMO DATA
+
+-   Include a small set of fictional demo users with distinct schedules
+    and interests.
+-   The prototype user must be able to choose friends to include in a
+    group.
+-   Calendar data must include event start/end times and enough
+    information to calculate free time.
+-   Sample activities should have relevant attributes such as category,
+    location, estimated cost/budget level, and interests.
+-   Make it obvious in the UI that the data is sample/demo data.
+
+4.  FRONTEND SCREENS AND FUNCTIONALITY
+
+4.1 Demo entry / location settings - Provide a simple entry point into
+the prototype. Real account creation and authentication are out of
+scope. - Provide a basic location setting or location selection control
+used by recommendations. - Use a manually selected/demo location; do not
+request device GPS permissions unless the Architect identifies a clear
+prototype need.
+
+4.2 Calendar screen - Show the current demo user’s sample schedule in a
+readable calendar or agenda view. - Allow the user to add a mock event
+and remove or edit a sample event if feasible. - Display event details
+such as title, date, start/end time, and location when available. -
+Include an obvious way to navigate to friend/group availability and
+recommendations.
+
+4.3 Friends and group selection - Display a list of fictional friends. -
+Allow the user to select multiple friends for a group-planning
+session. - Show which friends are currently included in the availability
+calculation.
+
+4.4 Shared availability calculation - Calculate time intervals when all
+selected group members are free, using their local sample calendar
+data. - Exclude intervals that overlap with any selected user’s existing
+event. - Handle different schedules and event start/end times
+consistently. - Show the common available time slots in the UI. - Handle
+the case where no overlapping availability exists with a clear empty
+state and a suggestion to change the date range or group. - Keep
+availability calculation logic separate from UI components so it can be
+tested and changed independently. - The Architect should recommend a
+simple, clearly documented approach to interval overlap and date/time
+handling.
+
+4.5 Activity recommendations - Recommend sample activities that fit the
+selected group’s common availability and preferences. - Include simple
+filters or preferences for budget, location, and interests. - Do not
+recommend an activity if it violates a hard constraint selected by the
+user, such as exceeding the stated budget or not fitting the available
+time. - Clearly show why an activity is suggested where practical, for
+example matching interests, location, or budget. - Recommendations can
+be generated from a local static dataset; external event search APIs are
+out of scope.
+
+4.6 Event invitation workflow - Let the current demo user select a
+recommended activity and available time and create an event proposal. -
+Allow the user to choose a fictional friend or friends to invite. -
+Represent sending invitations locally in the frontend; no real email,
+SMS, push notification, or network request is required. - Provide a way
+to simulate the invited friend’s response: accept or decline. - If
+accepted, update the appropriate demo calendar(s) with the confirmed
+event and show a confirmation. - If declined, do not add the event as
+confirmed; show the declined status and allow the organizer to choose
+another time or activity. - Display invitation status clearly, such as
+Pending, Accepted, or Declined. - Prevent duplicate additions when the
+same invitation is accepted more than once. - The UI should make clear
+that invitations and responses are simulated.
+
+5.  SUGGESTED COMPONENT RESPONSIBILITIES The Architect may refine this
+    decomposition, but should consider separating:
+
+-   Screens/navigation: entry, calendar, friend selection, availability
+    results, recommendations, and invitation details.
+-   Demo data: fictional users, friends, events, interests, locations,
+    and activities.
+-   Calendar/event management: reading and updating mock schedules.
+-   Availability service/utility: calculating shared free time.
+-   Recommendation service/utility: filtering and ranking sample
+    activities against constraints.
+-   Invitation workflow/state: creating invitations, recording
+    responses, and adding accepted events.
+-   Shared UI components: event cards, friend selectors, time-slot
+    cards, recommendation cards, and status indicators.
+
+Avoid unnecessary abstraction or production-scale infrastructure. The
+architecture should be appropriate for a small prototype.
+
+6.  QUALITY AND DESIGN EXPECTATIONS
+
+-   Provide simple, consistent navigation between the main screens.
+-   Use readable layouts and clear labels for dates, times, selected
+    friends, filters, and invitation states.
+-   Include loading/error states only where they make sense for local
+    operations; include useful empty states for no availability and no
+    matching recommendations.
+-   Keep business logic separate from presentation as much as practical.
+-   Use deterministic sample data and predictable behavior so tests and
+    demonstrations are repeatable.
+-   Do not store sensitive real user information.
+
+7.  OUT OF SCOPE
+
+-   Real authentication or account creation.
+-   Real Google, Apple, Microsoft, or other calendar integrations and
+    synchronization.
+-   Backend APIs, cloud database, or persistent server storage.
+-   Social media integrations, contact imports, web scraping, and
+    third-party friend discovery.
+-   Real push notifications, email, or SMS.
+-   Ticket purchasing, venue reservations, and payment processing.
+-   Production security, deployment, analytics, or multi-device
+    synchronization.
+
+8.  VALIDATION AND ACCEPTANCE CRITERIA The prototype is considered
+    functionally successful when the following scenarios can be
+    demonstrated:
+9.  Select at least two fictional friends and display only time slots
+    when every selected member is free.
+10. Include a conflicting event in one person’s schedule and verify the
+    overlapping time is excluded.
+11. Use a dataset with no shared free time and verify that the UI
+    explains no common availability was found.
+12. Change the selected group, date range, budget, location, or
+    interests and verify the displayed results update appropriately.
+13. Show recommendations that fit the selected time and hard
+    constraints.
+14. Create an invitation for a selected activity and time and display it
+    as Pending.
+15. Simulate acceptance and verify the event is added to the appropriate
+    mock calendar(s) and marked Accepted.
+16. Simulate decline and verify the event is not added as a confirmed
+    event and the invitation is marked Declined.
+17. Accept an invitation more than once and verify the event is not
+    duplicated.
+18. Verify the main workflow can be demonstrated using only local sample
+    data, without external accounts or API keys.
+
+The team will manually run these scenarios and record expected versus
+actual results. If practical, the availability and recommendation
+utility functions should have focused unit tests. Performance testing is
+optional for this prototype; correctness of availability and invitation
+behavior is the priority.
+
+9.  EXPECTED ARCHITECT OUTPUT Before implementation, produce an
+    architecture document that includes:
+
+-   A concise overview and explicit scope.
+-   A proposed React Native/Expo structure and screen/navigation plan.
+-   A component/module diagram or equivalent description showing
+    dependencies.
+-   Data models for demo users, friends, calendar events, activities,
+    time slots, and invitations.
+-   The proposed shared-availability algorithm and its edge cases.
+-   The recommendation filtering/ranking approach.
+-   Invitation state transitions and the behavior on acceptance or
+    decline.
+-   A test strategy mapped to the acceptance criteria.
+-   Key assumptions, risks, and decisions.
+-   A short explanation of how the architecture keeps the prototype
+    small while allowing future replacement of mock data with real
+    services.
+
+Do not implement the application as part of the architecture task. Do
+not add features beyond this scope without asking the project owner.
