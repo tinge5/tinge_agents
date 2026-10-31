@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -6,7 +6,7 @@ import { Provider, useDispatch, useSelector } from 'react-redux';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Animated, Text, View } from 'react-native';
 import { store, RootState } from '@/shared/store';
 import { restoreSession } from '@/features/auth/authSlice';
 import { AuthScreen } from '@/features/auth/AuthScreen';
@@ -45,8 +45,50 @@ function MainFlow() {
   );
 }
 
+function WakeUpLoader() {
+  const blinkOpacity = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(blinkOpacity, {
+          toValue: 0.35,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+        Animated.timing(blinkOpacity, {
+          toValue: 1,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    animation.start();
+    return () => animation.stop();
+  }, [blinkOpacity]);
+
+  return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.background, paddingHorizontal: 28 }}>
+      <ActivityIndicator size="large" color={theme.colors.primary} />
+      <Animated.Text
+        style={{
+          marginTop: 18,
+          color: theme.colors.text,
+          fontSize: 14,
+          textAlign: 'center',
+          opacity: blinkOpacity,
+          letterSpacing: 0.2,
+        }}
+      >
+        Please wait a minute as system wakes up...
+      </Animated.Text>
+    </View>
+  );
+}
+
 function RootNavigator() {
-  const { hydrated, isAuthenticated, restoredSession } = useSelector((s: RootState) => s.auth);
+  const { hydrated, isAuthenticated, restoredSession, loading } = useSelector((s: RootState) => s.auth);
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -64,12 +106,8 @@ function RootNavigator() {
     return restoredSession ? 'Welcome' : 'MainFlow';
   }, [isAuthenticated, restoredSession]);
 
-  if (!hydrated) {
-    return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.background }}>
-        <ActivityIndicator color={theme.colors.primary} />
-      </View>
-    );
+  if (!hydrated || loading) {
+    return <WakeUpLoader />;
   }
 
   return (
