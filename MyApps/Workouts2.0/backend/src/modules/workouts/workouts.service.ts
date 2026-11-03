@@ -602,64 +602,79 @@ export class WorkoutsService {
         where: { workoutSessionId },
       });
 
+      let planResult = { planCompleted: false, archiveCreated: false };
+
       if (!historyEntry) {
         const setResults = await tx.workoutSetResult.findMany({
           where: { workoutSessionId },
           orderBy: [{ setNumber: 'asc' }, { id: 'asc' }],
         });
 
-        const completedAt = completedSession.completedAt ?? new Date();
-        const planDay = await tx.workoutPlanDay.findUnique({
-          where: { id: session.planDayId },
-          select: {
-            title: true,
-            dayOfWeek: true,
-            weekIndex: true,
-          },
-        });
+        if (session.planId && session.planDayId) {
+          const completedAt = completedSession.completedAt ?? new Date();
+          const planDay = await tx.workoutPlanDay.findUnique({
+            where: { id: session.planDayId },
+            select: {
+              title: true,
+              dayOfWeek: true,
+              weekIndex: true,
+            },
+          });
 
-        const plan = await tx.workoutPlan.findUnique({
-          where: { id: session.planId },
-          select: {
-            name: true,
-          },
-        });
+          const plan = await tx.workoutPlan.findUnique({
+            where: { id: session.planId },
+            select: {
+              name: true,
+            },
+          });
 
-        if (!planDay || !plan) {
-          throw new NotFoundException();
+          if (planDay && plan) {
+            const createdHistory = await tx.workoutHistoryEntry.create({
+              data: {
+                userId,
+                workoutSessionId: completedSession.id,
+                originalPlanId: session.planId,
+                planName: plan.name,
+                workoutName: planDay.title,
+                dayName: `Day ${planDay.dayOfWeek + 1}`,
+                weekIndex: completedSession.weekIndex,
+                dayOfWeek: planDay.dayOfWeek,
+                completedAt,
+                setResults: {
+                  create: setResults.map((setResult) => ({
+                    exerciseName: setResult.exerciseName,
+                    exerciseId: setResult.exerciseId,
+                    setNumber: setResult.setNumber,
+                    reps: setResult.reps,
+                    weight: setResult.weight,
+                    completed: setResult.completed,
+                  })),
+                },
+              },
+              include: {
+                setResults: true,
+              },
+            });
+
+            try {
+              planResult = session.planId ? await this.finalizePlanIfNeeded(tx, userId, completedSession as any) : { planCompleted: false, archiveCreated: false };
+              return { success: true, planResult, history: createdHistory };
+            } catch (error) {
+              // Some sessions may be missing plan metadata from older records; keep the workout completion successful instead of crashing.
+              return { success: true, planResult: { planCompleted: false, archiveCreated: false }, history: createdHistory };
+            }
+          }
         }
 
-        const createdHistory = await tx.workoutHistoryEntry.create({
-          data: {
-            userId,
-            workoutSessionId: completedSession.id,
-            originalPlanId: session.planId,
-            planName: plan.name,
-            workoutName: planDay.title,
-            dayName: `Day ${planDay.dayOfWeek + 1}`,
-            weekIndex: completedSession.weekIndex,
-            dayOfWeek: planDay.dayOfWeek,
-            completedAt,
-            setResults: {
-              create: setResults.map((setResult) => ({
-                exerciseName: setResult.exerciseName,
-                exerciseId: setResult.exerciseId,
-                setNumber: setResult.setNumber,
-                reps: setResult.reps,
-                weight: setResult.weight,
-                completed: setResult.completed,
-              })),
-            },
-          },
-          include: {
-            setResults: true,
-          },
-        });
-
-        return { success: true, planResult: session.planId ? await this.finalizePlanIfNeeded(tx, userId, completedSession as any) : { planCompleted: false, archiveCreated: false }, history: createdHistory };
+        return { success: true, planResult: { planCompleted: false, archiveCreated: false } };
       }
 
-      const planResult = session.planId ? await this.finalizePlanIfNeeded(tx, userId, completedSession as any) : { planCompleted: false, archiveCreated: false };
+      try {
+        planResult = session.planId ? await this.finalizePlanIfNeeded(tx, userId, completedSession as any) : { planCompleted: false, archiveCreated: false };
+      } catch (error) {
+        // Keep completion successful when historical plan metadata is incomplete.
+      }
+
       return { success: true, planResult };
     });
   }

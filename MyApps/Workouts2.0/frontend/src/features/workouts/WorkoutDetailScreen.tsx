@@ -36,6 +36,10 @@ function toNumberOrNull(value: string) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function sanitizeNumericInput(value: string) {
+  return value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
+}
+
 function buildInitialInputs(exercises: WorkoutExercise[]): WorkoutInputState {
   return Object.fromEntries(
     exercises.map(exercise => {
@@ -308,13 +312,14 @@ export function WorkoutDetailScreen({ route, navigation }: any) {
                                 setInputs(prev => ({
                                   ...prev,
                                   [exercise.name]: Array.from({ length: plannedSets }, (_, setIndex) => prev[exercise.name]?.[setIndex] ?? { reps: '', weight: '' }).map((item, setIndex) =>
-                                    setIndex === index ? { ...item, reps: text } : item
+                                    setIndex === index ? { ...item, reps: sanitizeNumericInput(text) } : item
                                   ),
                                 }))
                               }
                               placeholder='Reps'
                               placeholderTextColor={theme.colors.textMuted}
-                              keyboardType='numeric'
+                              keyboardType='number-pad'
+                              inputMode='numeric'
                               style={{ flex: 1, minWidth: 0, borderWidth: 1, padding: 12, borderRadius: 12, borderColor: theme.colors.border, backgroundColor: theme.colors.surface, color: theme.colors.text, fontSize: 16 }}
                             />
                             <TextInput
@@ -323,13 +328,14 @@ export function WorkoutDetailScreen({ route, navigation }: any) {
                                 setInputs(prev => ({
                                   ...prev,
                                   [exercise.name]: Array.from({ length: plannedSets }, (_, setIndex) => prev[exercise.name]?.[setIndex] ?? { reps: '', weight: '' }).map((item, setIndex) =>
-                                    setIndex === index ? { ...item, weight: text } : item
+                                    setIndex === index ? { ...item, weight: sanitizeNumericInput(text) } : item
                                   ),
                                 }))
                               }
                               placeholder='Weight'
                               placeholderTextColor={theme.colors.textMuted}
-                              keyboardType='numeric'
+                              keyboardType='number-pad'
+                              inputMode='numeric'
                               style={{ flex: 1, minWidth: 0, borderWidth: 1, padding: 12, borderRadius: 12, borderColor: theme.colors.border, backgroundColor: theme.colors.surface, color: theme.colors.text, fontSize: 16 }}
                             />
                           </View>
