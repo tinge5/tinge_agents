@@ -54,12 +54,12 @@ function WakeUpLoader() {
         Animated.timing(blinkOpacity, {
           toValue: 0.35,
           duration: 700,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(blinkOpacity, {
           toValue: 1,
           duration: 700,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ])
     );

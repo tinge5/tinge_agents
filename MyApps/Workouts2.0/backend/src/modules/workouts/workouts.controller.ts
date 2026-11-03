@@ -15,15 +15,15 @@ class SaveWorkoutSetResultBody {
   @Min(1)
   setNumber!: number;
 
-  @IsNumber()
+  @IsNumber({ allowNaN: false, allowInfinity: false })
   @IsOptional()
   @Min(0)
-  reps!: number;
+  reps?: number | null;
 
-  @IsNumber()
+  @IsNumber({ allowNaN: false, allowInfinity: false })
   @IsOptional()
   @Min(0)
-  weight!: number | null;
+  weight?: number | null;
 }
 @UseGuards(JwtAuthGuard)
 @Controller('workouts')

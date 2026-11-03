@@ -106,6 +106,12 @@ function toNullableNumber(value: unknown) {
   return Number.isFinite(n) ? n : null;
 }
 
+function sanitizeWorkoutSetValue(value: unknown, fallback = 0) {
+  if (value === null || value === undefined || value === '') return fallback;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : fallback;
+}
+
 function aggregateSetResults(setResults: { setNumber: number; reps: number; weight: number }[]) {
   if (setResults.length === 0) return null;
   const hasWeights = setResults.some(set => set.weight != null);
@@ -188,7 +194,7 @@ export class WorkoutsService {
     exerciseName: string;
     exerciseId?: string | null;
     setNumber: number;
-    reps: number;
+    reps?: number | null;
     weight?: number | null;
   },
 ) {
@@ -209,6 +215,15 @@ export class WorkoutsService {
   );
 
   const setNumber = Math.max(1, Math.floor(Number(input.setNumber) || 1));
+  const normalizedReps = input.reps == null ? null : sanitizeWorkoutSetValue(input.reps, 0);
+  const normalizedWeight = input.weight == null ? null : sanitizeWorkoutSetValue(input.weight, 0);
+
+  if (normalizedReps == null && normalizedWeight == null) {
+    return { success: true };
+  }
+
+  const reps = normalizedReps ?? 0;
+  const weight = normalizedWeight ?? 0;
 
   const existing = await this.prisma.workoutSetResult.findFirst({
     where: {
@@ -222,8 +237,8 @@ export class WorkoutsService {
     await this.prisma.workoutSetResult.update({
       where: { id: existing.id },
       data: {
-        reps: Number(input.reps),
-        weight: Number(input.weight),
+        reps,
+        weight,
         completed: true,
       },
     });
@@ -233,8 +248,8 @@ export class WorkoutsService {
         workoutSessionId,
         exerciseName: canonicalExerciseName,
         setNumber,
-        reps: Number(input.reps),
-        weight: Number(input.weight),
+        reps,
+        weight,
         completed: true,
       },
     });

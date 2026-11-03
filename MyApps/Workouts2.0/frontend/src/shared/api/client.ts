@@ -58,6 +58,17 @@ export type CreatePlanInput = { name: string; goals: string[]; progressiveOverlo
 export type UpdatePlanInput = Partial<CreatePlanInput>;
 export type WorkoutSetResultInput = { exerciseName: string; exerciseId?: string | null; setNumber: number; reps: number | null; weight: number | null };
 export type WorkoutSetResultHistory = { id: string; exerciseName: string; exerciseId?: string | null; setNumber: number; reps: number; weight: number; completed: boolean };
+
+function sanitizeWorkoutSetResultInput(input: WorkoutSetResultInput): WorkoutSetResultInput {
+  const repsValue = input.reps == null || !Number.isFinite(input.reps) ? 0 : Math.max(0, Number(input.reps));
+  const weightValue = input.weight == null || !Number.isFinite(input.weight) ? 0 : Math.max(0, Number(input.weight));
+
+  return {
+    ...input,
+    reps: repsValue,
+    weight: weightValue,
+  };
+}
 export type TodayWorkout = { status: 'scheduled' | 'no_schedule' | 'in_progress' | 'completed' | 'no_active_plan'; workoutSessionId?: string; title?: string; day?: string; note?: string; weekIndex?: number; planId?: string; plan?: Plan; planDay?: PlanDay; exercises?: Array<{ name: string; exerciseId?: string | null; sets: number | null; reps: number | null; weight: number | null; previousPerformance?: { sets: number | null; reps: number | null; weight: number | null; setResults?: Array<{ setNumber?: number | null; reps?: number | null; weight?: number | null }> | null } | null; suggestedTarget?: { sets: number | null; reps: number | null; weight: number | null } | null }> };
 export type WorkoutHistorySession = { id: string; userId: string; originalPlanId?: string | null; planName: string; workoutName: string; dayName: string; weekIndex?: number | null; dayOfWeek?: number | null; completedAt: string; workoutSessionId: string; setResults: WorkoutSetResultHistory[] };
 
@@ -84,7 +95,12 @@ export async function signOut() { try { const { refreshToken } = await readStore
 export async function getMe() { return request<MeProfile>('/me'); }
 export async function getTodayWorkout() { return request<TodayWorkout>('/workouts/today', { headers: { 'x-device-timezone': getDeviceTimeZone() } }); }
 export async function startWorkoutSession() { return request<TodayWorkout>('/workouts/start', { method: 'POST', headers: { 'x-device-timezone': Intl.DateTimeFormat().resolvedOptions().timeZone } }); }
-export async function saveWorkoutSetResult(workoutSessionId: string, input: WorkoutSetResultInput) { return request<void>(`/workouts/${workoutSessionId}/set-results`, { method: 'POST', body: JSON.stringify(input) }); }
+export async function saveWorkoutSetResult(workoutSessionId: string, input: WorkoutSetResultInput) {
+  return request<void>(`/workouts/${workoutSessionId}/set-results`, {
+    method: 'POST',
+    body: JSON.stringify(sanitizeWorkoutSetResultInput(input)),
+  });
+}
 export async function completeWorkoutSession(workoutSessionId: string) { return request<void>(`/workouts/${workoutSessionId}/complete`, { method: 'POST' }); }
 export async function getPlans() { return request<Plan[]>('/plans'); }
 export async function createPlan(input: CreatePlanInput) { return request<Plan>('/plans', { method: 'POST', body: JSON.stringify(input) }); }

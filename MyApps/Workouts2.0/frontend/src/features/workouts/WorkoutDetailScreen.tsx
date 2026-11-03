@@ -159,7 +159,7 @@ export function WorkoutDetailScreen({ route, navigation }: any) {
       .slice()
       .sort((a, b) => {
         if (a.exerciseName === b.exerciseName) return a.setNumber - b.setNumber;
-        return a.exerciseName.localeCompare(b.exerciseName);
+        return (a.exerciseName ?? '').localeCompare(b.exerciseName ?? '');
       })
       .reduce<Array<{ exerciseName: string; setResults: CompletedSetResult[] }>>((acc, setResult) => {
         const last = acc[acc.length - 1];
@@ -201,12 +201,17 @@ export function WorkoutDetailScreen({ route, navigation }: any) {
         const exerciseInputs = inputs[exercise.name] ?? [];
         for (let index = 0; index < plannedSets; index += 1) {
           const input = exerciseInputs[index] ?? { reps: '', weight: '' };
+          const reps = toNumberOrNull(input.reps);
+          const weight = toNumberOrNull(input.weight);
+
+          if (reps == null && weight == null) continue;
+
           await saveWorkoutSetResult(resolvedSessionId, {
             exerciseName: exercise.name,
             exerciseId: exercise.exerciseId ?? null,
             setNumber: index + 1,
-            reps: toNumberOrNull(input.reps),
-            weight: toNumberOrNull(input.weight),
+            reps: reps ?? 0,
+            weight: weight ?? 0,
           });
         }
       }

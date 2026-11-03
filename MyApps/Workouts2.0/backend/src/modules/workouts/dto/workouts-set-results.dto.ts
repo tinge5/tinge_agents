@@ -6,17 +6,17 @@ export class WorkoutSetResultInputDto {
   exerciseName!: string;
 
   @Type(() => Number)
-  @IsNumber()
+  @IsNumber({ allowNaN: false, allowInfinity: false })
   @Min(0)
   sets!: number;
 
   @Type(() => Number)
-  @IsNumber()
+  @IsNumber({ allowNaN: false, allowInfinity: false })
   @Min(0)
   reps!: number;
 
   @Type(() => Number)
-  @IsNumber()
+  @IsNumber({ allowNaN: false, allowInfinity: false })
   @Min(0)
   weight!: number;
 }
