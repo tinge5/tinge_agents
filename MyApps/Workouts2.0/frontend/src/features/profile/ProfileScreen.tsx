@@ -150,7 +150,6 @@ export function ProfileScreen() {
     const durationWeeks = Math.max(1, Number(planForProgress.durationWeeks ?? 1));
     const now = new Date();
     now.setHours(0, 0, 0, 0);
-    const weekStart = getWeekStart(planStart);
     const currentWeekIndex = Math.max(0, Math.min(durationWeeks - 1, Math.floor((now.getTime() - planStart.getTime()) / (7 * 24 * 60 * 60 * 1000))));
 
     const getPlannedCountForWeek = (weekIndex: number, sourcePlan: MeProfile['activePlan']) => {
@@ -158,14 +157,9 @@ export function ProfileScreen() {
       let count = 0;
       for (const day of sourcePlan.days) {
         const targetWeek = Number(day?.weekIndex ?? 0);
-        if (targetWeek !== weekIndex) continue;
-        const dayOfWeek = Number(day?.dayOfWeek ?? 0);
-        const date = new Date(weekStart);
-        date.setDate(weekStart.getDate() + (weekIndex * 7) + ((dayOfWeek - weekStart.getDay() + 7) % 7));
-        if (date < planStart) continue;
-        count += 1;
+        if (targetWeek === weekIndex) count += 1;
       }
-      return Math.max(1, count || 1);
+      return Math.max(1, count);
     };
 
     const rows: Array<{ key: string; label: string; planned: number; completed: number }> = [];
