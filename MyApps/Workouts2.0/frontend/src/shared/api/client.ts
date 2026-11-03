@@ -20,6 +20,7 @@ export type MeProfile = {
     durationWeeks?: number;
     startDate?: string | null;
     createdAt?: string | null;
+    updatedAt?: string | null;
     days?: Array<{ id?: string; dayOfWeek?: number; weekIndex?: number; title?: string; exercises?: any[] }>;
   } | null;
   workoutHistory?: Array<{ id?: string; date?: string; title?: string; status?: string }>;

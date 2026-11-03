@@ -84,6 +84,21 @@ export function ProfileScreen() {
 
   const displayUser = profile ?? user;
   const activePlan = displayUser?.activePlan ?? null;
+  const [baselinePlan, setBaselinePlan] = useState<MeProfile['activePlan'] | null>(null);
+
+  React.useEffect(() => {
+    if (!activePlan?.id) return;
+    setBaselinePlan((current) => {
+      if (!current || current.id !== activePlan.id) {
+        return { ...activePlan };
+      }
+      return current;
+    });
+  }, [activePlan?.id]);
+
+  const planForProgress = baselinePlan ?? activePlan;
+  const planEditCutoff = activePlan?.updatedAt ? new Date(activePlan.updatedAt) : null;
+
   const completedPlans = useMemo(() => {
     if (completedPlansFromApi.length) return completedPlansFromApi;
     return (displayUser?.completedPlans ?? []).map(normalizeCompletedPlan);
@@ -102,9 +117,9 @@ export function ProfileScreen() {
   }, [displayUser?.workoutHistory, workoutHistory]);
 
   const activePlanHistory = useMemo(() => {
-    if (!activePlan) return [];
-    const planStart = activePlan.startDate ? new Date(activePlan.startDate) : new Date(activePlan.createdAt ?? Date.now());
-    const durationWeeks = Math.max(1, Number(activePlan.durationWeeks ?? 1));
+    if (!planForProgress) return [];
+    const planStart = planForProgress.startDate ? new Date(planForProgress.startDate) : new Date(planForProgress.createdAt ?? Date.now());
+    const durationWeeks = Math.max(1, Number(planForProgress.durationWeeks ?? 1));
     const effectiveEnd = new Date(planStart);
     effectiveEnd.setDate(planStart.getDate() + (durationWeeks * 7));
 
@@ -112,35 +127,36 @@ export function ProfileScreen() {
       if (!entry.date) return false;
       const completedAt = new Date(entry.date);
       if (Number.isNaN(completedAt.getTime())) return false;
-      if (entry.originalPlanId && activePlan.id) {
-        if (entry.originalPlanId === activePlan.id) return true;
+      if (entry.originalPlanId && planForProgress.id) {
+        if (entry.originalPlanId === planForProgress.id) return true;
       }
-      if (entry.planName && activePlan.name) {
-        if (entry.planName === activePlan.name) return true;
+      if (entry.planName && planForProgress.name) {
+        if (entry.planName === planForProgress.name) return true;
       }
       return completedAt >= planStart && completedAt <= effectiveEnd;
     });
-  }, [activePlan, historyEntries]);
+  }, [planForProgress, historyEntries]);
 
   const planWeeks = useMemo(() => {
-    if (!activePlan) {
+    if (!planForProgress) {
       return [] as Array<{ key: string; label: string; planned: number; completed: number }>;
     }
 
-    const planStart = activePlan.startDate ? new Date(activePlan.startDate) : new Date(activePlan.createdAt ?? Date.now());
+    const planStart = planForProgress.startDate ? new Date(planForProgress.startDate) : new Date(planForProgress.createdAt ?? Date.now());
     if (Number.isNaN(planStart.getTime())) {
       return [] as Array<{ key: string; label: string; planned: number; completed: number }>;
     }
 
-    const durationWeeks = Math.max(1, Number(activePlan.durationWeeks ?? 1));
+    const durationWeeks = Math.max(1, Number(planForProgress.durationWeeks ?? 1));
     const now = new Date();
     now.setHours(0, 0, 0, 0);
     const weekStart = getWeekStart(planStart);
+    const currentWeekIndex = Math.max(0, Math.min(durationWeeks - 1, Math.floor((now.getTime() - planStart.getTime()) / (7 * 24 * 60 * 60 * 1000))));
 
-    const getPlannedCountForWeek = (weekIndex: number) => {
-      if (!Array.isArray(activePlan.days) || !activePlan.days.length) return 1;
+    const getPlannedCountForWeek = (weekIndex: number, sourcePlan: MeProfile['activePlan']) => {
+      if (!sourcePlan || !Array.isArray(sourcePlan.days) || !sourcePlan.days.length) return 1;
       let count = 0;
-      for (const day of activePlan.days) {
+      for (const day of sourcePlan.days) {
         const targetWeek = Number(day?.weekIndex ?? 0);
         if (targetWeek !== weekIndex) continue;
         const dayOfWeek = Number(day?.dayOfWeek ?? 0);
@@ -153,14 +169,15 @@ export function ProfileScreen() {
     };
 
     const rows: Array<{ key: string; label: string; planned: number; completed: number }> = [];
-    const currentWeekIndex = Math.max(0, Math.min(durationWeeks - 1, Math.floor((now.getTime() - planStart.getTime()) / (7 * 24 * 60 * 60 * 1000))));
-
     for (let weekIndex = 0; weekIndex <= currentWeekIndex; weekIndex += 1) {
       const weekDate = new Date(planStart);
       weekDate.setDate(planStart.getDate() + (weekIndex * 7));
       const weekEnd = new Date(weekDate);
       weekEnd.setDate(weekDate.getDate() + 6);
-      const planned = getPlannedCountForWeek(weekIndex);
+
+      const useBaseline = !!planEditCutoff && weekDate < planEditCutoff;
+      const sourcePlan = useBaseline && baselinePlan ? baselinePlan : activePlan;
+      const planned = getPlannedCountForWeek(weekIndex, sourcePlan ?? planForProgress);
       const completed = activePlanHistory.filter((item) => {
         if (!item.date) return false;
         const parsed = new Date(item.date);
@@ -168,6 +185,7 @@ export function ProfileScreen() {
         const inRange = parsed >= weekDate && parsed <= weekEnd;
         return inRange;
       }).length;
+
       rows.push({
         key: `week-${weekIndex}`,
         label: `W${weekIndex + 1}`,
@@ -176,8 +194,8 @@ export function ProfileScreen() {
       });
     }
 
-    return rows;
-  }, [activePlan, activePlanHistory]);
+    return rows.slice(0, Math.max(1, currentWeekIndex + 1));
+  }, [activePlan, baselinePlan, planEditCutoff, planForProgress, activePlanHistory]);
 
   const plannedPerWeek = useMemo(() => {
     if (planWeeks.length) return Math.max(1, Math.max(...planWeeks.map((week) => week.planned)));
