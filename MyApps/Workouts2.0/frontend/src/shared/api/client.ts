@@ -23,7 +23,7 @@ export type MeProfile = {
     updatedAt?: string | null;
     days?: Array<{ id?: string; dayOfWeek?: number; weekIndex?: number; title?: string; exercises?: any[] }>;
   } | null;
-  workoutHistory?: Array<{ id?: string; date?: string; title?: string; status?: string }>;
+  workoutHistory?: Array<{ id?: string; date?: string; title?: string; status?: string; originalPlanId?: string | null; planName?: string | null; weekIndex?: number | null }>;
   completedPlans?: Array<{ id?: string; name?: string; completedAt?: string }>;
   exerciseHistory?: Array<{ exerciseName?: string; weight?: number; reps?: number; date?: string }>;
 };
