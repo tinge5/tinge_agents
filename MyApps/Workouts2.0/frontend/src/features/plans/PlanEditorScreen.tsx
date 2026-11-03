@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   EXERCISE_AUTOCOMPLETE_OPTIONS,
   getExerciseProgressionRule,
@@ -379,6 +379,8 @@ export function PlanEditorScreen() {
   const [activeDayIndex, setActiveDayIndex] = useState(0);
   const [selectedPreviewWeek, setSelectedPreviewWeek] = useState(1);
   const [viewMode, setViewMode] = useState<'edit' | 'view'>('edit');
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
+  const scrollViewRef = useRef<ScrollView>(null);
   const plans = data ?? [];
   const title = useMemo(() => (editingPlanId ? 'Edit Plan' : 'Create Plan'), [editingPlanId]);
   const totalWeeks = Math.max(1, Number(draft.durationWeeks ?? 4));
@@ -414,15 +416,25 @@ export function PlanEditorScreen() {
       };
       return editingPlanId ? updatePlan(editingPlanId, payload) : createPlan(payload);
     },
+    onMutate: () => {
+      setSaveStatus('saving');
+    },
     onSuccess: async (savedPlan) => {
       await queryClient.invalidateQueries({ queryKey: ['plans'] });
       setEditingPlanId(savedPlan.id);
       setDraft(toDraftPlan(savedPlan));
       setSelectedPreviewWeek(1);
       setViewMode('edit');
+      setSaveStatus('success');
+      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+      setTimeout(() => setSaveStatus('idle'), 2000);
       Alert.alert('Saved', 'Plan has been saved successfully.');
     },
-    onError: (err: any) => Alert.alert('Save failed', err?.message ?? 'Unable to save plan'),
+    onError: (err: any) => {
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 2500);
+      Alert.alert('Save failed', err?.message ?? 'Unable to save plan');
+    },
   });
 
   const activateMutation = useMutation({ mutationFn: activatePlan, onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ['plans'] }); await queryClient.invalidateQueries({ queryKey: ['workouts', 'today'] }); }, onError: (err: any) => Alert.alert('Activation failed', err?.message ?? 'Unable to activate plan') });
@@ -472,7 +484,7 @@ export function PlanEditorScreen() {
 
   return (
     <>
-    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 20, gap: 16, backgroundColor: theme.colors.background, flexGrow: 1 }}>
+    <ScrollView ref={scrollViewRef} keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 20, gap: 16, backgroundColor: theme.colors.background, flexGrow: 1 }}>
       <Text style={{ fontSize: 28, fontWeight: '800', color: theme.colors.text }}>Plans</Text>
       <Text style={{ color: theme.colors.textMuted }}>Use the New Plan action to start a fresh plan. Edit existing plans from the list below.</Text>
       <Pressable onPress={resetDraft} style={{ backgroundColor: theme.colors.surfaceAlt, padding: 12, borderRadius: 12, alignSelf: 'flex-start' }}><Text style={{ fontWeight: '700', color: theme.colors.text }}>New Plan</Text></Pressable>
@@ -596,7 +608,38 @@ export function PlanEditorScreen() {
                 </View>
               ))}
             </View>
-           <Pressable onPress={() => saveMutation.mutate()} style={({ pressed }) => ({ backgroundColor: pressed ? theme.colors.primaryDark : theme.colors.primary, padding: 14, borderRadius: 12 })}><Text style={{ color: 'white', textAlign: 'center', fontWeight: '700' }}>Save Plan</Text></Pressable>
+           <View style={{ gap: 8 }}>
+             {saveStatus !== 'idle' ? (
+               <View
+                 style={{
+                   paddingVertical: 10,
+                   paddingHorizontal: 12,
+                   borderRadius: 12,
+                   borderWidth: 1,
+                   backgroundColor: saveStatus === 'success' ? '#E8F8EE' : saveStatus === 'error' ? '#FEE2E2' : '#EAF3FF',
+                   borderColor: saveStatus === 'success' ? '#16A34A' : saveStatus === 'error' ? '#DC2626' : '#60A5FA',
+                 }}
+               >
+                 <Text style={{ color: saveStatus === 'success' ? '#166534' : saveStatus === 'error' ? '#991B1B' : '#1D4ED8', fontWeight: '700', textAlign: 'center' }}>
+                   {saveStatus === 'success' ? 'Saved plan' : saveStatus === 'error' ? 'Save failed' : 'Saving plan...'}
+                 </Text>
+               </View>
+             ) : null}
+             <Pressable
+               onPress={() => saveMutation.mutate()}
+               disabled={saveMutation.isPending}
+               style={({ pressed }) => ({
+                 backgroundColor: saveStatus === 'success' ? '#16A34A' : pressed ? theme.colors.primaryDark : theme.colors.primary,
+                 padding: 14,
+                 borderRadius: 12,
+                 opacity: saveMutation.isPending ? 0.8 : 1,
+               })}
+             >
+               <Text style={{ color: 'white', textAlign: 'center', fontWeight: '700' }}>
+                 {saveMutation.isPending ? 'Saving...' : saveStatus === 'success' ? 'Saved ✓' : 'Save Plan'}
+               </Text>
+             </Pressable>
+           </View>
 
           </>
         ) : (
