@@ -36,8 +36,8 @@ function getWeekLabel(date: Date) {
 function getWeeklyStatus(completed: number, planned: number) {
   const target = Math.max(1, planned);
   const ratio = completed / target;
-  if (ratio >= 0.8) return { label: 'On track', color: theme.colors.success, background: 'rgba(34, 197, 94, 0.12)', border: 'rgba(34, 197, 94, 0.45)' };
-  if (ratio >= 0.5) return { label: 'Slightly behind', color: theme.colors.warning, background: 'rgba(234, 179, 8, 0.12)', border: 'rgba(234, 179, 8, 0.45)' };
+  if (ratio >= 0.9) return { label: 'On track', color: theme.colors.success, background: 'rgba(34, 197, 94, 0.12)', border: 'rgba(34, 197, 94, 0.45)' };
+  if (ratio >= 0.6) return { label: 'Slightly behind', color: theme.colors.warning, background: 'rgba(234, 179, 8, 0.12)', border: 'rgba(234, 179, 8, 0.45)' };
   return { label: 'Needs catch-up', color: theme.colors.danger, background: 'rgba(239, 68, 68, 0.12)', border: 'rgba(239, 68, 68, 0.45)' };
 }
 
@@ -46,7 +46,7 @@ export function ProfileScreen() {
   const user = useAppSelector((s) => s.auth.user);
   const [profile, setProfile] = useState<MeProfile | null>(null);
   const [completedPlansFromApi, setCompletedPlansFromApi] = useState<Array<{ id?: string; name?: string; completedAt?: string }>>([]);
-  const [workoutHistory, setWorkoutHistory] = useState<Array<{ id?: string; date?: string; title?: string; status?: string }>>([]);
+  const [workoutHistory, setWorkoutHistory] = useState<Array<{ id?: string; date?: string; title?: string; status?: string; originalPlanId?: string | null; planName?: string | null }>>([]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -66,6 +66,8 @@ export function ProfileScreen() {
             date: entry?.completedAt,
             title: entry?.workoutName ?? entry?.dayName,
             status: 'completed',
+            originalPlanId: entry?.originalPlanId ?? null,
+            planName: entry?.planName ?? null,
           })));
         } catch {
           if (!mounted) return;
@@ -94,67 +96,73 @@ export function ProfileScreen() {
       date: entry?.date,
       title: entry?.title,
       status: entry?.status,
+      originalPlanId: entry?.originalPlanId ?? null,
+      planName: entry?.planName ?? null,
     }));
   }, [displayUser?.workoutHistory, workoutHistory]);
 
   const activePlanHistory = useMemo(() => {
-    if (!activePlan?.id || !historyEntries.length) return [];
+    if (!activePlan) return [];
+    const planStart = activePlan.startDate ? new Date(activePlan.startDate) : new Date(activePlan.createdAt ?? Date.now());
+    const durationWeeks = Math.max(1, Number(activePlan.durationWeeks ?? 1));
+    const effectiveEnd = new Date(planStart);
+    effectiveEnd.setDate(planStart.getDate() + (durationWeeks * 7));
 
-    const planId = String(activePlan.id);
     return historyEntries.filter((entry) => {
-      const workoutTitle = (entry.title ?? '').toLowerCase();
-      const workoutId = entry.id ?? '';
-      const maybeMatches = workoutTitle.includes(planId.toLowerCase()) || workoutId.includes(planId);
-      return maybeMatches || true;
+      if (!entry.date) return false;
+      const completedAt = new Date(entry.date);
+      if (Number.isNaN(completedAt.getTime())) return false;
+      if (entry.originalPlanId && activePlan.id) {
+        if (entry.originalPlanId === activePlan.id) return true;
+      }
+      if (entry.planName && activePlan.name) {
+        if (entry.planName === activePlan.name) return true;
+      }
+      return completedAt >= planStart && completedAt <= effectiveEnd;
     });
-  }, [activePlan?.id, historyEntries]);
+  }, [activePlan, historyEntries]);
 
   const planWeeks = useMemo(() => {
-    if (!activePlan || !Array.isArray(activePlan.days) || !activePlan.days.length) {
-      return [] as Array<{ key: string; label: string; planned: number; completed: number }>
+    if (!activePlan) {
+      return [] as Array<{ key: string; label: string; planned: number; completed: number }>;
     }
 
     const planStart = activePlan.startDate ? new Date(activePlan.startDate) : new Date(activePlan.createdAt ?? Date.now());
-    if (Number.isNaN(planStart.getTime())) return [] as Array<{ key: string; label: string; planned: number; completed: number }>;
-
-    const weekCounts = new Map<string, number>();
-    for (const day of activePlan.days) {
-      const weekIndex = Number(day?.weekIndex ?? 0);
-      if (!Number.isFinite(weekIndex)) continue;
-      const weekKey = `week-${weekIndex}`;
-      weekCounts.set(weekKey, (weekCounts.get(weekKey) ?? 0) + 1);
+    if (Number.isNaN(planStart.getTime())) {
+      return [] as Array<{ key: string; label: string; planned: number; completed: number }>;
     }
 
     const durationWeeks = Math.max(1, Number(activePlan.durationWeeks ?? 1));
-    const rows: Array<{ key: string; label: string; planned: number; completed: number }> = [];
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const currentWeek = getWeekStart(today);
+    const plannedByWeek = new Map<number, number>();
+    if (Array.isArray(activePlan.days) && activePlan.days.length) {
+      for (const day of activePlan.days) {
+        const weekIndex = Number(day?.weekIndex ?? 0);
+        if (!Number.isFinite(weekIndex)) continue;
+        plannedByWeek.set(weekIndex, (plannedByWeek.get(weekIndex) ?? 0) + 1);
+      }
+    }
 
+    const completedByWeek = new Map<number, number>();
+    for (const item of activePlanHistory) {
+      if (!item.date) continue;
+      const parsed = new Date(item.date);
+      if (Number.isNaN(parsed.getTime())) continue;
+      const diffDays = Math.floor((parsed.getTime() - planStart.getTime()) / (24 * 60 * 60 * 1000));
+      const weekIndex = Math.max(0, Math.min(durationWeeks - 1, Math.floor(diffDays / 7)));
+      completedByWeek.set(weekIndex, (completedByWeek.get(weekIndex) ?? 0) + 1);
+    }
+
+    const rows: Array<{ key: string; label: string; planned: number; completed: number }> = [];
     for (let weekIndex = 0; weekIndex < durationWeeks; weekIndex += 1) {
-      const weekStart = new Date(planStart);
-      weekStart.setHours(0, 0, 0, 0);
-      weekStart.setDate(weekStart.getDate() + (weekIndex * 7));
-      const weekKey = weekStart.toISOString();
-      const completed = activePlanHistory.filter((item) => {
-        if (!item.date) return false;
-        const parsed = new Date(item.date);
-        return !Number.isNaN(parsed.getTime()) && getWeekStart(parsed).toISOString() === weekKey;
-      }).length;
       rows.push({
-        key: weekKey,
+        key: `week-${weekIndex}`,
         label: `W${weekIndex + 1}`,
-        planned: Math.max(1, weekCounts.get(`week-${weekIndex}`) ?? 1),
-        completed,
+        planned: Math.max(1, plannedByWeek.get(weekIndex) ?? 1),
+        completed: completedByWeek.get(weekIndex) ?? 0,
       });
     }
 
-    const maxIndex = rows.length - 1;
-    if (maxIndex >= 0 && rows[maxIndex].key === currentWeek.toISOString()) {
-      return rows;
-    }
-
-    return rows.slice(Math.max(0, rows.length - 6));
+    return rows;
   }, [activePlan, activePlanHistory]);
 
   const plannedPerWeek = useMemo(() => {
@@ -184,7 +192,7 @@ export function ProfileScreen() {
     const totalCompleted = weeklyProgress.reduce((sum, item) => sum + item.completed, 0);
     const totalPlanned = weeklyProgress.reduce((sum, item) => sum + item.planned, 0);
     const ratio = totalPlanned > 0 ? totalCompleted / totalPlanned : 0;
-    const status = ratio >= 0.8 ? { label: 'On track', color: theme.colors.success, background: 'rgba(34, 197, 94, 0.12)', border: 'rgba(34, 197, 94, 0.45)' } : ratio >= 0.5 ? { label: 'Slightly behind', color: theme.colors.warning, background: 'rgba(234, 179, 8, 0.12)', border: 'rgba(234, 179, 8, 0.45)' } : { label: 'Needs catch-up', color: theme.colors.danger, background: 'rgba(239, 68, 68, 0.12)', border: 'rgba(239, 68, 68, 0.45)' };
+    const status = ratio >= 0.9 ? { label: 'On track', color: theme.colors.success, background: 'rgba(34, 197, 94, 0.12)', border: 'rgba(34, 197, 94, 0.45)' } : ratio >= 0.6 ? { label: 'Slightly behind', color: theme.colors.warning, background: 'rgba(234, 179, 8, 0.12)', border: 'rgba(234, 179, 8, 0.45)' } : { label: 'Needs catch-up', color: theme.colors.danger, background: 'rgba(239, 68, 68, 0.12)', border: 'rgba(239, 68, 68, 0.45)' };
     return { totalCompleted, totalPlanned, ratio, status };
   }, [weeklyProgress]);
 
@@ -197,35 +205,41 @@ export function ProfileScreen() {
         <Text style={{ color: theme.colors.text }}>Active plan: {activePlan?.name ?? 'No active plan'}</Text>
       </View>
 
-      <View style={{ borderWidth: 1, borderColor: theme.colors.border, padding: 16, borderRadius: 16, gap: 12, backgroundColor: theme.colors.surface }}>
-        <Text style={{ fontWeight: '700', color: theme.colors.text }}>Workout Progress</Text>
+      {activePlan ? (
+        <View style={{ borderWidth: 1, borderColor: theme.colors.border, padding: 16, borderRadius: 16, gap: 12, backgroundColor: theme.colors.surface }}>
+          <Text style={{ fontWeight: '700', color: theme.colors.text }}>Workout Progress</Text>
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: summary.status.background, borderWidth: 1, borderColor: summary.status.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 }}>
-          <View>
-            <Text style={{ color: theme.colors.text, fontSize: 15, fontWeight: '700' }}>{summary.totalCompleted} / {summary.totalPlanned} workouts</Text>
-            <Text style={{ color: theme.colors.textMuted, fontSize: 12 }}>Last 6 weeks</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: summary.status.background, borderWidth: 1, borderColor: summary.status.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 }}>
+            <View>
+              <Text style={{ color: theme.colors.text, fontSize: 15, fontWeight: '700' }}>{summary.totalCompleted} / {summary.totalPlanned} workouts</Text>
+              <Text style={{ color: theme.colors.textMuted, fontSize: 12 }}>Current plan</Text>
+            </View>
+            <View style={{ backgroundColor: summary.status.color, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 }}>
+              <Text style={{ color: '#ffffff', fontSize: 11, fontWeight: '800' }}>{summary.status.label}</Text>
+            </View>
           </View>
-          <View style={{ backgroundColor: summary.status.color, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 }}>
-            <Text style={{ color: '#ffffff', fontSize: 11, fontWeight: '800' }}>{summary.status.label}</Text>
-          </View>
-        </View>
 
-        {weeklyProgress.length ? (
-          <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 8, minHeight: 120 }}>
-            {weeklyProgress.map((week, index) => (
-              <View key={`${week.label}-${index}`} style={{ flex: 1, alignItems: 'center', gap: 6 }}>
-                <Text style={{ color: theme.colors.textMuted, fontSize: 10, fontWeight: '600' }}>{week.completed}/{week.planned}</Text>
-                <View style={{ width: '100%', maxWidth: 28, height: 80, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.04)', overflow: 'hidden', justifyContent: 'flex-end' }}>
-                  <View style={{ height: `${Math.max(6, week.fillRatio * 100)}%`, backgroundColor: week.color, borderRadius: 10 }} />
+          {weeklyProgress.length ? (
+            <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 8, minHeight: 120 }}>
+              {weeklyProgress.map((week, index) => (
+                <View key={`${week.label}-${index}`} style={{ flex: 1, alignItems: 'center', gap: 6 }}>
+                  <Text style={{ color: theme.colors.textMuted, fontSize: 10, fontWeight: '600' }}>{week.completed}/{week.planned}</Text>
+                  <View style={{ width: '100%', maxWidth: 28, height: 80, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.04)', overflow: 'hidden', justifyContent: 'flex-end' }}>
+                    <View style={{ height: `${Math.max(6, week.fillRatio * 100)}%`, backgroundColor: week.color, borderRadius: 10 }} />
+                  </View>
+                  <Text style={{ color: theme.colors.textMuted, fontSize: 9 }}>{week.label}</Text>
                 </View>
-                <Text style={{ color: theme.colors.textMuted, fontSize: 9 }}>{week.label}</Text>
-              </View>
-            ))}
-          </View>
-        ) : (
-          <Text style={{ color: theme.colors.textMuted }}>Complete a workout to start tracking your progress.</Text>
-        )}
-      </View>
+              ))}
+            </View>
+          ) : (
+            <Text style={{ color: theme.colors.textMuted }}>Complete a workout to start tracking your progress.</Text>
+          )}
+        </View>
+      ) : (
+        <View style={{ borderWidth: 1, borderColor: theme.colors.border, padding: 16, borderRadius: 16, backgroundColor: theme.colors.surface }}>
+          <Text style={{ color: theme.colors.textMuted }}>No active plan. Add or activate a plan to track workouts.</Text>
+        </View>
+      )}
 
       <View style={{ borderWidth: 1, borderColor: theme.colors.border, padding: 16, borderRadius: 16, gap: 8, backgroundColor: theme.colors.surface }}>
         <Text style={{ fontWeight: '700', color: theme.colors.text }}>Completed Plans</Text>
