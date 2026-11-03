@@ -133,32 +133,46 @@ export function ProfileScreen() {
     }
 
     const durationWeeks = Math.max(1, Number(activePlan.durationWeeks ?? 1));
-    const plannedByWeek = new Map<number, number>();
-    if (Array.isArray(activePlan.days) && activePlan.days.length) {
-      for (const day of activePlan.days) {
-        const weekIndex = Number(day?.weekIndex ?? 0);
-        if (!Number.isFinite(weekIndex)) continue;
-        plannedByWeek.set(weekIndex, (plannedByWeek.get(weekIndex) ?? 0) + 1);
-      }
-    }
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const weekStart = getWeekStart(planStart);
 
-    const completedByWeek = new Map<number, number>();
-    for (const item of activePlanHistory) {
-      if (!item.date) continue;
-      const parsed = new Date(item.date);
-      if (Number.isNaN(parsed.getTime())) continue;
-      const diffDays = Math.floor((parsed.getTime() - planStart.getTime()) / (24 * 60 * 60 * 1000));
-      const weekIndex = Math.max(0, Math.min(durationWeeks - 1, Math.floor(diffDays / 7)));
-      completedByWeek.set(weekIndex, (completedByWeek.get(weekIndex) ?? 0) + 1);
-    }
+    const getPlannedCountForWeek = (weekIndex: number) => {
+      if (!Array.isArray(activePlan.days) || !activePlan.days.length) return 1;
+      let count = 0;
+      for (const day of activePlan.days) {
+        const targetWeek = Number(day?.weekIndex ?? 0);
+        if (targetWeek !== weekIndex) continue;
+        const dayOfWeek = Number(day?.dayOfWeek ?? 0);
+        const date = new Date(weekStart);
+        date.setDate(weekStart.getDate() + (weekIndex * 7) + ((dayOfWeek - weekStart.getDay() + 7) % 7));
+        if (date < planStart) continue;
+        count += 1;
+      }
+      return Math.max(1, count || 1);
+    };
 
     const rows: Array<{ key: string; label: string; planned: number; completed: number }> = [];
-    for (let weekIndex = 0; weekIndex < durationWeeks; weekIndex += 1) {
+    const currentWeekIndex = Math.max(0, Math.min(durationWeeks - 1, Math.floor((now.getTime() - planStart.getTime()) / (7 * 24 * 60 * 60 * 1000))));
+
+    for (let weekIndex = 0; weekIndex <= currentWeekIndex; weekIndex += 1) {
+      const weekDate = new Date(planStart);
+      weekDate.setDate(planStart.getDate() + (weekIndex * 7));
+      const weekEnd = new Date(weekDate);
+      weekEnd.setDate(weekDate.getDate() + 6);
+      const planned = getPlannedCountForWeek(weekIndex);
+      const completed = activePlanHistory.filter((item) => {
+        if (!item.date) return false;
+        const parsed = new Date(item.date);
+        if (Number.isNaN(parsed.getTime())) return false;
+        const inRange = parsed >= weekDate && parsed <= weekEnd;
+        return inRange;
+      }).length;
       rows.push({
         key: `week-${weekIndex}`,
         label: `W${weekIndex + 1}`,
-        planned: Math.max(1, plannedByWeek.get(weekIndex) ?? 1),
-        completed: completedByWeek.get(weekIndex) ?? 0,
+        planned,
+        completed,
       });
     }
 
