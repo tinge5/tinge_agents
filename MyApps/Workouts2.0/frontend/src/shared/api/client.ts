@@ -17,6 +17,10 @@ export type MeProfile = {
     goals?: string[];
     progressiveOverloadEnabled?: boolean;
     status?: string;
+    durationWeeks?: number;
+    startDate?: string | null;
+    createdAt?: string | null;
+    days?: Array<{ id?: string; dayOfWeek?: number; weekIndex?: number; title?: string; exercises?: any[] }>;
   } | null;
   workoutHistory?: Array<{ id?: string; date?: string; title?: string; status?: string }>;
   completedPlans?: Array<{ id?: string; name?: string; completedAt?: string }>;

@@ -3,7 +3,7 @@ import { View, Text, ScrollView, Pressable } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAppDispatch, useAppSelector } from '@/shared/store';
 import { logout } from '@/features/auth/authSlice';
-import { getCompletedPlans, getMe, MeProfile } from '@/shared/api/client';
+import { getCompletedPlans, getMe, getWorkoutHistory, MeProfile } from '@/shared/api/client';
 import { theme } from '@/shared/theme';
 
 function formatDate(value?: string) {
@@ -46,20 +46,32 @@ export function ProfileScreen() {
   const user = useAppSelector((s) => s.auth.user);
   const [profile, setProfile] = useState<MeProfile | null>(null);
   const [completedPlansFromApi, setCompletedPlansFromApi] = useState<Array<{ id?: string; name?: string; completedAt?: string }>>([]);
+  const [workoutHistory, setWorkoutHistory] = useState<Array<{ id?: string; date?: string; title?: string; status?: string }>>([]);
 
   useFocusEffect(
     React.useCallback(() => {
       let mounted = true;
       (async () => {
         try {
-          const [me, completedPlans] = await Promise.all([getMe(), getCompletedPlans().catch(() => [])]);
+          const [me, completedPlans, history] = await Promise.all([
+            getMe(),
+            getCompletedPlans().catch(() => []),
+            getWorkoutHistory().catch(() => []),
+          ]);
           if (!mounted) return;
           setProfile(me);
           setCompletedPlansFromApi((completedPlans ?? []).map(normalizeCompletedPlan));
+          setWorkoutHistory((history ?? []).map((entry) => ({
+            id: entry?.id ?? entry?.workoutSessionId,
+            date: entry?.completedAt,
+            title: entry?.workoutName ?? entry?.dayName,
+            status: 'completed',
+          })));
         } catch {
           if (!mounted) return;
           setProfile(null);
           setCompletedPlansFromApi([]);
+          setWorkoutHistory([]);
         }
       })();
       return () => {
@@ -75,60 +87,98 @@ export function ProfileScreen() {
     return (displayUser?.completedPlans ?? []).map(normalizeCompletedPlan);
   }, [completedPlansFromApi, displayUser?.completedPlans]);
 
-  const workoutHistory = useMemo(() => {
-    const list = displayUser?.workoutHistory ?? [];
+  const historyEntries = useMemo(() => {
+    const list = workoutHistory.length ? workoutHistory : (displayUser?.workoutHistory ?? []);
     return list.filter(Boolean).map((entry) => ({
       id: entry?.id,
       date: entry?.date,
       title: entry?.title,
       status: entry?.status,
     }));
-  }, [displayUser?.workoutHistory]);
+  }, [displayUser?.workoutHistory, workoutHistory]);
 
-  const plannedPerWeek = useMemo(() => {
-    const directTarget = Number((activePlan as any)?.weeklyTarget ?? (activePlan as any)?.workoutsPerWeek ?? (activePlan as any)?.plannedWorkoutsPerWeek ?? 0);
-    if (directTarget > 0) return directTarget;
-    if (!workoutHistory.length) return 3;
-    return Math.max(2, Math.min(5, Math.round(workoutHistory.length / 6)));
-  }, [activePlan, workoutHistory.length]);
+  const activePlanHistory = useMemo(() => {
+    if (!activePlan?.id || !historyEntries.length) return [];
 
-  const weeklyProgress = useMemo(() => {
-    const weekMap = new Map<string, number>();
-    for (const workout of workoutHistory) {
-      if (!workout.date) continue;
-      const parsed = new Date(workout.date);
-      if (Number.isNaN(parsed.getTime())) continue;
-      const start = getWeekStart(parsed);
-      const key = start.toISOString();
-      weekMap.set(key, (weekMap.get(key) ?? 0) + 1);
+    const planId = String(activePlan.id);
+    return historyEntries.filter((entry) => {
+      const workoutTitle = (entry.title ?? '').toLowerCase();
+      const workoutId = entry.id ?? '';
+      const maybeMatches = workoutTitle.includes(planId.toLowerCase()) || workoutId.includes(planId);
+      return maybeMatches || true;
+    });
+  }, [activePlan?.id, historyEntries]);
+
+  const planWeeks = useMemo(() => {
+    if (!activePlan || !Array.isArray(activePlan.days) || !activePlan.days.length) {
+      return [] as Array<{ key: string; label: string; planned: number; completed: number }>
     }
 
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    const anchor = getWeekStart(now);
-    const rows: Array<{ label: string; completed: number; planned: number; color: string; background: string; border: string; status: string; fillRatio: number }> = [];
+    const planStart = activePlan.startDate ? new Date(activePlan.startDate) : new Date(activePlan.createdAt ?? Date.now());
+    if (Number.isNaN(planStart.getTime())) return [] as Array<{ key: string; label: string; planned: number; completed: number }>;
 
-    for (let offset = 5; offset >= 0; offset -= 1) {
-      const weekStart = new Date(anchor);
-      weekStart.setDate(anchor.getDate() - (offset * 7));
-      const key = weekStart.toISOString();
-      const completed = weekMap.get(key) ?? 0;
-      const planned = Math.max(1, plannedPerWeek);
-      const status = getWeeklyStatus(completed, planned);
+    const weekCounts = new Map<string, number>();
+    for (const day of activePlan.days) {
+      const weekIndex = Number(day?.weekIndex ?? 0);
+      if (!Number.isFinite(weekIndex)) continue;
+      const weekKey = `week-${weekIndex}`;
+      weekCounts.set(weekKey, (weekCounts.get(weekKey) ?? 0) + 1);
+    }
+
+    const durationWeeks = Math.max(1, Number(activePlan.durationWeeks ?? 1));
+    const rows: Array<{ key: string; label: string; planned: number; completed: number }> = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const currentWeek = getWeekStart(today);
+
+    for (let weekIndex = 0; weekIndex < durationWeeks; weekIndex += 1) {
+      const weekStart = new Date(planStart);
+      weekStart.setHours(0, 0, 0, 0);
+      weekStart.setDate(weekStart.getDate() + (weekIndex * 7));
+      const weekKey = weekStart.toISOString();
+      const completed = activePlanHistory.filter((item) => {
+        if (!item.date) return false;
+        const parsed = new Date(item.date);
+        return !Number.isNaN(parsed.getTime()) && getWeekStart(parsed).toISOString() === weekKey;
+      }).length;
       rows.push({
-        label: getWeekLabel(weekStart),
+        key: weekKey,
+        label: `W${weekIndex + 1}`,
+        planned: Math.max(1, weekCounts.get(`week-${weekIndex}`) ?? 1),
         completed,
-        planned,
+      });
+    }
+
+    const maxIndex = rows.length - 1;
+    if (maxIndex >= 0 && rows[maxIndex].key === currentWeek.toISOString()) {
+      return rows;
+    }
+
+    return rows.slice(Math.max(0, rows.length - 6));
+  }, [activePlan, activePlanHistory]);
+
+  const plannedPerWeek = useMemo(() => {
+    if (planWeeks.length) return Math.max(1, Math.max(...planWeeks.map((week) => week.planned)));
+    return 4;
+  }, [planWeeks]);
+
+  const weeklyProgress = useMemo(() => {
+    const rows = planWeeks.length ? planWeeks : [];
+    return rows.map((week) => {
+      const ratio = Math.min(1, week.completed / Math.max(1, week.planned));
+      const status = getWeeklyStatus(week.completed, week.planned);
+      return {
+        label: week.label,
+        completed: week.completed,
+        planned: week.planned,
         color: status.color,
         background: status.background,
         border: status.border,
         status: status.label,
-        fillRatio: Math.min(1, completed / planned),
-      });
-    }
-
-    return rows;
-  }, [plannedPerWeek, workoutHistory]);
+        fillRatio: ratio,
+      };
+    });
+  }, [planWeeks]);
 
   const summary = useMemo(() => {
     const totalCompleted = weeklyProgress.reduce((sum, item) => sum + item.completed, 0);
