@@ -130,16 +130,25 @@ export function ProfileScreen() {
     if (Number.isNaN(planStart.getTime())) {
       return [] as Array<{ key: string; label: string; planned: number; completed: number }>;
     }
+    planStart.setHours(0, 0, 0, 0);
 
     const durationWeeks = Math.max(1, Number(planForProgress.durationWeeks ?? 1));
     const now = new Date();
     now.setHours(0, 0, 0, 0);
     const currentWeekIndex = Math.max(0, Math.min(durationWeeks - 1, Math.floor((now.getTime() - planStart.getTime()) / (7 * 24 * 60 * 60 * 1000))));
+    const editDate = planEditCutoff && !Number.isNaN(planEditCutoff.getTime()) ? new Date(planEditCutoff) : null;
+    editDate?.setHours(0, 0, 0, 0);
+    const planEditWeekIndex = editDate
+      ? Math.max(0, Math.floor((editDate.getTime() - planStart.getTime()) / (7 * 24 * 60 * 60 * 1000)))
+      : null;
 
     const getPlannedCountForWeek = (weekIndex: number, sourcePlan: MeProfile['activePlan']) => {
       if (!sourcePlan || !Array.isArray(sourcePlan.days) || !sourcePlan.days.length) return 1;
-      const count = sourcePlan.days.filter((day) => Number(day?.weekIndex ?? 0) === weekIndex).length;
-      return Math.max(1, count);
+      const weekDays = sourcePlan.days.filter((day) => Number(day?.weekIndex ?? 0) === weekIndex);
+      const scheduledDays = weekDays.length
+        ? weekDays
+        : sourcePlan.days.filter((day) => Number(day?.weekIndex ?? 0) === 0);
+      return Math.max(1, scheduledDays.length);
     };
 
     const getCompletedCountForWeek = (weekIndex: number) => {
@@ -153,10 +162,12 @@ export function ProfileScreen() {
         if (Number.isNaN(completedAt.getTime())) continue;
         if (completedAt < planStart) continue;
 
-        const weekFromEntry = Number(item?.weekIndex ?? 0);
-        if (Number.isFinite(weekFromEntry) && weekFromEntry >= 0 && weekFromEntry < durationWeeks) {
-          if (weekFromEntry === weekIndex) total += 1;
-          continue;
+        if (item.weekIndex !== null && item.weekIndex !== undefined) {
+          const weekFromEntry = Number(item.weekIndex);
+          if (Number.isFinite(weekFromEntry) && weekFromEntry >= 0 && weekFromEntry < durationWeeks) {
+            if (weekFromEntry === weekIndex) total += 1;
+            continue;
+          }
         }
 
         const deltaDays = Math.floor((completedAt.getTime() - planStart.getTime()) / (24 * 60 * 60 * 1000));
@@ -168,9 +179,7 @@ export function ProfileScreen() {
 
     const rows: Array<{ key: string; label: string; planned: number; completed: number }> = [];
     for (let weekIndex = 0; weekIndex <= currentWeekIndex; weekIndex += 1) {
-      const weekDate = new Date(planStart);
-      weekDate.setDate(planStart.getDate() + (weekIndex * 7));
-      const useBaseline = !!planEditCutoff && weekDate < planEditCutoff;
+      const useBaseline = !!baselinePlan && planEditWeekIndex !== null && weekIndex < planEditWeekIndex;
       const sourcePlan = useBaseline && baselinePlan ? baselinePlan : activePlan;
       const planned = getPlannedCountForWeek(weekIndex, sourcePlan ?? planForProgress);
       const completed = getCompletedCountForWeek(weekIndex);
