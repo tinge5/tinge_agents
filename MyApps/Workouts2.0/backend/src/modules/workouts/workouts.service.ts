@@ -196,6 +196,7 @@ export class WorkoutsService {
     setNumber: number;
     reps?: number | null;
     weight?: number | null;
+    completed?: boolean;
   },
 ) {
   const session = await this.prisma.workoutSession.findFirst({
@@ -217,8 +218,9 @@ export class WorkoutsService {
   const setNumber = Math.max(1, Math.floor(Number(input.setNumber) || 1));
   const normalizedReps = input.reps == null ? null : sanitizeWorkoutSetValue(input.reps, 0);
   const normalizedWeight = input.weight == null ? null : sanitizeWorkoutSetValue(input.weight, 0);
+  const completed = input.completed ?? true;
 
-  if (normalizedReps == null && normalizedWeight == null) {
+  if (normalizedReps == null && normalizedWeight == null && completed) {
     return { success: true };
   }
 
@@ -239,7 +241,8 @@ export class WorkoutsService {
       data: {
         reps,
         weight,
-        completed: true,
+        exerciseId: input.exerciseId ?? null,
+        completed,
       },
     });
   } else {
@@ -247,10 +250,11 @@ export class WorkoutsService {
       data: {
         workoutSessionId,
         exerciseName: canonicalExerciseName,
+        exerciseId: input.exerciseId ?? null,
         setNumber,
         reps,
         weight,
-        completed: true,
+        completed,
       },
     });
   }
@@ -354,6 +358,17 @@ export class WorkoutsService {
       select: {
         id: true,
         status: true,
+        setResults: {
+          select: {
+            id: true,
+            exerciseName: true,
+            exerciseId: true,
+            setNumber: true,
+            reps: true,
+            weight: true,
+            completed: true,
+          },
+        },
       },
     });
 
@@ -411,6 +426,7 @@ export class WorkoutsService {
 
         return {
           id: exercise.id,
+          exerciseId: exercise.exerciseId,
           name: exercise.exerciseName,
           previousPerformance: previousPerformance && previousPerformance.source !== 'plan_target'
             ? previousPerformance
@@ -436,6 +452,7 @@ export class WorkoutsService {
         title: day.title,
         day: `Day ${day.dayOfWeek + 1} (${DAY_LABELS[day.dayOfWeek] ?? 'Day'})`,
         exercises,
+        setResults: latestRelevantSession.setResults,
       };
     }
 
@@ -450,6 +467,7 @@ export class WorkoutsService {
         title: day.title,
         day: `Day ${day.dayOfWeek + 1} (${DAY_LABELS[day.dayOfWeek] ?? 'Day'})`,
         exercises,
+        setResults: latestRelevantSession.setResults,
       };
     }
 
@@ -472,7 +490,7 @@ export class WorkoutsService {
   async start(userId: string, workoutSessionId?: string, deviceTimeZone?: string) {
     if (!workoutSessionId) {
       const today = await this.today(userId, deviceTimeZone);
-      if (!today || today.status !== 'scheduled' || !today.planId || !today.planDay?.id) {
+      if (!today || !['scheduled', 'in_progress'].includes(today.status) || !today.planId || !today.planDay?.id) {
         throw new NotFoundException('No workout session available to start');
       }
 
@@ -490,6 +508,7 @@ export class WorkoutsService {
         return this.prisma.workoutSession.update({
           where: { id: existingSession.id },
           data: { status: 'in_progress', actualDate: existingSession.actualDate ?? new Date() },
+          include: { setResults: true },
         });
       }
 
@@ -503,12 +522,17 @@ export class WorkoutsService {
           status: 'in_progress',
           actualDate: new Date(),
         },
+        include: { setResults: true },
       });
     }
 
     const session = await this.prisma.workoutSession.findFirst({ where: { id: workoutSessionId, userId } });
     if (!session) throw new NotFoundException();
-    return this.prisma.workoutSession.update({ where: { id: workoutSessionId }, data: { status: 'in_progress', actualDate: new Date() } });
+    return this.prisma.workoutSession.update({
+      where: { id: workoutSessionId },
+      data: { status: 'in_progress', actualDate: new Date() },
+      include: { setResults: true },
+    });
   }
 
   private async finalizePlanIfNeeded(tx: any, userId: string, session: { id: string; planId: string; planDayId: string; weekIndex: number }) : Promise<PlanCompletionResult> {

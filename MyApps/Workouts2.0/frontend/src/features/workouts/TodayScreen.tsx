@@ -102,7 +102,7 @@ export function TodayScreen({ navigation }: any) {
   const isCompletedWorkout = workout?.status === 'completed';
   const isInProgressWorkout = workout?.status === 'in_progress';
   const isReviewMode = isCompletedWorkout;
-  const workoutButtonLabel = isReviewMode ? 'Review Workout' : 'Start Workout';
+  const workoutButtonLabel = isReviewMode ? 'Review Workout' : isInProgressWorkout ? 'Resume Workout' : 'Start Workout';
   const DAY_LABELS: Record<number, string> = {
   0: 'Sunday',
   1: 'Monday',

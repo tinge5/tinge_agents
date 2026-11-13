@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Headers, Param, Post, Req, UseGuards } from '@nestjs/common';
-import { IsNumber, IsString, Min, IsOptional } from 'class-validator';
+import { IsBoolean, IsNumber, IsString, Min, IsOptional } from 'class-validator';
 import { JwtAuthGuard } from '../../shared/auth/jwt-auth.guard';
 import { WorkoutsService } from './workouts.service';
 
@@ -24,6 +24,10 @@ class SaveWorkoutSetResultBody {
   @IsOptional()
   @Min(0)
   weight?: number | null;
+
+  @IsOptional()
+  @IsBoolean()
+  completed?: boolean;
 }
 @UseGuards(JwtAuthGuard)
 @Controller('workouts')

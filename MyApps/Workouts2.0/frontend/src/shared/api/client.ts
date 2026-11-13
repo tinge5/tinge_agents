@@ -56,8 +56,10 @@ export type Plan = {
 };
 export type CreatePlanInput = { name: string; goals: string[]; progressiveOverloadEnabled: boolean; isActive?: boolean; durationWeeks?: number; startDate?: string | null; days: PlanDay[] };
 export type UpdatePlanInput = Partial<CreatePlanInput>;
-export type WorkoutSetResultInput = { exerciseName: string; exerciseId?: string | null; setNumber: number; reps: number | null; weight: number | null };
+export type WorkoutSetResultInput = { exerciseName: string; exerciseId?: string | null; setNumber: number; reps: number | null; weight: number | null; completed?: boolean };
 export type WorkoutSetResultHistory = { id: string; exerciseName: string; exerciseId?: string | null; setNumber: number; reps: number; weight: number; completed: boolean };
+export type WorkoutSetResult = { id?: string; exerciseName: string; exerciseId?: string | null; setNumber: number; reps: number; weight: number; completed: boolean };
+export type WorkoutSessionStartResponse = { id: string; setResults: WorkoutSetResult[] };
 
 function sanitizeWorkoutSetResultInput(input: WorkoutSetResultInput): WorkoutSetResultInput {
   const repsValue = input.reps == null || !Number.isFinite(input.reps) ? 0 : Math.max(0, Number(input.reps));
@@ -69,7 +71,7 @@ function sanitizeWorkoutSetResultInput(input: WorkoutSetResultInput): WorkoutSet
     weight: weightValue,
   };
 }
-export type TodayWorkout = { status: 'scheduled' | 'no_schedule' | 'in_progress' | 'completed' | 'no_active_plan'; workoutSessionId?: string; title?: string; day?: string; note?: string; weekIndex?: number; planId?: string; plan?: Plan; planDay?: PlanDay; exercises?: Array<{ name: string; exerciseId?: string | null; sets: number | null; reps: number | null; weight: number | null; previousPerformance?: { sets: number | null; reps: number | null; weight: number | null; setResults?: Array<{ setNumber?: number | null; reps?: number | null; weight?: number | null }> | null } | null; suggestedTarget?: { sets: number | null; reps: number | null; weight: number | null } | null }> };
+export type TodayWorkout = { status: 'scheduled' | 'no_schedule' | 'in_progress' | 'completed' | 'no_active_plan'; workoutSessionId?: string; title?: string; day?: string; note?: string; weekIndex?: number; planId?: string; plan?: Plan; planDay?: PlanDay; setResults?: WorkoutSetResult[]; exercises?: Array<{ id?: string; name: string; exerciseId?: string | null; sets: number | null; reps: number | null; weight: number | null; previousPerformance?: { sets: number | null; reps: number | null; weight: number | null; setResults?: Array<{ setNumber?: number | null; reps?: number | null; weight?: number | null }> | null } | null; suggestedTarget?: { sets: number | null; reps: number | null; weight: number | null } | null }> };
 export type WorkoutHistorySession = { id: string; userId: string; originalPlanId?: string | null; planName: string; workoutName: string; dayName: string; weekIndex?: number | null; dayOfWeek?: number | null; completedAt: string; workoutSessionId: string; setResults: WorkoutSetResultHistory[] };
 
 async function readStoredTokens() {
@@ -94,7 +96,7 @@ export async function restoreSessionFromStorage() { const raw = await AsyncStora
 export async function signOut() { try { const { refreshToken } = await readStoredTokens(); if (refreshToken) { await request('/auth/logout', { method: 'POST', body: JSON.stringify({ refreshToken }) }, false).catch(() => undefined); } } finally { await persistTokens(null); } }
 export async function getMe() { return request<MeProfile>('/me'); }
 export async function getTodayWorkout() { return request<TodayWorkout>('/workouts/today', { headers: { 'x-device-timezone': getDeviceTimeZone() } }); }
-export async function startWorkoutSession() { return request<TodayWorkout>('/workouts/start', { method: 'POST', headers: { 'x-device-timezone': Intl.DateTimeFormat().resolvedOptions().timeZone } }); }
+export async function startWorkoutSession() { return request<WorkoutSessionStartResponse>('/workouts/start', { method: 'POST', headers: { 'x-device-timezone': Intl.DateTimeFormat().resolvedOptions().timeZone } }); }
 export async function saveWorkoutSetResult(workoutSessionId: string, input: WorkoutSetResultInput) {
   return request<void>(`/workouts/${workoutSessionId}/set-results`, {
     method: 'POST',
