@@ -274,6 +274,7 @@ export function ProfileScreen() {
           unmatchedCompletedEntries.splice(completedEntryIndex, 1);
           return {
             key: day.id ?? `${currentWeekIndex}-${scheduledDay}-${day.title ?? index}-${index}`,
+            dayOfWeek: scheduledDay,
             label: Number.isInteger(scheduledDay) && scheduledDay >= 0 && scheduledDay <= 6
               ? new Date(2024, 0, 7 + scheduledDay).toLocaleDateString(undefined, { weekday: 'short' })
               : day.title || `Workout ${index + 1}`,
@@ -288,6 +289,7 @@ export function ProfileScreen() {
             : 'missed' as const;
         return {
           key: day.id ?? `${currentWeekIndex}-${scheduledDay}-${day.title ?? index}-${index}`,
+          dayOfWeek: scheduledDay,
           label: Number.isInteger(scheduledDay) && scheduledDay >= 0 && scheduledDay <= 6
             ? new Date(2024, 0, 7 + scheduledDay).toLocaleDateString(undefined, { weekday: 'short' })
             : day.title || `Workout ${index + 1}`,
@@ -298,6 +300,9 @@ export function ProfileScreen() {
     const completed = completedEntries.length;
     const workoutsToCatchUp = workouts.filter((workout) => workout.state === 'missed').length;
     const todayHasWorkout = scheduledDays.some((day) => Number(day?.dayOfWeek) === today.getDay());
+    const todayWorkoutCompleted = workouts.some((workout) =>
+      workout.state === 'completed' && workout.dayOfWeek === today.getDay()
+    );
     const nextWorkout = scheduledDays
       .map((day) => Number(day?.dayOfWeek))
       .filter((scheduledDay) => Number.isInteger(scheduledDay) && scheduledDay >= 0 && scheduledDay <= 6)
@@ -322,6 +327,15 @@ export function ProfileScreen() {
         color: theme.colors.warning,
         background: 'rgba(234, 179, 8, 0.12)',
         border: 'rgba(234, 179, 8, 0.45)',
+      };
+    } else if (todayWorkoutCompleted) {
+      status = {
+        label: completed >= planned
+          ? 'Workout completed today · All scheduled workouts complete'
+          : 'Workout completed today',
+        color: theme.colors.success,
+        background: 'rgba(34, 197, 94, 0.12)',
+        border: 'rgba(34, 197, 94, 0.45)',
       };
     } else if (completed >= planned) {
       status = {
