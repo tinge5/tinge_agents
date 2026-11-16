@@ -3,7 +3,7 @@ import {
   EXERCISE_AUTOCOMPLETE_OPTIONS,
   getExerciseProgressionRule,
 } from '../../shared/exerciseLibrary';
-import { Alert, ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, ActivityIndicator, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   activatePlan,
@@ -40,17 +40,28 @@ const DAY_LABELS: Record<number, string> = {
   6: 'Saturday',
 };
 
+type PlanLevel = 'Beginner' | 'Intermediate' | 'Advanced';
+type PlanLevelFilter = 'All' | PlanLevel;
+type DaysPerWeekFilter = 'All' | 3 | 4;
+
 type PlanSuggestion = {
   name: string;
   goal: string;
+  level: PlanLevel;
+  daysPerWeek: number;
   description: string;
   days: PlanDay[];
 };
+
+const PLAN_LEVEL_FILTERS: PlanLevelFilter[] = ['All', 'Beginner', 'Intermediate', 'Advanced'];
+const PLAN_DAYS_FILTERS: DaysPerWeekFilter[] = ['All', 3, 4];
 
 const PLAN_SUGGESTIONS: PlanSuggestion[] = [
   {
     name: '4-Day Strength Upper/Lower',
     goal: 'strength',
+    level: 'Intermediate',
+    daysPerWeek: 4,
     description: 'Two upper-body and two lower-body sessions with compound lifts prioritized.',
     days: [
       { dayOfWeek: 1, title: 'Upper A', exercises: [
@@ -84,6 +95,8 @@ const PLAN_SUGGESTIONS: PlanSuggestion[] = [
   {
     name: '4-Day Hypertrophy Upper/Lower',
     goal: 'hypertrophy',
+    level: 'Intermediate',
+    daysPerWeek: 4,
     description: 'A balanced upper/lower routine with moderate-to-higher rep targets and accessory work.',
     days: [
       { dayOfWeek: 1, title: 'Upper A', exercises: [
@@ -123,6 +136,8 @@ const PLAN_SUGGESTIONS: PlanSuggestion[] = [
   {
     name: '4-Day Balanced Push/Pull/Legs/Full Body',
     goal: 'general fitness',
+    level: 'Beginner',
+    daysPerWeek: 4,
     description: 'A varied weekly structure with push, pull, and leg sessions plus a lighter full-body day.',
     days: [
       { dayOfWeek: 1, title: 'Push', exercises: [
@@ -498,7 +513,10 @@ export function PlanEditorScreen() {
   const [viewMode, setViewMode] = useState<'edit' | 'view'>('edit');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [selectedSuggestion, setSelectedSuggestion] = useState<PlanSuggestion | null>(null);
-  const [suggestionToAdd, setSuggestionToAdd] = useState<PlanSuggestion | null>(null);
+  const [isCatalogExpanded, setIsCatalogExpanded] = useState(false);
+  const [levelFilter, setLevelFilter] = useState<PlanLevelFilter>('All');
+  const [daysPerWeekFilter, setDaysPerWeekFilter] = useState<DaysPerWeekFilter>('All');
+  const [isConfirmingSuggestionAdd, setIsConfirmingSuggestionAdd] = useState(false);
   const [suggestionPlanName, setSuggestionPlanName] = useState('');
   const scrollViewRef = useRef<ScrollView>(null);
   const plans = data ?? [];
@@ -577,7 +595,7 @@ export function PlanEditorScreen() {
       }),
     onSuccess: async (createdPlan) => {
       await queryClient.invalidateQueries({ queryKey: ['plans'] });
-      setSuggestionToAdd(null);
+      setIsConfirmingSuggestionAdd(false);
       setSuggestionPlanName('');
       setSelectedSuggestion(null);
       scrollViewRef.current?.scrollTo({ y: 0, animated: true });
@@ -608,9 +626,10 @@ export function PlanEditorScreen() {
   const startEdit = (plan: Plan) => { setEditingPlanId(plan.id); setDraft(toDraftPlan(plan)); setActiveDayIndex(0); setSelectedPreviewWeek(1); setViewMode('edit'); };
   const startView = (plan: Plan) => { setEditingPlanId(plan.id); setDraft(toDraftPlan(plan)); setActiveDayIndex(0); setSelectedPreviewWeek(1); setViewMode('view'); };
   const resetDraft = () => { setEditingPlanId(null); setDraft(defaultDraft()); setActiveDayIndex(0); setSelectedPreviewWeek(1); setViewMode('edit'); };
-  const confirmAddSuggestion = (suggestion: PlanSuggestion) => {
+  const openSuggestion = (suggestion: PlanSuggestion) => {
     setSuggestionPlanName(suggestion.name);
-    setSuggestionToAdd(suggestion);
+    setIsConfirmingSuggestionAdd(false);
+    setSelectedSuggestion(suggestion);
   };
   const updateDay = (updater: (day: PlanDay) => PlanDay) => { setDraft((prev: any) => { const days = safeArray<PlanDay>(prev.days).slice(); days[activeDayIndex] = updater(days[activeDayIndex] ?? emptyDay(0)); return { ...prev, days }; }); };
   const addDay = () => {
@@ -634,6 +653,10 @@ export function PlanEditorScreen() {
     setActiveDayIndex((current) => Math.max(0, Math.min(current, Math.max(0, safeArray<PlanDay>(draft.days).length - 2))));
   };
   const allDays = safeArray<PlanDay>(draft.days);
+  const filteredSuggestions = PLAN_SUGGESTIONS.filter((suggestion) =>
+    (levelFilter === 'All' || suggestion.level === levelFilter) &&
+    (daysPerWeekFilter === 'All' || suggestion.daysPerWeek === daysPerWeekFilter),
+  );
 
   return (
     <>
@@ -649,48 +672,72 @@ export function PlanEditorScreen() {
 })} />)}
       <View style={{ backgroundColor: theme.colors.surface, padding: 16, borderRadius: 16, gap: 12, borderWidth: 1, borderColor: theme.colors.border }}>
         <Text style={{ fontSize: 20, fontWeight: '700', color: theme.colors.text }}>Plan Suggestions</Text>
-        <PlanFieldHelp text="Browse ready-to-use four-day plans. Preview the workout days and exercises before adding one to your plans." />
-        {PLAN_SUGGESTIONS.map((suggestion) => (
-          <View key={suggestion.name} style={{ backgroundColor: theme.colors.background, padding: 14, borderRadius: 12, gap: 8, borderWidth: 1, borderColor: theme.colors.border }}>
-            <Text style={{ fontSize: 16, fontWeight: '700', color: theme.colors.text }}>{suggestion.name}</Text>
-            <Text style={{ color: theme.colors.textMuted, textTransform: 'capitalize' }}>Goal: {suggestion.goal} · 4 days/week</Text>
-            <Text style={{ color: theme.colors.text }}>{suggestion.description}</Text>
+    <PlanFieldHelp text="Open the catalog to browse and filter suggested workout plans." />
+    <Pressable
+      onPress={() => setIsCatalogExpanded((expanded) => !expanded)}
+      accessibilityRole="button"
+      accessibilityState={{ expanded: isCatalogExpanded }}
+      style={{ backgroundColor: theme.colors.surfaceAlt, padding: 12, borderRadius: 12, alignSelf: 'flex-start' }}
+    >
+      <Text style={{ color: theme.colors.text, fontWeight: '700' }}>
+        {isCatalogExpanded ? 'Hide Our Catalog' : 'See Our Catalog'}
+      </Text>
+    </Pressable>
+    {isCatalogExpanded ? (
+      <View style={{ gap: 10 }}>
+        <Text style={{ fontWeight: '700', color: theme.colors.text }}>Filter by level</Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {PLAN_LEVEL_FILTERS.map((level) => {
+            const selected = levelFilter === level;
+            return (
+              <Pressable
+                key={level}
+                onPress={() => setLevelFilter(level)}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999, backgroundColor: selected ? theme.colors.primary : theme.colors.surfaceAlt }}
+              >
+                <Text style={{ color: selected ? 'white' : theme.colors.text, fontWeight: '700' }}>{level}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        <Text style={{ fontWeight: '700', color: theme.colors.text }}>Filter by days per week</Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {PLAN_DAYS_FILTERS.map((days) => {
+            const selected = daysPerWeekFilter === days;
+            const label = days === 'All' ? 'Any days' : `${days} days`;
+            return (
+              <Pressable
+                key={days}
+                onPress={() => setDaysPerWeekFilter(days)}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999, backgroundColor: selected ? theme.colors.primary : theme.colors.surfaceAlt }}
+              >
+                <Text style={{ color: selected ? 'white' : theme.colors.text, fontWeight: '700' }}>{label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        {filteredSuggestions.length ? filteredSuggestions.map((suggestion) => (
+          <View key={suggestion.name} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, backgroundColor: theme.colors.background, padding: 12, borderRadius: 12, borderWidth: 1, borderColor: theme.colors.border }}>
+            <Text style={{ flex: 1, fontSize: 16, fontWeight: '700', color: theme.colors.text }}>{suggestion.name}</Text>
             <Pressable
-              onPress={() => setSelectedSuggestion(suggestion)}
-              style={{ backgroundColor: theme.colors.surfaceAlt, padding: 11, borderRadius: 10, alignSelf: 'flex-start' }}
+              onPress={() => openSuggestion(suggestion)}
+              accessibilityRole="button"
+              style={{ backgroundColor: theme.colors.primary, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10 }}
             >
-              <Text style={{ color: theme.colors.text, fontWeight: '700' }}>
-                {selectedSuggestion?.name === suggestion.name ? 'Plan Preview Shown' : 'View Plan'}
-              </Text>
+              <Text style={{ color: 'white', fontWeight: '700' }}>View Plan</Text>
             </Pressable>
           </View>
-        ))}
-        {selectedSuggestion ? (
-          <View style={{ padding: 14, borderRadius: 12, gap: 10, borderWidth: 1, borderColor: theme.colors.primary, backgroundColor: theme.colors.background }}>
-            <Text style={{ fontSize: 18, fontWeight: '700', color: theme.colors.text }}>{selectedSuggestion.name}</Text>
-            <Text style={{ color: theme.colors.textMuted }}>{selectedSuggestion.description}</Text>
-            {selectedSuggestion.days.map((day) => (
-              <View key={`${selectedSuggestion.name}-${day.dayOfWeek}`} style={{ padding: 12, borderRadius: 10, backgroundColor: theme.colors.surface, gap: 6 }}>
-                <Text style={{ fontWeight: '700', color: theme.colors.text }}>{day.title} · {DAY_LABELS[normalizeDayOfWeek(day.dayOfWeek)]}</Text>
-                {safeArray<PlanDayExercise>(day.exercises).map((exercise, index) => (
-                  <Text key={`${exercise.exerciseName}-${index}`} style={{ color: theme.colors.text }}>
-                    {exercise.exerciseName} — {exercise.setsTarget} x {exercise.repsTarget}
-                  </Text>
-                ))}
-              </View>
-            ))}
-            <Pressable
-              onPress={() => confirmAddSuggestion(selectedSuggestion)}
-              disabled={addSuggestionMutation.isPending}
-              style={{ backgroundColor: theme.colors.primary, padding: 13, borderRadius: 12, opacity: addSuggestionMutation.isPending ? 0.6 : 1 }}
-            >
-              <Text style={{ textAlign: 'center', color: 'white', fontWeight: '700' }}>Add Plan</Text>
-            </Pressable>
-            <Pressable onPress={() => setSelectedSuggestion(null)} style={{ padding: 8, alignSelf: 'center' }}>
-              <Text style={{ color: theme.colors.textMuted, fontWeight: '600' }}>Close Preview</Text>
-            </Pressable>
+        )) : (
+          <View style={{ padding: 12, borderRadius: 12, backgroundColor: theme.colors.background }}>
+            <Text style={{ color: theme.colors.text }}>No plans match these filters yet. Try another level or day count.</Text>
           </View>
-        ) : null}
+        )}
+      </View>
+    ) : null}
       </View>
       <View style={{ backgroundColor: theme.colors.surface, padding: 16, borderRadius: 16, gap: 12, borderWidth: 1, borderColor: theme.colors.border }}>
         <Text style={{ fontSize: 20, fontWeight: '700', color: theme.colors.text }}>{viewMode === 'view' ? 'View Plan' : title}</Text>
@@ -1046,68 +1093,106 @@ export function PlanEditorScreen() {
       </View>
     )}
 
-    {suggestionToAdd && (
-      <View
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.55)',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 1000,
-        }}
-      >
-        <View
-          style={{
-            width: '85%',
-            maxWidth: 420,
-            backgroundColor: theme.colors.surface,
-            borderRadius: 16,
-            padding: 24,
-            gap: 12,
-          }}
-        >
-          <Text style={{ fontSize: 20, fontWeight: '700', color: theme.colors.text }}>
-            Add Suggested Plan?
-          </Text>
-          <Text style={{ color: theme.colors.text }}>
-            This will add the plan and all of its workout days and exercises to your account. It will be saved inactive, so your current active plan will not change.
-          </Text>
-          <TextInput
-            value={suggestionPlanName}
-            onChangeText={setSuggestionPlanName}
-            placeholder="Plan name"
-            placeholderTextColor={theme.colors.textMuted}
-            accessibilityLabel="Suggested plan name"
-            style={{ borderWidth: 1, padding: 12, borderRadius: 10, borderColor: theme.colors.border, backgroundColor: theme.colors.background, color: theme.colors.text, fontSize: 16 }}
-          />
-          <Text style={{ color: theme.colors.textMuted, fontSize: 12 }}>
-            Change the name if you like, or keep the suggested name.
-          </Text>
-          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 12 }}>
-            <Pressable
-              onPress={() => setSuggestionToAdd(null)}
-              disabled={addSuggestionMutation.isPending}
-              style={{ padding: 12, borderRadius: 10, backgroundColor: theme.colors.surfaceAlt, opacity: addSuggestionMutation.isPending ? 0.6 : 1 }}
-            >
-              <Text style={{ fontWeight: '700', color: theme.colors.text }}>Cancel</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => addSuggestionMutation.mutate({ suggestion: suggestionToAdd, name: suggestionPlanName })}
-              disabled={addSuggestionMutation.isPending}
-              style={{ padding: 12, borderRadius: 10, backgroundColor: theme.colors.primary, opacity: addSuggestionMutation.isPending ? 0.6 : 1 }}
-            >
-              <Text style={{ fontWeight: '700', color: 'white' }}>
-                {addSuggestionMutation.isPending ? 'Adding...' : 'Confirm Add'}
-              </Text>
-            </Pressable>
-          </View>
+    <Modal
+      visible={selectedSuggestion !== null}
+      transparent
+      animationType="fade"
+      onRequestClose={() => {
+        setSelectedSuggestion(null);
+        setIsConfirmingSuggestionAdd(false);
+      }}
+    >
+      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', alignItems: 'center', padding: 16 }}>
+        <View style={{ width: '100%', maxWidth: 480, maxHeight: '90%', backgroundColor: theme.colors.surface, borderRadius: 16, padding: 16, gap: 12 }}>
+          {selectedSuggestion ? (
+            <>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                <Text style={{ flex: 1, fontSize: 20, fontWeight: '700', color: theme.colors.text }}>
+                  {isConfirmingSuggestionAdd ? 'Add Suggested Plan?' : selectedSuggestion.name}
+                </Text>
+                <Pressable
+                  onPress={() => {
+                    setSelectedSuggestion(null);
+                    setIsConfirmingSuggestionAdd(false);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Close plan preview"
+                  style={{ padding: 8, borderRadius: 8, backgroundColor: theme.colors.surfaceAlt }}
+                >
+                  <Text style={{ color: theme.colors.text, fontWeight: '700' }}>Close</Text>
+                </Pressable>
+              </View>
+              {isConfirmingSuggestionAdd ? (
+                <>
+                  <ScrollView keyboardShouldPersistTaps="handled" style={{ flexShrink: 1 }} contentContainerStyle={{ gap: 12 }}>
+                    <Text style={{ color: theme.colors.text }}>
+                      Add this plan and all its workout days and exercises to your account? It will be saved inactive, so your current active plan will not change.
+                    </Text>
+                    <TextInput
+                      value={suggestionPlanName}
+                      onChangeText={setSuggestionPlanName}
+                      placeholder="Plan name"
+                      placeholderTextColor={theme.colors.textMuted}
+                      accessibilityLabel="Suggested plan name"
+                      style={{ borderWidth: 1, padding: 12, borderRadius: 10, borderColor: theme.colors.border, backgroundColor: theme.colors.background, color: theme.colors.text, fontSize: 16 }}
+                    />
+                    <Text style={{ color: theme.colors.textMuted, fontSize: 12 }}>
+                      Change the name if you like, or keep the suggested name.
+                    </Text>
+                  </ScrollView>
+                  <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 12 }}>
+                    <Pressable
+                      onPress={() => setIsConfirmingSuggestionAdd(false)}
+                      disabled={addSuggestionMutation.isPending}
+                      style={{ padding: 12, borderRadius: 10, backgroundColor: theme.colors.surfaceAlt, opacity: addSuggestionMutation.isPending ? 0.6 : 1 }}
+                    >
+                      <Text style={{ fontWeight: '700', color: theme.colors.text }}>Back</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => addSuggestionMutation.mutate({ suggestion: selectedSuggestion, name: suggestionPlanName })}
+                      disabled={addSuggestionMutation.isPending}
+                      style={{ padding: 12, borderRadius: 10, backgroundColor: theme.colors.primary, opacity: addSuggestionMutation.isPending ? 0.6 : 1 }}
+                    >
+                      <Text style={{ fontWeight: '700', color: 'white' }}>
+                        {addSuggestionMutation.isPending ? 'Adding...' : 'Confirm Add'}
+                      </Text>
+                    </Pressable>
+                  </View>
+                </>
+              ) : (
+                <>
+                  <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ gap: 10 }}>
+                    <Text style={{ color: theme.colors.textMuted }}>
+                      {selectedSuggestion.level} · {selectedSuggestion.daysPerWeek} days/week · Goal: {selectedSuggestion.goal}
+                    </Text>
+                    <Text style={{ color: theme.colors.text }}>{selectedSuggestion.description}</Text>
+                    {selectedSuggestion.days.map((day) => (
+                      <View key={`${selectedSuggestion.name}-${day.dayOfWeek}`} style={{ padding: 12, borderRadius: 10, backgroundColor: theme.colors.background, gap: 6 }}>
+                        <Text style={{ fontWeight: '700', color: theme.colors.text }}>
+                          {day.title} · {DAY_LABELS[normalizeDayOfWeek(day.dayOfWeek)]}
+                        </Text>
+                        {safeArray<PlanDayExercise>(day.exercises).map((exercise, index) => (
+                          <Text key={`${exercise.exerciseName}-${index}`} style={{ color: theme.colors.text }}>
+                            {exercise.exerciseName} — {exercise.setsTarget} x {exercise.repsTarget}
+                          </Text>
+                        ))}
+                      </View>
+                    ))}
+                  </ScrollView>
+                  <Pressable
+                    onPress={() => setIsConfirmingSuggestionAdd(true)}
+                    disabled={addSuggestionMutation.isPending}
+                    style={{ backgroundColor: theme.colors.primary, padding: 13, borderRadius: 12, opacity: addSuggestionMutation.isPending ? 0.6 : 1 }}
+                  >
+                    <Text style={{ textAlign: 'center', color: 'white', fontWeight: '700' }}>Add Plan</Text>
+                  </Pressable>
+                </>
+              )}
+            </>
+          ) : null}
         </View>
       </View>
-    )}
+    </Modal>
 
   </>
 );
