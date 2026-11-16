@@ -519,6 +519,7 @@ export function PlanEditorScreen() {
   const [isConfirmingSuggestionAdd, setIsConfirmingSuggestionAdd] = useState(false);
   const [suggestionPlanName, setSuggestionPlanName] = useState('');
   const scrollViewRef = useRef<ScrollView>(null);
+  const planEditorYRef = useRef(0);
   const plans = data ?? [];
   const title = useMemo(() => (editingPlanId ? 'Edit Plan' : 'Create Plan'), [editingPlanId]);
   const totalWeeks = Math.max(1, Number(draft.durationWeeks ?? 4));
@@ -624,8 +625,24 @@ export function PlanEditorScreen() {
   });
 
   const startEdit = (plan: Plan) => { setEditingPlanId(plan.id); setDraft(toDraftPlan(plan)); setActiveDayIndex(0); setSelectedPreviewWeek(1); setViewMode('edit'); };
-  const startView = (plan: Plan) => { setEditingPlanId(plan.id); setDraft(toDraftPlan(plan)); setActiveDayIndex(0); setSelectedPreviewWeek(1); setViewMode('view'); };
+  const scrollToPlanEditor = () => {
+    requestAnimationFrame(() => {
+      scrollViewRef.current?.scrollTo({ y: planEditorYRef.current, animated: true });
+    });
+  };
+  const startView = (plan: Plan) => {
+    setEditingPlanId(plan.id);
+    setDraft(toDraftPlan(plan));
+    setActiveDayIndex(0);
+    setSelectedPreviewWeek(1);
+    setViewMode('view');
+    scrollToPlanEditor();
+  };
   const resetDraft = () => { setEditingPlanId(null); setDraft(defaultDraft()); setActiveDayIndex(0); setSelectedPreviewWeek(1); setViewMode('edit'); };
+  const startNewPlan = () => {
+    resetDraft();
+    scrollToPlanEditor();
+  };
   const openSuggestion = (suggestion: PlanSuggestion) => {
     setSuggestionPlanName(suggestion.name);
     setIsConfirmingSuggestionAdd(false);
@@ -663,7 +680,7 @@ export function PlanEditorScreen() {
     <ScrollView ref={scrollViewRef} keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 20, gap: 16, backgroundColor: theme.colors.background, flexGrow: 1 }}>
       <Text style={{ fontSize: 28, fontWeight: '800', color: theme.colors.text }}>Plans</Text>
       <Text style={{ color: theme.colors.textMuted }}>Use the New Plan action to start a fresh plan. Edit existing plans from the list below.</Text>
-      <Pressable onPress={resetDraft} style={{ backgroundColor: theme.colors.surfaceAlt, padding: 12, borderRadius: 12, alignSelf: 'flex-start' }}><Text style={{ fontWeight: '700', color: theme.colors.text }}>New Plan</Text></Pressable>
+      <Pressable onPress={startNewPlan} style={{ backgroundColor: theme.colors.surfaceAlt, padding: 12, borderRadius: 12, alignSelf: 'flex-start' }}><Text style={{ fontWeight: '700', color: theme.colors.text }}>New Plan</Text></Pressable>
       {isLoading ? <View style={{ paddingVertical: 40 }}><ActivityIndicator color={theme.colors.primary} /></View> : isError ? <Text style={{ color: theme.colors.danger }}>{(error as Error)?.message ?? 'Unable to load plans'}</Text> : plans.length === 0 ? <View style={{ backgroundColor: theme.colors.surface, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: theme.colors.border }}><Text style={{ fontWeight: '700', color: theme.colors.text }}>No plans yet</Text><Text style={{ color: theme.colors.text }}>Create your first workout plan below.</Text></View> : plans.map((plan) => <PlanCard key={plan.id} plan={plan} onView={startView} onEdit={startEdit} onActivate={(p) => activateMutation.mutate(p.id)} onDeactivate={(p) => deactivateMutation.mutate(p.id)} onRestart={(p) => setRestartConfirm({ planId: p.id, title: 'Restart Plan?', message: 'This will restart the plan at Week 1 starting today. Completed workout history will not be deleted or changed. The plan configuration, days, exercises, sets, reps, weights, and other settings will remain unchanged. Do you want to continue?' })} onDelete={(p) => setDeleteConfirm({
   type: 'plan',
   title: 'Delete Plan?',
@@ -739,7 +756,12 @@ export function PlanEditorScreen() {
       </View>
     ) : null}
       </View>
-      <View style={{ backgroundColor: theme.colors.surface, padding: 16, borderRadius: 16, gap: 12, borderWidth: 1, borderColor: theme.colors.border }}>
+      <View
+        onLayout={({ nativeEvent }) => {
+          planEditorYRef.current = nativeEvent.layout.y;
+        }}
+        style={{ backgroundColor: theme.colors.surface, padding: 16, borderRadius: 16, gap: 12, borderWidth: 1, borderColor: theme.colors.border }}
+      >
         <Text style={{ fontSize: 20, fontWeight: '700', color: theme.colors.text }}>{viewMode === 'view' ? 'View Plan' : title}</Text>
         {viewMode === 'edit' ? (
           <>
