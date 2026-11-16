@@ -41,6 +41,12 @@ function getWeeklyStatus(completed: number, planned: number) {
   return { label: 'Needs catch-up', color: theme.colors.danger, background: 'rgba(239, 68, 68, 0.12)', border: 'rgba(239, 68, 68, 0.45)' };
 }
 
+function getPlanDaysForWeek(plan: NonNullable<MeProfile['activePlan']>, weekIndex: number) {
+  const days = plan.days ?? [];
+  const weekDays = days.filter((day) => Number(day?.weekIndex ?? 0) === weekIndex);
+  return weekDays.length ? weekDays : days.filter((day) => Number(day?.weekIndex ?? 0) === 0);
+}
+
 export function ProfileScreen() {
   const dispatch = useAppDispatch();
   const user = useAppSelector((s) => s.auth.user);
@@ -144,10 +150,7 @@ export function ProfileScreen() {
 
     const getPlannedCountForWeek = (weekIndex: number, sourcePlan: MeProfile['activePlan']) => {
       if (!sourcePlan || !Array.isArray(sourcePlan.days) || !sourcePlan.days.length) return 1;
-      const weekDays = sourcePlan.days.filter((day) => Number(day?.weekIndex ?? 0) === weekIndex);
-      const scheduledDays = weekDays.length
-        ? weekDays
-        : sourcePlan.days.filter((day) => Number(day?.weekIndex ?? 0) === 0);
+      const scheduledDays = getPlanDaysForWeek(sourcePlan, weekIndex);
       return Math.max(1, scheduledDays.length);
     };
 
@@ -194,6 +197,120 @@ export function ProfileScreen() {
 
     return rows;
   }, [activePlan, baselinePlan, planEditCutoff, planForProgress, historyEntries]);
+
+  const currentWeekProgress = useMemo(() => {
+    if (!activePlan || !planForProgress) return null;
+
+    const planStart = planForProgress.startDate
+      ? new Date(planForProgress.startDate)
+      : new Date(planForProgress.createdAt ?? Date.now());
+    if (Number.isNaN(planStart.getTime())) return null;
+    planStart.setHours(0, 0, 0, 0);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const durationWeeks = Math.max(1, Number(planForProgress.durationWeeks ?? 1));
+    const currentWeekIndex = Math.max(
+      0,
+      Math.min(durationWeeks - 1, Math.floor((today.getTime() - planStart.getTime()) / (7 * 24 * 60 * 60 * 1000)))
+    );
+    const weekStart = new Date(planStart);
+    weekStart.setDate(weekStart.getDate() + currentWeekIndex * 7);
+    const dayOffset = Math.floor((today.getTime() - weekStart.getTime()) / (24 * 60 * 60 * 1000));
+    const scheduledDays = getPlanDaysForWeek(activePlan, currentWeekIndex);
+    const planned = scheduledDays.length;
+
+    let completed = 0;
+    for (const item of historyEntries) {
+      if (!item.date) continue;
+      if (item.originalPlanId && activePlan.id && item.originalPlanId !== activePlan.id) continue;
+      if (item.planName && activePlan.name && item.planName !== activePlan.name) continue;
+
+      const completedAt = new Date(item.date);
+      if (Number.isNaN(completedAt.getTime()) || completedAt < planStart) continue;
+
+      if (item.weekIndex !== null && item.weekIndex !== undefined) {
+        const entryWeekIndex = Number(item.weekIndex);
+        if (Number.isFinite(entryWeekIndex) && entryWeekIndex >= 0 && entryWeekIndex < durationWeeks) {
+          if (entryWeekIndex === currentWeekIndex) completed += 1;
+          continue;
+        }
+      }
+
+      const entryWeekIndex = Math.max(
+        0,
+        Math.floor((completedAt.getTime() - planStart.getTime()) / (7 * 24 * 60 * 60 * 1000))
+      );
+      if (entryWeekIndex === currentWeekIndex) completed += 1;
+    }
+
+    const overdue = scheduledDays.filter((day) => {
+      const scheduledDay = Number(day?.dayOfWeek);
+      if (!Number.isInteger(scheduledDay) || scheduledDay < 0 || scheduledDay > 6) return false;
+      const scheduledOffset = (scheduledDay - weekStart.getDay() + 7) % 7;
+      return scheduledOffset < dayOffset;
+    }).length;
+    const workoutsToCatchUp = Math.max(0, overdue - completed);
+    const todayHasWorkout = scheduledDays.some((day) => Number(day?.dayOfWeek) === today.getDay());
+    const nextWorkout = scheduledDays
+      .map((day) => Number(day?.dayOfWeek))
+      .filter((scheduledDay) => Number.isInteger(scheduledDay) && scheduledDay >= 0 && scheduledDay <= 6)
+      .map((scheduledDay) => ({
+        day: scheduledDay,
+        offset: (scheduledDay - weekStart.getDay() + 7) % 7,
+      }))
+      .filter((schedule) => schedule.offset >= dayOffset)
+      .sort((a, b) => a.offset - b.offset)[0];
+
+    let status: { label: string; color: string; background: string; border: string };
+    if (planned === 0) {
+      status = {
+        label: 'No workouts scheduled this week',
+        color: theme.colors.textMuted,
+        background: 'rgba(255,255,255,0.04)',
+        border: theme.colors.border,
+      };
+    } else if (workoutsToCatchUp > 0) {
+      status = {
+        label: `${workoutsToCatchUp} workout${workoutsToCatchUp === 1 ? '' : 's'} to catch up on`,
+        color: theme.colors.warning,
+        background: 'rgba(234, 179, 8, 0.12)',
+        border: 'rgba(234, 179, 8, 0.45)',
+      };
+    } else if (completed >= planned) {
+      status = {
+        label: 'All scheduled workouts completed',
+        color: theme.colors.success,
+        background: 'rgba(34, 197, 94, 0.12)',
+        border: 'rgba(34, 197, 94, 0.45)',
+      };
+    } else if (todayHasWorkout) {
+      status = {
+        label: 'Workout scheduled today',
+        color: theme.colors.primary,
+        background: 'rgba(255,255,255,0.04)',
+        border: theme.colors.border,
+      };
+    } else if (nextWorkout) {
+      const nextDay = new Date(weekStart);
+      nextDay.setDate(nextDay.getDate() + nextWorkout.offset);
+      status = {
+        label: `So far, so good · Next workout ${nextDay.toLocaleDateString(undefined, { weekday: 'long' })}`,
+        color: theme.colors.success,
+        background: 'rgba(34, 197, 94, 0.12)',
+        border: 'rgba(34, 197, 94, 0.45)',
+      };
+    } else {
+      status = {
+        label: 'On track this week',
+        color: theme.colors.success,
+        background: 'rgba(34, 197, 94, 0.12)',
+        border: 'rgba(34, 197, 94, 0.45)',
+      };
+    }
+
+    return { completed, planned, status };
+  }, [activePlan, planForProgress, historyEntries]);
 
   const plannedPerWeek = useMemo(() => {
     if (planWeeks.length) return Math.max(1, Math.max(...planWeeks.map((week) => week.planned)));
@@ -248,6 +365,16 @@ export function ProfileScreen() {
               <Text style={{ color: '#ffffff', fontSize: 11, fontWeight: '800' }}>{summary.status.label}</Text>
             </View>
           </View>
+
+          {currentWeekProgress ? (
+            <View style={{ backgroundColor: currentWeekProgress.status.background, borderWidth: 1, borderColor: currentWeekProgress.status.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, gap: 4 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                <Text style={{ color: theme.colors.textMuted, fontSize: 12, fontWeight: '600' }}>This week</Text>
+                <Text style={{ color: theme.colors.text, fontSize: 14, fontWeight: '700' }}>{currentWeekProgress.completed} / {currentWeekProgress.planned} workouts</Text>
+              </View>
+              <Text style={{ color: currentWeekProgress.status.color, fontSize: 12, fontWeight: '700' }}>{currentWeekProgress.status.label}</Text>
+            </View>
+          ) : null}
 
           {weeklyProgress.length ? (
             <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 8, minHeight: 120 }}>
