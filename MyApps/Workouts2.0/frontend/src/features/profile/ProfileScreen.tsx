@@ -247,41 +247,53 @@ export function ProfileScreen() {
     }
 
     const unmatchedCompletedEntries = completedEntries.slice();
-    const workouts = scheduledDays.map((day, index) => {
-      const scheduledDay = Number(day?.dayOfWeek);
-      const scheduledOffset = Number.isInteger(scheduledDay) && scheduledDay >= 0 && scheduledDay <= 6
-        ? (scheduledDay - weekStart.getDay() + 7) % 7
-        : null;
-      const completedEntryIndex = unmatchedCompletedEntries.findIndex((entry) => {
-        const entryDay = typeof entry.dayOfWeek === 'number' ? entry.dayOfWeek : null;
-        if (entryDay !== null && scheduledOffset !== null) return entryDay === scheduledDay;
-        return !!entry.title && !!day.title && entry.title.trim().toLowerCase() === day.title.trim().toLowerCase();
-      });
+    const workouts = scheduledDays
+      .map((day, index) => ({ day, index }))
+      .sort((a, b) => {
+        const aDay = Number(a.day?.dayOfWeek);
+        const bDay = Number(b.day?.dayOfWeek);
+        const aValid = Number.isInteger(aDay) && aDay >= 0 && aDay <= 6;
+        const bValid = Number.isInteger(bDay) && bDay >= 0 && bDay <= 6;
+        if (aValid && bValid) return aDay - bDay || a.index - b.index;
+        if (aValid) return -1;
+        if (bValid) return 1;
+        return a.index - b.index;
+      })
+      .map(({ day, index }) => {
+        const scheduledDay = Number(day?.dayOfWeek);
+        const scheduledOffset = Number.isInteger(scheduledDay) && scheduledDay >= 0 && scheduledDay <= 6
+          ? (scheduledDay - weekStart.getDay() + 7) % 7
+          : null;
+        const completedEntryIndex = unmatchedCompletedEntries.findIndex((entry) => {
+          const entryDay = typeof entry.dayOfWeek === 'number' ? entry.dayOfWeek : null;
+          if (entryDay !== null && scheduledOffset !== null) return entryDay === scheduledDay;
+          return !!entry.title && !!day.title && entry.title.trim().toLowerCase() === day.title.trim().toLowerCase();
+        });
 
-      if (completedEntryIndex >= 0) {
-        unmatchedCompletedEntries.splice(completedEntryIndex, 1);
+        if (completedEntryIndex >= 0) {
+          unmatchedCompletedEntries.splice(completedEntryIndex, 1);
+          return {
+            key: day.id ?? `${currentWeekIndex}-${scheduledDay}-${day.title ?? index}-${index}`,
+            label: Number.isInteger(scheduledDay) && scheduledDay >= 0 && scheduledDay <= 6
+              ? new Date(2024, 0, 7 + scheduledDay).toLocaleDateString(undefined, { weekday: 'short' })
+              : day.title || `Workout ${index + 1}`,
+            state: 'completed' as const,
+          };
+        }
+
+        const state = scheduledOffset === null || scheduledOffset > dayOffset
+          ? 'upcoming' as const
+          : scheduledOffset === dayOffset
+            ? 'today' as const
+            : 'missed' as const;
         return {
           key: day.id ?? `${currentWeekIndex}-${scheduledDay}-${day.title ?? index}-${index}`,
           label: Number.isInteger(scheduledDay) && scheduledDay >= 0 && scheduledDay <= 6
             ? new Date(2024, 0, 7 + scheduledDay).toLocaleDateString(undefined, { weekday: 'short' })
             : day.title || `Workout ${index + 1}`,
-          state: 'completed' as const,
+          state,
         };
-      }
-
-      const state = scheduledOffset === null || scheduledOffset > dayOffset
-        ? 'upcoming' as const
-        : scheduledOffset === dayOffset
-          ? 'today' as const
-          : 'missed' as const;
-      return {
-        key: day.id ?? `${currentWeekIndex}-${scheduledDay}-${day.title ?? index}-${index}`,
-        label: Number.isInteger(scheduledDay) && scheduledDay >= 0 && scheduledDay <= 6
-          ? new Date(2024, 0, 7 + scheduledDay).toLocaleDateString(undefined, { weekday: 'short' })
-          : day.title || `Workout ${index + 1}`,
-        state,
-      };
-    });
+      });
 
     const completed = completedEntries.length;
     const workoutsToCatchUp = workouts.filter((workout) => workout.state === 'missed').length;
