@@ -52,7 +52,7 @@ export function ProfileScreen() {
   const user = useAppSelector((s) => s.auth.user);
   const [profile, setProfile] = useState<MeProfile | null>(null);
   const [completedPlansFromApi, setCompletedPlansFromApi] = useState<Array<{ id?: string; name?: string; completedAt?: string }>>([]);
-  const [workoutHistory, setWorkoutHistory] = useState<Array<{ id?: string; date?: string; title?: string; status?: string; originalPlanId?: string | null; planName?: string | null; weekIndex?: number | null }>>([]);
+  const [workoutHistory, setWorkoutHistory] = useState<Array<{ id?: string; date?: string; title?: string; status?: string; originalPlanId?: string | null; planName?: string | null; weekIndex?: number | null; dayOfWeek?: number | null }>>([]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -75,6 +75,7 @@ export function ProfileScreen() {
             originalPlanId: entry?.originalPlanId ?? null,
             planName: entry?.planName ?? null,
             weekIndex: typeof entry?.weekIndex === 'number' ? entry.weekIndex : null,
+            dayOfWeek: typeof entry?.dayOfWeek === 'number' ? entry.dayOfWeek : null,
           })));
         } catch {
           if (!mounted) return;
@@ -124,6 +125,7 @@ export function ProfileScreen() {
       originalPlanId: entry?.originalPlanId ?? null,
       planName: entry?.planName ?? null,
       weekIndex: typeof entry?.weekIndex === 'number' ? entry.weekIndex : null,
+      dayOfWeek: typeof entry?.dayOfWeek === 'number' ? entry.dayOfWeek : null,
     }));
   }, [displayUser?.workoutHistory, workoutHistory]);
 
@@ -220,7 +222,7 @@ export function ProfileScreen() {
     const scheduledDays = getPlanDaysForWeek(activePlan, currentWeekIndex);
     const planned = scheduledDays.length;
 
-    let completed = 0;
+    const completedEntries: typeof historyEntries = [];
     for (const item of historyEntries) {
       if (!item.date) continue;
       if (item.originalPlanId && activePlan.id && item.originalPlanId !== activePlan.id) continue;
@@ -232,7 +234,7 @@ export function ProfileScreen() {
       if (item.weekIndex !== null && item.weekIndex !== undefined) {
         const entryWeekIndex = Number(item.weekIndex);
         if (Number.isFinite(entryWeekIndex) && entryWeekIndex >= 0 && entryWeekIndex < durationWeeks) {
-          if (entryWeekIndex === currentWeekIndex) completed += 1;
+          if (entryWeekIndex === currentWeekIndex) completedEntries.push(item);
           continue;
         }
       }
@@ -241,16 +243,48 @@ export function ProfileScreen() {
         0,
         Math.floor((completedAt.getTime() - planStart.getTime()) / (7 * 24 * 60 * 60 * 1000))
       );
-      if (entryWeekIndex === currentWeekIndex) completed += 1;
+      if (entryWeekIndex === currentWeekIndex) completedEntries.push(item);
     }
 
-    const overdue = scheduledDays.filter((day) => {
+    const unmatchedCompletedEntries = completedEntries.slice();
+    const workouts = scheduledDays.map((day, index) => {
       const scheduledDay = Number(day?.dayOfWeek);
-      if (!Number.isInteger(scheduledDay) || scheduledDay < 0 || scheduledDay > 6) return false;
-      const scheduledOffset = (scheduledDay - weekStart.getDay() + 7) % 7;
-      return scheduledOffset < dayOffset;
-    }).length;
-    const workoutsToCatchUp = Math.max(0, overdue - completed);
+      const scheduledOffset = Number.isInteger(scheduledDay) && scheduledDay >= 0 && scheduledDay <= 6
+        ? (scheduledDay - weekStart.getDay() + 7) % 7
+        : null;
+      const completedEntryIndex = unmatchedCompletedEntries.findIndex((entry) => {
+        const entryDay = typeof entry.dayOfWeek === 'number' ? entry.dayOfWeek : null;
+        if (entryDay !== null && scheduledOffset !== null) return entryDay === scheduledDay;
+        return !!entry.title && !!day.title && entry.title.trim().toLowerCase() === day.title.trim().toLowerCase();
+      });
+
+      if (completedEntryIndex >= 0) {
+        unmatchedCompletedEntries.splice(completedEntryIndex, 1);
+        return {
+          key: day.id ?? `${currentWeekIndex}-${scheduledDay}-${day.title ?? index}-${index}`,
+          label: Number.isInteger(scheduledDay) && scheduledDay >= 0 && scheduledDay <= 6
+            ? new Date(2024, 0, 7 + scheduledDay).toLocaleDateString(undefined, { weekday: 'short' })
+            : day.title || `Workout ${index + 1}`,
+          state: 'completed' as const,
+        };
+      }
+
+      const state = scheduledOffset === null || scheduledOffset > dayOffset
+        ? 'upcoming' as const
+        : scheduledOffset === dayOffset
+          ? 'today' as const
+          : 'missed' as const;
+      return {
+        key: day.id ?? `${currentWeekIndex}-${scheduledDay}-${day.title ?? index}-${index}`,
+        label: Number.isInteger(scheduledDay) && scheduledDay >= 0 && scheduledDay <= 6
+          ? new Date(2024, 0, 7 + scheduledDay).toLocaleDateString(undefined, { weekday: 'short' })
+          : day.title || `Workout ${index + 1}`,
+        state,
+      };
+    });
+
+    const completed = completedEntries.length;
+    const workoutsToCatchUp = workouts.filter((workout) => workout.state === 'missed').length;
     const todayHasWorkout = scheduledDays.some((day) => Number(day?.dayOfWeek) === today.getDay());
     const nextWorkout = scheduledDays
       .map((day) => Number(day?.dayOfWeek))
@@ -309,7 +343,7 @@ export function ProfileScreen() {
       };
     }
 
-    return { completed, planned, status };
+    return { completed, planned, status, workouts };
   }, [activePlan, planForProgress, historyEntries]);
 
   const plannedPerWeek = useMemo(() => {
@@ -373,6 +407,30 @@ export function ProfileScreen() {
                 <Text style={{ color: theme.colors.text, fontSize: 14, fontWeight: '700' }}>{currentWeekProgress.completed} / {currentWeekProgress.planned} workouts</Text>
               </View>
               <Text style={{ color: currentWeekProgress.status.color, fontSize: 12, fontWeight: '700' }}>{currentWeekProgress.status.label}</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingTop: 4 }}>
+                {currentWeekProgress.workouts.map((workout) => {
+                  const isCompleted = workout.state === 'completed';
+                  const isMissed = workout.state === 'missed';
+                  const color = isCompleted
+                    ? theme.colors.success
+                    : isMissed
+                      ? theme.colors.danger
+                      : theme.colors.textMuted;
+                  const symbol = isCompleted ? '✓' : isMissed ? '!' : workout.state === 'today' ? '•' : '○';
+                  const stateLabel = isCompleted ? 'completed' : isMissed ? 'missed' : workout.state === 'today' ? 'scheduled today' : 'upcoming';
+                  return (
+                    <View
+                      key={workout.key}
+                      accessible
+                      accessibilityLabel={`${workout.label}: ${stateLabel}`}
+                      style={{ flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1, borderColor: isCompleted || isMissed ? color : theme.colors.border, backgroundColor: isCompleted ? 'rgba(34, 197, 94, 0.12)' : isMissed ? 'rgba(239, 68, 68, 0.12)' : 'rgba(255,255,255,0.04)', borderRadius: 999, paddingHorizontal: 9, paddingVertical: 5 }}
+                    >
+                      <Text style={{ color, fontSize: 13, fontWeight: '800' }}>{symbol}</Text>
+                      <Text style={{ color: isCompleted || isMissed ? color : theme.colors.textMuted, fontSize: 11, fontWeight: '700' }}>{workout.label}</Text>
+                    </View>
+                  );
+                })}
+              </View>
             </View>
           ) : null}
 
