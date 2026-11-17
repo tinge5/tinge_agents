@@ -907,11 +907,18 @@ export function PlanEditorScreen() {
     onError: (err: any) => Alert.alert('Restart failed', err?.message ?? 'Unable to restart plan'),
   });
 
-  const startEdit = (plan: Plan) => { setEditingPlanId(plan.id); setDraft(toDraftPlan(plan)); setActiveDayIndex(0); setSelectedPreviewWeek(1); setViewMode('edit'); };
   const scrollToPlanEditor = () => {
     requestAnimationFrame(() => {
       scrollViewRef.current?.scrollTo({ y: planEditorYRef.current, animated: true });
     });
+  };
+  const startEdit = (plan: Plan) => {
+    setEditingPlanId(plan.id);
+    setDraft(toDraftPlan(plan));
+    setActiveDayIndex(0);
+    setSelectedPreviewWeek(1);
+    setViewMode('edit');
+    scrollToPlanEditor();
   };
   const startView = (plan: Plan) => {
     setEditingPlanId(plan.id);
