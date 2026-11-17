@@ -789,7 +789,10 @@ function PlanCard({
   const days = safeArray<PlanDay>(plan.days);
   return (
     <View style={{ backgroundColor: theme.colors.surface, padding: 16, borderRadius: 16, gap: 8, borderWidth: 1, borderColor: theme.colors.border }}>
-      <Text style={{ fontWeight: '700', fontSize: 18, color: theme.colors.text }}>{plan.name}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <Text style={{ flex: 1, fontWeight: '700', fontSize: 18, color: theme.colors.text }}>{plan.name}</Text>
+        <ActiveStatusIndicator isActive={plan.isActive} />
+      </View>
       <Text style={{ color: theme.colors.text }}>Goals: {goals.length ? goals.join(', ') : 'None'}</Text>
       <Text style={{ color: theme.colors.text }}>Progressive overload: {plan.progressiveOverloadEnabled ? 'enabled' : 'disabled'}</Text>
       <Text style={{ color: theme.colors.text }}>Status: {plan.status}{plan.isActive ? ' (active)' : ''}</Text>
@@ -893,6 +896,27 @@ function getPreviewedDays(plan: any, weekIndex: number) {
   return days.length ? days.map((day) => ({ ...day, exercises: safeArray<PlanDayExercise>(day.exercises).map((exercise) => applyProgressionToExercise(exercise, weekIndex, !!plan.progressiveOverloadEnabled)) })) : safeArray<PlanDay>(plan.days).filter((day) => Number(day.weekIndex ?? 0) === 0).map((day) => ({ ...day, exercises: safeArray<PlanDayExercise>(day.exercises).map((exercise) => applyProgressionToExercise(exercise, weekIndex, !!plan.progressiveOverloadEnabled)) }));
 }
 
+function ActiveStatusIndicator({ isActive }: { isActive: boolean }) {
+  return (
+    <View
+      accessibilityLabel={isActive ? 'Active plan' : 'Inactive plan'}
+      style={{
+        width: 12,
+        height: 12,
+        borderRadius: 6,
+        backgroundColor: isActive ? theme.colors.success : '#52525b',
+        borderWidth: 1,
+        borderColor: isActive ? '#86efac' : '#71717a',
+        shadowColor: theme.colors.success,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: isActive ? 0.9 : 0,
+        shadowRadius: isActive ? 8 : 0,
+        elevation: isActive ? 6 : 0,
+      }}
+    />
+  );
+}
+
 export function PlanEditorScreen() {
   const [deleteConfirm, setDeleteConfirm] = useState<{
     type: 'day' | 'plan';
@@ -922,6 +946,7 @@ export function PlanEditorScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
   const planEditorYRef = useRef(0);
   const plans = data ?? [];
+  const viewedPlanIsActive = plans.find((plan) => plan.id === editingPlanId)?.isActive ?? !!draft.isActive;
   const title = useMemo(() => (editingPlanId ? 'Edit Plan' : 'Create Plan'), [editingPlanId]);
   const totalWeeks = Math.max(1, Number(draft.durationWeeks ?? 4));
   const previewWeekNumbers = previewWeeks(1, totalWeeks);
@@ -1321,7 +1346,10 @@ export function PlanEditorScreen() {
           <>
             <PlanFieldHelp text="Viewing uses the exact selected plan's persisted days and exercises." />
             <Text style={{ color: theme.colors.text }}>{draft.name || 'Untitled plan'}</Text>
-            <Text style={{ color: theme.colors.text }}>{draft.isActive ? 'Active' : 'Inactive'}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <ActiveStatusIndicator isActive={viewedPlanIsActive} />
+              <Text style={{ color: theme.colors.text }}>{viewedPlanIsActive ? 'Active' : 'Inactive'}</Text>
+            </View>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
               {previewWeekNumbers.map((weekNumber) => (
                 <Pressable key={weekNumber} onPress={() => setSelectedPreviewWeek(weekNumber)} style={{ backgroundColor: selectedPreviewWeek === weekNumber ? theme.colors.primary : theme.colors.surfaceAlt, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999 }}>
