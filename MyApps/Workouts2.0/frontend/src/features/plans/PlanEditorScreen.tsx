@@ -1344,8 +1344,8 @@ export function PlanEditorScreen() {
             <PlanFieldHelp text="Viewing uses the exact selected plan's persisted days and exercises." />
             <Text style={{ color: theme.colors.text }}>{draft.name || 'Untitled plan'}</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <ActiveStatusIndicator isActive={viewedPlanIsActive} />
               <Text style={{ color: theme.colors.text }}>{viewedPlanIsActive ? 'Active' : 'Inactive'}</Text>
+              <ActiveStatusIndicator isActive={viewedPlanIsActive} />
             </View>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
               {previewWeekNumbers.map((weekNumber) => (
