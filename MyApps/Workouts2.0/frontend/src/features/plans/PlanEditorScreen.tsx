@@ -898,22 +898,19 @@ function getPreviewedDays(plan: any, weekIndex: number) {
 
 function ActiveStatusIndicator({ isActive }: { isActive: boolean }) {
   return (
-    <View
+    <Text
       accessibilityLabel={isActive ? 'Active plan' : 'Inactive plan'}
       style={{
-        width: 12,
-        height: 12,
-        borderRadius: 6,
-        backgroundColor: isActive ? theme.colors.success : '#52525b',
-        borderWidth: 1,
-        borderColor: isActive ? '#86efac' : '#71717a',
-        shadowColor: theme.colors.success,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: isActive ? 0.9 : 0,
-        shadowRadius: isActive ? 8 : 0,
-        elevation: isActive ? 6 : 0,
+        fontSize: 16,
+        lineHeight: 16,
+        color: isActive ? theme.colors.success : '#71717a',
+        textShadowColor: theme.colors.success,
+        textShadowOffset: { width: 0, height: 0 },
+        textShadowRadius: isActive ? 8 : 0,
       }}
-    />
+    >
+      ●
+    </Text>
   );
 }
 
