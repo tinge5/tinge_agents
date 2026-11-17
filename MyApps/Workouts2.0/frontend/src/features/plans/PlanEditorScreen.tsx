@@ -790,8 +790,8 @@ function PlanCard({
   return (
     <View style={{ backgroundColor: theme.colors.surface, padding: 16, borderRadius: 16, gap: 8, borderWidth: 1, borderColor: theme.colors.border }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <Text style={{ flex: 1, fontWeight: '700', fontSize: 18, color: theme.colors.text }}>{plan.name}</Text>
-        <ActiveStatusIndicator isActive={plan.isActive} />
+      <Text style={{ flexShrink: 1, fontWeight: '700', fontSize: 18, color: theme.colors.text }}>{plan.name}</Text>
+      <ActiveStatusIndicator isActive={plan.isActive} />
       </View>
       <Text style={{ color: theme.colors.text }}>Goals: {goals.length ? goals.join(', ') : 'None'}</Text>
       <Text style={{ color: theme.colors.text }}>Progressive overload: {plan.progressiveOverloadEnabled ? 'enabled' : 'disabled'}</Text>
