@@ -449,10 +449,128 @@ const PLAN_SUGGESTIONS: PlanSuggestion[] = [
         { exerciseName: 'Seated Calf Raise', setsTarget: 3, repsTarget: 12 },
       ] },
     ],
+  },
+  {
+    name: '3-Day Lower Body & Glute Focus',
+    goal: 'hypertrophy',
+    level: 'Intermediate',
+    daysPerWeek: 3,
+    description: 'A lower-body specialization program emphasizing glute development, stronger legs, and balanced hamstring and quadriceps growth.',
+    days: [
+      { dayOfWeek: 1, title: 'Glutes & Quads', exercises: [
+        { exerciseName: 'Barbell Back Squat', setsTarget: 4, repsTarget: 8 },
+        { exerciseName: 'Leg Press', setsTarget: 3, repsTarget: 12 },
+        { exerciseName: 'Bulgarian Split Squat', setsTarget: 3, repsTarget: 10 },
+        { exerciseName: 'Lunge', setsTarget: 3, repsTarget: 12 },
+      ] },
+      { dayOfWeek: 3, title: 'Glutes & Hamstrings', exercises: [
+        { exerciseName: 'Romanian Deadlift', setsTarget: 4, repsTarget: 10 },
+        { exerciseName: 'Barbell Deadlift', setsTarget: 3, repsTarget: 6 },
+        { exerciseName: 'Bulgarian Split Squat', setsTarget: 3, repsTarget: 10 },
+        { exerciseName: 'Leg Press', setsTarget: 3, repsTarget: 12 },
+      ] },
+      { dayOfWeek: 5, title: 'Lower Body Volume', exercises: [
+        { exerciseName: 'Barbell Back Squat', setsTarget: 3, repsTarget: 10 },
+        { exerciseName: 'Romanian Deadlift', setsTarget: 3, repsTarget: 12 },
+        { exerciseName: 'Lunge', setsTarget: 3, repsTarget: 12 },
+        { exerciseName: 'Leg Press', setsTarget: 3, repsTarget: 15 },
+      ] },
+    ],
+  },
+  {
+    name: '4-Day Lower Body & Glute Specialization',
+    goal: 'hypertrophy',
+    level: 'Intermediate',
+    daysPerWeek: 4,
+    description: 'A four-day lower-body specialization routine designed to prioritize glute growth, leg development, and progressive overload through varied training sessions.',
+    days: [
+      { dayOfWeek: 1, title: 'Glutes & Quads A', exercises: [
+        { exerciseName: 'Barbell Back Squat', setsTarget: 4, repsTarget: 8 },
+        { exerciseName: 'Leg Press', setsTarget: 3, repsTarget: 12 },
+        { exerciseName: 'Bulgarian Split Squat', setsTarget: 3, repsTarget: 10 },
+        { exerciseName: 'Lunge', setsTarget: 2, repsTarget: 12 },
+      ] },
+      { dayOfWeek: 2, title: 'Glutes & Hamstrings A', exercises: [
+        { exerciseName: 'Romanian Deadlift', setsTarget: 4, repsTarget: 10 },
+        { exerciseName: 'Barbell Deadlift', setsTarget: 3, repsTarget: 6 },
+        { exerciseName: 'Bulgarian Split Squat', setsTarget: 3, repsTarget: 10 },
+      ] },
+      { dayOfWeek: 4, title: 'Glutes & Quads B', exercises: [
+        { exerciseName: 'Leg Press', setsTarget: 4, repsTarget: 12 },
+        { exerciseName: 'Barbell Back Squat', setsTarget: 3, repsTarget: 10 },
+        { exerciseName: 'Lunge', setsTarget: 3, repsTarget: 12 },
+      ] },
+      { dayOfWeek: 5, title: 'Glutes & Hamstrings B', exercises: [
+        { exerciseName: 'Romanian Deadlift', setsTarget: 3, repsTarget: 12 },
+        { exerciseName: 'Bulgarian Split Squat', setsTarget: 3, repsTarget: 12 },
+        { exerciseName: 'Barbell Deadlift', setsTarget: 3, repsTarget: 6 },
+      ] },
+    ],
+  },
+  {
+    name: '3-Day Upper Body Strength & Size',
+    goal: 'hypertrophy',
+    level: 'Intermediate',
+    daysPerWeek: 3,
+    description: 'An upper-body specialization program focused on building chest, back, shoulders, and arms through compound lifts and targeted accessory exercises.',
+    days: [
+      { dayOfWeek: 1, title: 'Chest & Triceps', exercises: [
+        { exerciseName: 'Barbell Bench Press', setsTarget: 4, repsTarget: 8 },
+        { exerciseName: 'Incline Dumbbell Press', setsTarget: 3, repsTarget: 10 },
+        { exerciseName: 'Overhead Press', setsTarget: 3, repsTarget: 8 },
+        { exerciseName: 'Tricep Pushdown', setsTarget: 3, repsTarget: 12 },
+      ] },
+      { dayOfWeek: 3, title: 'Back & Biceps', exercises: [
+        { exerciseName: 'Pull-Up', setsTarget: 3, repsTarget: 8 },
+        { exerciseName: 'Dumbbell Row', setsTarget: 4, repsTarget: 10 },
+        { exerciseName: 'Lat Pulldown', setsTarget: 3, repsTarget: 10 },
+        { exerciseName: 'Seated Cable Row', setsTarget: 3, repsTarget: 12 },
+        { exerciseName: 'Bicep Curl', setsTarget: 3, repsTarget: 12 },
+      ] },
+      { dayOfWeek: 5, title: 'Upper Body Volume', exercises: [
+        { exerciseName: 'Dumbbell Bench Press', setsTarget: 3, repsTarget: 10 },
+        { exerciseName: 'Dumbbell Shoulder Press', setsTarget: 3, repsTarget: 10 },
+        { exerciseName: 'Lat Pulldown', setsTarget: 3, repsTarget: 12 },
+        { exerciseName: 'Dumbbell Row', setsTarget: 3, repsTarget: 12 },
+        { exerciseName: 'Tricep Pushdown', setsTarget: 2, repsTarget: 12 },
+        { exerciseName: 'Bicep Curl', setsTarget: 2, repsTarget: 12 },
+      ] },
+    ],
+  },
+  {
+    name: '4-Day Upper Body Specialization',
+    goal: 'hypertrophy',
+    level: 'Intermediate',
+    daysPerWeek: 4,
+    description: 'A four-day upper-body focused program designed to maximize chest, back, shoulder, and arm development through dedicated training sessions and progressive overload.',
+    days: [
+      { dayOfWeek: 1, title: 'Chest & Triceps', exercises: [
+        { exerciseName: 'Barbell Bench Press', setsTarget: 4, repsTarget: 8 },
+        { exerciseName: 'Incline Dumbbell Press', setsTarget: 3, repsTarget: 10 },
+        { exerciseName: 'Dumbbell Bench Press', setsTarget: 3, repsTarget: 10 },
+        { exerciseName: 'Tricep Pushdown', setsTarget: 3, repsTarget: 12 },
+      ] },
+      { dayOfWeek: 2, title: 'Back & Biceps', exercises: [
+        { exerciseName: 'Pull-Up', setsTarget: 3, repsTarget: 8 },
+        { exerciseName: 'Dumbbell Row', setsTarget: 4, repsTarget: 10 },
+        { exerciseName: 'Lat Pulldown', setsTarget: 3, repsTarget: 10 },
+        { exerciseName: 'Bicep Curl', setsTarget: 3, repsTarget: 12 },
+      ] },
+      { dayOfWeek: 4, title: 'Shoulders & Chest', exercises: [
+        { exerciseName: 'Overhead Press', setsTarget: 4, repsTarget: 8 },
+        { exerciseName: 'Dumbbell Shoulder Press', setsTarget: 3, repsTarget: 10 },
+        { exerciseName: 'Incline Dumbbell Press', setsTarget: 3, repsTarget: 10 },
+        { exerciseName: 'Barbell Bench Press', setsTarget: 3, repsTarget: 10 },
+      ] },
+      { dayOfWeek: 5, title: 'Back & Arms', exercises: [
+        { exerciseName: 'Seated Cable Row', setsTarget: 4, repsTarget: 10 },
+        { exerciseName: 'Lat Pulldown', setsTarget: 3, repsTarget: 12 },
+        { exerciseName: 'Dumbbell Row', setsTarget: 3, repsTarget: 12 },
+        { exerciseName: 'Bicep Curl', setsTarget: 3, repsTarget: 12 },
+        { exerciseName: 'Tricep Pushdown', setsTarget: 3, repsTarget: 12 },
+      ] },
+    ],
   }
-
-
-
 ];
 
 const emptyDay = (dayOfWeek: number): PlanDay => ({
