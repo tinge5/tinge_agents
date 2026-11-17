@@ -1204,7 +1204,6 @@ export function PlanEditorScreen() {
             <PlanFieldHelp text="Viewing uses the exact selected plan's persisted days and exercises." />
             <Text style={{ color: theme.colors.text }}>{draft.name || 'Untitled plan'}</Text>
             <Text style={{ color: theme.colors.text }}>{draft.isActive ? 'Active' : 'Inactive'}</Text>
-            <Text style={{ color: theme.colors.text }}>Duration: {draft.durationWeeks} weeks</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
               {previewWeekNumbers.map((weekNumber) => (
                 <Pressable key={weekNumber} onPress={() => setSelectedPreviewWeek(weekNumber)} style={{ backgroundColor: selectedPreviewWeek === weekNumber ? theme.colors.primary : theme.colors.surfaceAlt, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999 }}>
