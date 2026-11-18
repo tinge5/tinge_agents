@@ -619,15 +619,6 @@ export const EXERCISE_LIBRARY: Record<string, ExerciseProgressionRule> = {
       'Bodyweight hamstring movement emphasizing eccentric strength; progress repetitions with strict control.',
   },
 
-  'Seated Leg Press': {
-    canonicalName: 'Seated Leg Press',
-    strategy: 'weight',
-    weight: { type: 'increment', value: 10, decimals: 1 },
-    reps: { type: 'increment', value: 0, min: 1 },
-    sets: { type: 'increment', value: 0, min: 1 },
-    notes:
-      'Machine-based lower-body compound movement; gradually increase load while maintaining range of motion.',
-  },
 
   'Machine Chest Press': {
     canonicalName: 'Machine Chest Press',
@@ -848,8 +839,456 @@ export const EXERCISE_LIBRARY: Record<string, ExerciseProgressionRule> = {
     notes:
       'Unilateral loaded carry emphasizing grip, obliques, and trunk stability; gradually increase load.',
   },
-};
 
+  // Olympic Lifts and Athletic Performance
+
+  'Hang Clean': {
+    canonicalName: 'Hang Clean',
+    strategy: 'weight',
+    weight: { type: 'increment', value: 5, decimals: 1 },
+    reps: { type: 'increment', value: 0, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Explosive Olympic lift emphasizing hip extension, traps, glutes, and legs; prioritize technique and bar speed before increasing weight.',
+  },
+
+  'Power Clean': {
+    canonicalName: 'Power Clean',
+    strategy: 'weight',
+    weight: { type: 'increment', value: 5, decimals: 1 },
+    reps: { type: 'increment', value: 0, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Explosive full-body Olympic lift; prioritize proper technique, bar speed, and controlled receiving position.',
+  },
+
+  'Hang Power Clean': {
+    canonicalName: 'Hang Power Clean',
+    strategy: 'weight',
+    weight: { type: 'increment', value: 5, decimals: 1 },
+    reps: { type: 'increment', value: 0, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Explosive hip-extension movement; emphasize speed, power, and consistent technique.',
+  },
+
+  'Clean Pull': {
+    canonicalName: 'Clean Pull',
+    strategy: 'weight',
+    weight: { type: 'increment', value: 5, decimals: 1 },
+    reps: { type: 'increment', value: 0, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Olympic lifting accessory emphasizing explosive leg drive, posterior-chain strength, and upper-back development.',
+  },
+
+  'Power Snatch': {
+    canonicalName: 'Power Snatch',
+    strategy: 'weight',
+    weight: { type: 'increment', value: 2.5, decimals: 1 },
+    reps: { type: 'increment', value: 0, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Explosive Olympic lift; prioritize overhead stability, mobility, and technical consistency.',
+  },
+
+  'Hang Snatch': {
+    canonicalName: 'Hang Snatch',
+    strategy: 'weight',
+    weight: { type: 'increment', value: 2.5, decimals: 1 },
+    reps: { type: 'increment', value: 0, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Technical Olympic lift emphasizing explosive hip extension and overhead stability; prioritize technique over load.',
+  },
+
+  'Push Jerk': {
+    canonicalName: 'Push Jerk',
+    strategy: 'weight',
+    weight: { type: 'increment', value: 5, decimals: 1 },
+    reps: { type: 'increment', value: 0, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Explosive overhead movement using leg drive; prioritize coordinated movement and stable receiving position.',
+  },
+
+  'Split Jerk': {
+    canonicalName: 'Split Jerk',
+    strategy: 'weight',
+    weight: { type: 'increment', value: 2.5, decimals: 1 },
+    reps: { type: 'increment', value: 0, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Advanced Olympic overhead movement; prioritize footwork, balance, and overhead stability.',
+  },
+
+  'Box Jump': {
+    canonicalName: 'Box Jump',
+    strategy: 'bodyweight',
+    weight: { type: 'increment', value: 0, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Plyometric exercise emphasizing lower-body explosiveness; prioritize maximal effort and controlled landings.',
+  },
+
+  'Broad Jump': {
+    canonicalName: 'Broad Jump',
+    strategy: 'bodyweight',
+    weight: { type: 'increment', value: 0, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Horizontal power exercise emphasizing explosive hip extension and lower-body coordination.',
+  },
+
+  // Additional Chest Exercises
+
+  'Dumbbell Floor Press': {
+    canonicalName: 'Dumbbell Floor Press',
+    strategy: 'weight',
+    weight: { type: 'increment', value: 5, decimals: 1 },
+    reps: { type: 'increment', value: 0, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Horizontal pressing variation emphasizing the chest and triceps; use controlled repetitions and gradual load increases.',
+  },
+
+  'Incline Cable Fly': {
+    canonicalName: 'Incline Cable Fly',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 2.5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Upper-chest isolation movement; prioritize controlled stretches and contractions.',
+  },
+
+  'Decline Cable Fly': {
+    canonicalName: 'Decline Cable Fly',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 2.5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Lower-chest isolation movement; maintain controlled cable movement and consistent tension.',
+  },
+
+  'Svend Press': {
+    canonicalName: 'Svend Press',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 2.5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Chest accessory movement using an isometric plate squeeze; prioritize controlled pressing and consistent tension.',
+  },
+
+  // Additional Back Exercises
+
+  'Pendlay Row': {
+    canonicalName: 'Pendlay Row',
+    strategy: 'weight',
+    weight: { type: 'increment', value: 5, decimals: 1 },
+    reps: { type: 'increment', value: 0, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Explosive horizontal pulling movement; reset the bar between repetitions and maintain a neutral spine.',
+  },
+
+  'Meadows Row': {
+    canonicalName: 'Meadows Row',
+    strategy: 'hybrid',
+    weight: { type: 'increment', value: 5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Unilateral landmine rowing movement emphasizing the lats and upper back; maintain controlled repetitions.',
+  },
+
+  'Straight-Arm Pulldown': {
+    canonicalName: 'Straight-Arm Pulldown',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 2.5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Lat isolation movement; maintain straight elbows and controlled shoulder extension.',
+  },
+
+  'Wide-Grip Lat Pulldown': {
+    canonicalName: 'Wide-Grip Lat Pulldown',
+    strategy: 'weight',
+    weight: { type: 'increment', value: 5, decimals: 1 },
+    reps: { type: 'increment', value: 0, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Vertical pulling variation emphasizing the lats and upper back; maintain controlled repetitions.',
+  },
+
+  'Inverted Row': {
+    canonicalName: 'Inverted Row',
+    strategy: 'bodyweight',
+    weight: { type: 'increment', value: 0, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Bodyweight horizontal pulling movement; progress repetitions before introducing external resistance.',
+  },
+
+  'Rack Pull': {
+    canonicalName: 'Rack Pull',
+    strategy: 'weight',
+    weight: { type: 'increment', value: 10, decimals: 1 },
+    reps: { type: 'increment', value: 0, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Partial-range deadlift variation emphasizing the upper back, traps, and posterior chain; maintain controlled technique.',
+  },
+
+  // Additional Shoulder Exercises
+
+  'Landmine Press': {
+    canonicalName: 'Landmine Press',
+    strategy: 'weight',
+    weight: { type: 'increment', value: 5, decimals: 1 },
+    reps: { type: 'increment', value: 0, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Angled pressing movement emphasizing the shoulders and triceps; maintain comfortable shoulder positioning.',
+  },
+
+  'Reverse Pec Deck': {
+    canonicalName: 'Reverse Pec Deck',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 2.5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Rear deltoid isolation movement; prioritize controlled repetitions and avoid excessive momentum.',
+  },
+
+  'Leaning Lateral Raise': {
+    canonicalName: 'Leaning Lateral Raise',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 2.5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Side deltoid isolation movement; use controlled repetitions and consistent range of motion.',
+  },
+
+  'Cable Y-Raise': {
+    canonicalName: 'Cable Y-Raise',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 2.5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Shoulder and upper-back accessory movement; use light resistance and controlled execution.',
+  },
+
+  'Prone Y-T-W Raise': {
+    canonicalName: 'Prone Y-T-W Raise',
+    strategy: 'bodyweight',
+    weight: { type: 'increment', value: 0, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Shoulder stability and upper-back exercise; prioritize controlled movement and proper positioning.',
+  },
+
+  // Additional Biceps and Triceps
+
+  'Spider Curl': {
+    canonicalName: 'Spider Curl',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 2.5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Biceps isolation movement; maintain strict positioning and controlled contractions.',
+  },
+
+  'Bayesian Cable Curl': {
+    canonicalName: 'Bayesian Cable Curl',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 2.5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Biceps isolation movement emphasizing the lengthened position; prioritize controlled elbow flexion.',
+  },
+
+  'Concentration Curl': {
+    canonicalName: 'Concentration Curl',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 2.5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Unilateral biceps isolation movement; maintain strict form and equal repetitions on both arms.',
+  },
+
+  'Reverse Curl': {
+    canonicalName: 'Reverse Curl',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 2.5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Forearm and brachialis accessory movement; use controlled repetitions and stable wrist positioning.',
+  },
+
+  'Zottman Curl': {
+    canonicalName: 'Zottman Curl',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 2.5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Biceps and forearm movement; control both the lifting and lowering phases.',
+  },
+
+  'Tate Press': {
+    canonicalName: 'Tate Press',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 2.5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Triceps accessory movement; prioritize controlled repetitions and comfortable elbow positioning.',
+  },
+
+  'Reverse-Grip Tricep Pushdown': {
+    canonicalName: 'Reverse-Grip Tricep Pushdown',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 2.5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Triceps isolation movement; maintain controlled elbow extension and stable wrist positioning.',
+  },
+
+  // Additional Lower Body and Glute Exercises
+
+  'Seated Leg Curl': {
+    canonicalName: 'Seated Leg Curl',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Hamstring isolation movement; prioritize controlled contractions and consistent range of motion.',
+  },
+
+  'Lying Leg Curl': {
+    canonicalName: 'Lying Leg Curl',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Hamstring isolation movement; control the lowering phase and avoid swinging.',
+  },
+
+  'Single-Leg Romanian Deadlift': {
+    canonicalName: 'Single-Leg Romanian Deadlift',
+    strategy: 'hybrid',
+    weight: { type: 'increment', value: 2.5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Unilateral posterior-chain movement emphasizing the glutes and hamstrings; maintain balance and hip alignment.',
+  },
+
+  'Cable Glute Kickback': {
+    canonicalName: 'Cable Glute Kickback',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 2.5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Glute isolation movement; maintain stable hips and avoid excessive lower-back arching.',
+  },
+
+  'Glute-Ham Raise': {
+    canonicalName: 'Glute-Ham Raise',
+    strategy: 'bodyweight',
+    weight: { type: 'increment', value: 0, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Posterior-chain movement emphasizing hamstrings and glutes; progress repetitions before adding resistance.',
+  },
+
+  'Frog Pumps': {
+    canonicalName: 'Frog Pumps',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 2.5, decimals: 1 },
+    reps: { type: 'increment', value: 2, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Glute isolation movement; emphasize hip extension, full contraction, and controlled repetitions.',
+  },
+
+  'Single-Leg Hip Thrust': {
+    canonicalName: 'Single-Leg Hip Thrust',
+    strategy: 'hybrid',
+    weight: { type: 'increment', value: 2.5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Unilateral glute movement; maintain pelvic stability and equal repetitions on both sides.',
+  },
+
+  'Adductor Machine': {
+    canonicalName: 'Adductor Machine',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Inner-thigh isolation movement; use controlled repetitions and comfortable range of motion.',
+  },
+
+  'Abductor Machine': {
+    canonicalName: 'Abductor Machine',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Outer-hip and glute medius isolation movement; prioritize controlled repetitions and consistent tension.',
+  },
+
+  'Spanish Squat': {
+    canonicalName: 'Spanish Squat',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 2.5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Quadriceps-focused movement using a resistance band; maintain controlled positioning and appropriate range of motion.',
+  },
+
+  'Belt Squat': {
+    canonicalName: 'Belt Squat',
+    strategy: 'weight',
+    weight: { type: 'increment', value: 10, decimals: 1 },
+    reps: { type: 'increment', value: 0, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Lower-body compound movement emphasizing quads and glutes; increase resistance gradually while maintaining squat depth.',
+  },
+
+  // Additional Calf Exercises
+
+  'Donkey Calf Raise': {
+    canonicalName: 'Donkey Calf Raise',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Calf isolation movement; emphasize a controlled stretch and full contraction.',
+  },
+
+  'Single-Leg Calf Raise': {
+    canonicalName: 'Single-Leg Calf Raise',
+    strategy: 'bodyweight',
+    weight: { type: 'increment', value: 0, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Unilateral calf movement; maintain balance and equal repetitions on both legs.',
+  },
+
+  // Additional Core Exercises
+
+  'Hanging Knee Raise': {
+    canonicalName: 'Hanging Knee Raise',
+    strategy: 'bodyweight',
+    weight: { type: 'increment', value: 0, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Core and hip flexor movement; emphasize controlled pelvic movement and avoid swinging.',
+  },
+
+  'Cable Woodchopper': {
+    canonicalName: 'Cable Woodchopper',
+    strategy: 'reps',
+    weight: { type: 'increment', value: 2.5, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Rotational core movement; maintain controlled rotation and stable positioning.',
+  },
+
+  'Bird Dog': {
+    canonicalName: 'Bird Dog',
+    strategy: 'bodyweight',
+    weight: { type: 'increment', value: 0, decimals: 1 },
+    reps: { type: 'increment', value: 1, min: 1 },
+    sets: { type: 'increment', value: 0, min: 1 },
+    notes: 'Core stability movement; maintain neutral spinal alignment and controlled opposite-arm and leg movement.',
+  },
+
+};
 export const GENERIC_PROGRESSIVE_OVERLOAD_RULE: ExerciseProgressionRule = {
   canonicalName: 'Generic Exercise',
   strategy: 'generic',
