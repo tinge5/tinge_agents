@@ -209,6 +209,8 @@ export function HistoryScreen() {
             <View style={{ gap: 12 }}>
               <View style={{ gap: 2 }}>
                 <Text style={{ fontSize: 18, fontWeight: '800', color: theme.colors.text }}>{selectedGroup.title}</Text>
+                <Text style={{ fontSize: 14, color: theme.colors.warning }}>Tap on day to see full details</Text>
+
               </View>
 
               <View style={{ gap: 12 }}>

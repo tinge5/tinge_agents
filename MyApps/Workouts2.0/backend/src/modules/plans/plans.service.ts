@@ -10,6 +10,19 @@ const normalizeDayOfWeek = (value: any, fallback = 0) => {
 const normalizePlanDayKey = (day: any, idx: number) =>
   `${normalizeDayOfWeek(day.dayOfWeek, idx % 7)}:${Number(day.weekIndex ?? 0)}:${String(day.title ?? '').trim()}`;
 
+function normalizeTimeZone(value?: string) {
+  const timeZone = value?.trim() || 'UTC';
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone });
+  } catch (error) {
+    if (error instanceof RangeError) {
+      throw new BadRequestException('Invalid device time zone');
+    }
+    throw error;
+  }
+  return timeZone;
+}
+
 @Injectable()
 export class PlansService {
   constructor(private prisma: PrismaService) {}
@@ -138,9 +151,10 @@ export class PlansService {
     return this.prisma.workoutPlan.findMany({ where: { userId }, include: { days: { include: { exercises: true } } } });
   }
 
-  async create(userId: string, dto: any) {
+  async create(userId: string, dto: any, deviceTimeZone?: string) {
     const durationWeeks = Number(dto.durationWeeks ?? 4);
     if (Number.isNaN(durationWeeks) || durationWeeks < 1) throw new BadRequestException('durationWeeks must be at least 1');
+    const now = new Date();
     if (dto.isActive) await this.prisma.workoutPlan.updateMany({ where: { userId, isActive: true }, data: { isActive: false } });
     return this.prisma.workoutPlan.create({
       data: {
@@ -152,6 +166,8 @@ export class PlansService {
         status: dto.isActive ? 'active' : 'draft',
         currentWeekIndex: 0,
         durationWeeks,
+        startDate: dto.isActive ? now : (dto.startDate ? new Date(dto.startDate) : null),
+        timeZone: normalizeTimeZone(deviceTimeZone),
         days: { create: this.normalizeDays(dto.days) },
       },
       include: { days: { include: { exercises: true } } },
@@ -164,11 +180,12 @@ export class PlansService {
     return plan;
   }
 
-  async update(userId: string, planId: string, dto: any) {
+  async update(userId: string, planId: string, dto: any, deviceTimeZone?: string) {
     const plan = await this.get(userId, planId);
     const isActive = dto.isActive ?? plan.isActive;
     if (dto.durationWeeks !== undefined && (Number(dto.durationWeeks) < 1 || Number.isNaN(Number(dto.durationWeeks)))) throw new BadRequestException('durationWeeks must be at least 1');
     if (isActive) await this.prisma.workoutPlan.updateMany({ where: { userId, isActive: true, id: { not: planId } }, data: { isActive: false } });
+    const isBeingActivated = isActive && !plan.isActive;
 
     const updatedPlan = await this.prisma.workoutPlan.update({
       where: { id: planId },
@@ -177,8 +194,13 @@ export class PlansService {
         goals: dto.goals ?? plan.goals,
         progressiveOverloadEnabled: dto.progressiveOverloadEnabled ?? plan.progressiveOverloadEnabled,
         isActive,
-        status: isActive ? 'active' : 'draft',
+        status: plan.status === 'completed' && !isBeingActivated ? 'completed' : (isActive ? 'active' : 'draft'),
         durationWeeks: dto.durationWeeks ?? plan.durationWeeks,
+        ...(isBeingActivated ? {
+          startDate: new Date(),
+          completedAt: null,
+          timeZone: normalizeTimeZone(deviceTimeZone ?? plan.timeZone ?? undefined),
+        } : {}),
       },
       include: { days: { include: { exercises: true } } },
     });
@@ -191,15 +213,30 @@ export class PlansService {
   }
 
   async remove(userId: string, planId: string) { await this.get(userId, planId); await this.prisma.workoutPlan.delete({ where: { id: planId } }); return { success: true }; }
-  async activate(userId: string, planId: string) { await this.get(userId, planId); await this.prisma.$transaction([this.prisma.workoutPlan.updateMany({ where: { userId, isActive: true, id: { not: planId } }, data: { isActive: false, status: 'draft' } }), this.prisma.workoutPlan.update({ where: { id: planId }, data: { isActive: true, status: 'active' } })]); return this.get(userId, planId); }
+  async activate(userId: string, planId: string, deviceTimeZone?: string) {
+    await this.get(userId, planId);
+    await this.prisma.$transaction([
+      this.prisma.workoutPlan.updateMany({ where: { userId, isActive: true, id: { not: planId } }, data: { isActive: false, status: 'draft' } }),
+      this.prisma.workoutPlan.update({ where: { id: planId }, data: {
+        startDate: new Date(),
+        completedAt: null,
+        timeZone: normalizeTimeZone(deviceTimeZone),
+        isActive: true,
+        status: 'active',
+      } }),
+    ]);
+    return this.get(userId, planId);
+  }
   async deactivate(userId: string, planId: string) { await this.get(userId, planId); return this.prisma.workoutPlan.update({ where: { id: planId }, data: { isActive: false, status: 'draft' } }); }
-  async restart(userId: string, planId: string) {
+  async restart(userId: string, planId: string, deviceTimeZone?: string) {
     await this.get(userId, planId);
     const now = new Date();
     return this.prisma.workoutPlan.update({
       where: { id: planId },
       data: {
         startDate: now,
+        completedAt: null,
+        timeZone: normalizeTimeZone(deviceTimeZone),
         isActive: true,
         status: 'active',
       },

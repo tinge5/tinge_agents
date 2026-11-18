@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../shared/prisma/prisma.service';
+import { PlanCompletionService } from '../plans/plan-completion.service';
 import { applyProgression, getExerciseProgressionRule, normalizeExerciseCanonicalName } from './exerciseProgression';
 
 type WorkoutPlanExerciseLike = {
@@ -27,11 +28,6 @@ type PreviousPerformance = {
     reps: number | null;
     weight: number | null;
   }>;
-};
-
-type PlanCompletionResult = {
-  planCompleted: boolean;
-  archiveCreated: boolean;
 };
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -68,13 +64,14 @@ function calendarDateToUtcMs(parts: { year: number; month: number; day: number }
 }
 
 function calculateWeekIndex(
-  plan: { createdAt: Date; currentWeekIndex: number; startDate?: Date | null; durationWeeks?: number | null },
+  plan: { createdAt: Date; currentWeekIndex: number; startDate?: Date | null; durationWeeks?: number | null; timeZone?: string },
   today = new Date(),
   deviceTimeZone?: string,
 ) {
   const anchor = plan.startDate ?? plan.createdAt;
-  const currentDateParts = getCalendarDateParts(today, deviceTimeZone);
-  const anchorDateParts = getCalendarDateParts(anchor, deviceTimeZone);
+  const timeZone = plan.timeZone ?? deviceTimeZone;
+  const currentDateParts = getCalendarDateParts(today, timeZone);
+  const anchorDateParts = getCalendarDateParts(anchor, timeZone);
   const daysSinceStart = Math.floor((calendarDateToUtcMs(currentDateParts) - calendarDateToUtcMs(anchorDateParts)) / MS_PER_DAY);
   const weekIndex = Math.max(0, Math.floor(daysSinceStart / 7));
   const maxWeek = Math.max(0, Number(plan.durationWeeks ?? 1) - 1);
@@ -185,7 +182,10 @@ function getDeviceLocalDayInfo(deviceTimeZone?: string) {
 
 @Injectable()
 export class WorkoutsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private planCompletionService: PlanCompletionService,
+  ) {}
 
  async saveWorkoutSetResult(
   userId: string,
@@ -323,6 +323,7 @@ export class WorkoutsService {
   }
 
   async today(userId: string, deviceTimeZone?: string) {
+    await this.planCompletionService.completeExpiredPlansForUser(userId, deviceTimeZone);
     const plan = await this.prisma.workoutPlan.findFirst({
       where: { userId, isActive: true },
       include: { days: { include: { exercises: true } } },
@@ -488,6 +489,9 @@ export class WorkoutsService {
   }
 
   async start(userId: string, workoutSessionId?: string, deviceTimeZone?: string) {
+    if (workoutSessionId) {
+      await this.planCompletionService.completeExpiredPlansForUser(userId, deviceTimeZone);
+    }
     if (!workoutSessionId) {
       const today = await this.today(userId, deviceTimeZone);
       if (!today || !['scheduled', 'in_progress'].includes(today.status) || !today.planId || !today.planDay?.id) {
@@ -535,82 +539,6 @@ export class WorkoutsService {
     });
   }
 
-  private async finalizePlanIfNeeded(tx: any, userId: string, session: { id: string; planId: string; planDayId: string; weekIndex: number }) : Promise<PlanCompletionResult> {
-    const plan = await tx.workoutPlan.findFirst({
-      where: { id: session.planId, userId },
-      include: {
-        days: {
-          select: {
-            id: true,
-            weekIndex: true,
-            dayOfWeek: true,
-          },
-        },
-        sessions: {
-          where: { status: 'completed' },
-          select: {
-            id: true,
-            planDayId: true,
-            weekIndex: true,
-            completedAt: true,
-          },
-        },
-        archives: {
-          where: { planId: session.planId, userId },
-          select: { id: true },
-        },
-      },
-    });
-
-    if (!plan) throw new NotFoundException();
-    if (plan.status === 'completed' || plan.archives.length > 0) {
-      return { planCompleted: plan.status === 'completed', archiveCreated: false };
-    }
-
-    const durationWeeks = Math.max(1, Number(plan.durationWeeks ?? 1));
-    const scheduledWorkoutDays = plan.days.filter((day) => Number(day.weekIndex ?? 0) >= 0 && Number(day.weekIndex ?? 0) < durationWeeks);
-    const totalScheduledWorkouts = scheduledWorkoutDays.length;
-    const completedSessions = plan.sessions.filter((item) => item.completedAt && Number(item.weekIndex ?? 0) < durationWeeks);
-
-    if (completedSessions.length < totalScheduledWorkouts) {
-      return { planCompleted: false, archiveCreated: false };
-    }
-
-    const weekIndexes = scheduledWorkoutDays.map((day) => Number(day.weekIndex ?? 0));
-    const lastWeekIndex = weekIndexes.length > 0 ? Math.max(...weekIndexes) : durationWeeks - 1;
-    const finalScheduledDay = scheduledWorkoutDays.filter((day) => Number(day.weekIndex ?? 0) === lastWeekIndex);
-    if (finalScheduledDay.length === 0) {
-      return { planCompleted: false, archiveCreated: false };
-    }
-
-    const finalWeekCompletedSessions = completedSessions.filter((item) => Number(item.weekIndex ?? 0) === lastWeekIndex);
-    const finalWeekRequiredCount = finalScheduledDay.length;
-    if (finalWeekCompletedSessions.length < finalWeekRequiredCount) {
-      return { planCompleted: false, archiveCreated: false };
-    }
-
-    const completedSessionDays = new Set(completedSessions.map((item) => item.planDayId));
-    const hasAnyUncompletedScheduledDay = scheduledWorkoutDays.some((day) => !completedSessionDays.has(day.id));
-    if (hasAnyUncompletedScheduledDay) {
-      return { planCompleted: false, archiveCreated: false };
-    }
-
-    const completedAt = new Date();
-    const summarySnapshot = {
-      planId: plan.id,
-      planName: plan.name,
-      completedAt: completedAt.toISOString(),
-      completedBySessionId: session.id,
-      totalScheduledWorkouts,
-      completedSessions: completedSessions.length,
-    };
-
-    await tx.workoutPlan.update({ where: { id: plan.id }, data: { status: 'completed', completedAt } });
-    await tx.workoutPlanArchive.create({ data: { userId, planId: plan.id, snapshot: summarySnapshot as any } });
-
-    return { planCompleted: true, archiveCreated: true };
-  }
-
   async complete(userId: string, workoutSessionId: string) {
     const session = await this.prisma.workoutSession.findFirst({ where: { id: workoutSessionId, userId }, include: { plan: true } });
     if (!session) throw new NotFoundException();
@@ -625,8 +553,6 @@ export class WorkoutsService {
       const historyEntry = await tx.workoutHistoryEntry.findUnique({
         where: { workoutSessionId },
       });
-
-      let planResult = { planCompleted: false, archiveCreated: false };
 
       if (!historyEntry) {
         const setResults = await tx.workoutSetResult.findMany({
@@ -679,27 +605,14 @@ export class WorkoutsService {
                 setResults: true,
               },
             });
-
-            try {
-              planResult = session.planId ? await this.finalizePlanIfNeeded(tx, userId, completedSession as any) : { planCompleted: false, archiveCreated: false };
-              return { success: true, planResult, history: createdHistory };
-            } catch (error) {
-              // Some sessions may be missing plan metadata from older records; keep the workout completion successful instead of crashing.
-              return { success: true, planResult: { planCompleted: false, archiveCreated: false }, history: createdHistory };
-            }
+            return { success: true, planResult: { planCompleted: false, archiveCreated: false }, history: createdHistory };
           }
         }
 
         return { success: true, planResult: { planCompleted: false, archiveCreated: false } };
       }
 
-      try {
-        planResult = session.planId ? await this.finalizePlanIfNeeded(tx, userId, completedSession as any) : { planCompleted: false, archiveCreated: false };
-      } catch (error) {
-        // Keep completion successful when historical plan metadata is incomplete.
-      }
-
-      return { success: true, planResult };
+      return { success: true, planResult: { planCompleted: false, archiveCreated: false } };
     });
   }
 }

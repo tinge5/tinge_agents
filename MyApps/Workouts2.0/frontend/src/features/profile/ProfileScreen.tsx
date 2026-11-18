@@ -3,7 +3,7 @@ import { View, Text, ScrollView, Pressable } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAppDispatch, useAppSelector } from '@/shared/store';
 import { logout } from '@/features/auth/authSlice';
-import { getCompletedPlans, getMe, getWorkoutHistory, MeProfile } from '@/shared/api/client';
+import { CompletedPlanSummary, getCompletedPlans, getMe, getWorkoutHistory, MeProfile } from '@/shared/api/client';
 import { theme } from '@/shared/theme';
 
 function formatDate(value?: string) {
@@ -11,14 +11,6 @@ function formatDate(value?: string) {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return null;
   return parsed.toLocaleDateString();
-}
-
-function normalizeCompletedPlan(plan: any) {
-  return {
-    id: plan?.id,
-    name: plan?.name ?? plan?.title ?? 'Completed Plan',
-    completedAt: plan?.completedAt ?? plan?.completed_at ?? plan?.finishedAt ?? plan?.finished_at ?? plan?.endedAt ?? plan?.ended_at ?? plan?.completedDate ?? plan?.completed_date,
-  };
 }
 
 function getWeekStart(date: Date) {
@@ -51,22 +43,31 @@ export function ProfileScreen() {
   const dispatch = useAppDispatch();
   const user = useAppSelector((s) => s.auth.user);
   const [profile, setProfile] = useState<MeProfile | null>(null);
-  const [completedPlansFromApi, setCompletedPlansFromApi] = useState<Array<{ id?: string; name?: string; completedAt?: string }>>([]);
+  const [completedPlansFromApi, setCompletedPlansFromApi] = useState<CompletedPlanSummary[]>([]);
   const [workoutHistory, setWorkoutHistory] = useState<Array<{ id?: string; date?: string; title?: string; status?: string; originalPlanId?: string | null; planName?: string | null; weekIndex?: number | null; dayOfWeek?: number | null }>>([]);
+  const [completedPlansError, setCompletedPlansError] = useState<string | null>(null);
 
   useFocusEffect(
     React.useCallback(() => {
       let mounted = true;
       (async () => {
         try {
-          const [me, completedPlans, history] = await Promise.all([
+          const [me, history] = await Promise.all([
             getMe(),
-            getCompletedPlans().catch(() => []),
             getWorkoutHistory().catch(() => []),
           ]);
           if (!mounted) return;
+          let completedPlans: CompletedPlanSummary[] = [];
+          let completedPlansLoadError: string | null = null;
+          try {
+            completedPlans = await getCompletedPlans();
+          } catch (error) {
+            completedPlansLoadError = error instanceof Error ? error.message : 'Unable to load completed plans';
+          }
+          if (!mounted) return;
+          setCompletedPlansError(completedPlansLoadError);
           setProfile(me);
-          setCompletedPlansFromApi((completedPlans ?? []).map(normalizeCompletedPlan));
+          setCompletedPlansFromApi(completedPlans);
           setWorkoutHistory((history ?? []).map((entry) => ({
             id: entry?.id ?? entry?.workoutSessionId,
             date: entry?.completedAt,
@@ -82,6 +83,7 @@ export function ProfileScreen() {
           setProfile(null);
           setCompletedPlansFromApi([]);
           setWorkoutHistory([]);
+          setCompletedPlansError(null);
         }
       })();
       return () => {
@@ -112,7 +114,7 @@ export function ProfileScreen() {
 
   const completedPlans = useMemo(() => {
     if (completedPlansFromApi.length) return completedPlansFromApi;
-    return (displayUser?.completedPlans ?? []).map(normalizeCompletedPlan);
+    return displayUser?.completedPlans ?? [];
   }, [completedPlansFromApi, displayUser?.completedPlans]);
 
   const historyEntries = useMemo(() => {
@@ -485,9 +487,19 @@ export function ProfileScreen() {
       <View style={{ borderWidth: 1, borderColor: theme.colors.border, padding: 16, borderRadius: 16, gap: 8, backgroundColor: theme.colors.surface }}>
         <Text style={{ fontWeight: '700', color: theme.colors.text }}>Completed Plans</Text>
         {completedPlans.length ? completedPlans.map((plan, index) => {
+          const startedAt = formatDate(plan.startDate ?? undefined);
           const completedAt = formatDate(plan.completedAt);
-          return <Text key={`${plan.id ?? plan.name ?? 'plan'}-${index}`} style={{ color: theme.colors.text }}>{plan.name ?? 'Completed Plan'}{completedAt ? ` — ${completedAt}` : ''}</Text>;
-        }) : <Text style={{ color: theme.colors.textMuted }}>No completed plans yet.</Text>}
+          return (
+            <View key={`${plan.id ?? plan.planId}-${index}`} style={{ padding: 12, borderWidth: 1, borderColor: theme.colors.border, borderRadius: 12, gap: 4 }}>
+              <Text style={{ fontWeight: '700', color: theme.colors.text }}>{plan.name}</Text>
+              <Text style={{ color: theme.colors.textMuted }}>Started: {startedAt ?? 'Unknown'}</Text>
+              <Text style={{ color: theme.colors.textMuted }}>Finished: {completedAt ?? 'Unknown'}</Text>
+              <Text style={{ color: theme.colors.textMuted }}>{plan.completedWorkouts} {plan.completedWorkouts === 1 ? 'workout' : 'workouts'} completed</Text>
+            </View>
+          );
+        }) : completedPlansError ? (
+          <Text style={{ color: theme.colors.danger }}>{completedPlansError}</Text>
+        ) : <Text style={{ color: theme.colors.textMuted }}>No completed plans yet.</Text>}
       </View>
       <Pressable onPress={() => dispatch(logout() as any)} style={{ backgroundColor: theme.colors.danger, padding: 16, borderRadius: 16 }}>
         <Text style={{ color: 'white', textAlign: 'center', fontWeight: '800' }}>Log Out</Text>

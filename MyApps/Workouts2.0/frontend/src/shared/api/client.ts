@@ -7,6 +7,15 @@ export const SESSION_KEY = 'workouts2-session';
 
 export type AuthUser = { id: string; email: string; displayName: string };
 export type AuthSession = { accessToken: string; refreshToken: string; user: AuthUser };
+export type CompletedPlanSummary = {
+  id: string;
+  planId: string;
+  name: string;
+  startDate: string | null;
+  completedAt: string;
+  completedWorkouts: number;
+  totalScheduledWorkouts: number;
+};
 export type MeProfile = {
   id: string;
   displayName: string;
@@ -19,12 +28,14 @@ export type MeProfile = {
     status?: string;
     durationWeeks?: number;
     startDate?: string | null;
+    completedAt?: string | null;
+    timeZone?: string;
     createdAt?: string | null;
     updatedAt?: string | null;
     days?: Array<{ id?: string; dayOfWeek?: number; weekIndex?: number; title?: string; exercises?: any[] }>;
   } | null;
   workoutHistory?: Array<{ id?: string; date?: string; title?: string; status?: string; originalPlanId?: string | null; planName?: string | null; weekIndex?: number | null; dayOfWeek?: number | null }>;
-  completedPlans?: Array<{ id?: string; name?: string; completedAt?: string }>;
+  completedPlans?: CompletedPlanSummary[];
   exerciseHistory?: Array<{ exerciseName?: string; weight?: number; reps?: number; date?: string }>;
 };
 
@@ -50,6 +61,8 @@ export type Plan = {
   currentWeekIndex?: number;
   durationWeeks?: number;
   startDate?: string | null;
+  completedAt?: string | null;
+  timeZone?: string;
   createdAt?: string;
   updatedAt?: string;
   days: PlanDay[];
@@ -94,7 +107,7 @@ export async function forgotPassword(email: string) { return request<{ success: 
 export async function resetPassword(token: string, password: string) { return request<{ success: boolean }>('/auth/reset-password', { method: 'POST', body: JSON.stringify({ token, password }) }, false); }
 export async function restoreSessionFromStorage() { const raw = await AsyncStorage.getItem(SESSION_KEY); if (!raw) return null; try { const session = JSON.parse(raw) as AuthSession; const me = await getMe(); const merged = { ...session, user: me } as AuthSession; await persistTokens(merged); return merged; } catch { await persistTokens(null); return null; } }
 export async function signOut() { try { const { refreshToken } = await readStoredTokens(); if (refreshToken) { await request('/auth/logout', { method: 'POST', body: JSON.stringify({ refreshToken }) }, false).catch(() => undefined); } } finally { await persistTokens(null); } }
-export async function getMe() { return request<MeProfile>('/me'); }
+export async function getMe() { return request<MeProfile>('/me', { headers: { 'x-device-timezone': getDeviceTimeZone() } }); }
 export async function getTodayWorkout() { return request<TodayWorkout>('/workouts/today', { headers: { 'x-device-timezone': getDeviceTimeZone() } }); }
 export async function startWorkoutSession() { return request<WorkoutSessionStartResponse>('/workouts/start', { method: 'POST', headers: { 'x-device-timezone': Intl.DateTimeFormat().resolvedOptions().timeZone } }); }
 export async function saveWorkoutSetResult(workoutSessionId: string, input: WorkoutSetResultInput) {
@@ -105,13 +118,13 @@ export async function saveWorkoutSetResult(workoutSessionId: string, input: Work
 }
 export async function completeWorkoutSession(workoutSessionId: string) { return request<void>(`/workouts/${workoutSessionId}/complete`, { method: 'POST' }); }
 export async function getPlans() { return request<Plan[]>('/plans'); }
-export async function createPlan(input: CreatePlanInput) { return request<Plan>('/plans', { method: 'POST', body: JSON.stringify(input) }); }
-export async function updatePlan(planId: string, input: UpdatePlanInput) { return request<Plan>(`/plans/${planId}`, { method: 'PATCH', body: JSON.stringify(input) }); }
+export async function createPlan(input: CreatePlanInput) { return request<Plan>('/plans', { method: 'POST', headers: { 'x-device-timezone': getDeviceTimeZone() }, body: JSON.stringify(input) }); }
+export async function updatePlan(planId: string, input: UpdatePlanInput) { return request<Plan>(`/plans/${planId}`, { method: 'PATCH', headers: { 'x-device-timezone': getDeviceTimeZone() }, body: JSON.stringify(input) }); }
 export async function deletePlan(planId: string) { return request<void>(`/plans/${planId}`, { method: 'DELETE' }); }
-export async function activatePlan(planId: string) { return request<Plan>(`/plans/${planId}/activate`, { method: 'POST' }); }
+export async function activatePlan(planId: string) { return request<Plan>(`/plans/${planId}/activate`, { method: 'POST', headers: { 'x-device-timezone': getDeviceTimeZone() } }); }
 export async function deactivatePlan(planId: string) { return request<Plan>(`/plans/${planId}/deactivate`, { method: 'POST' }); }
-export async function restartPlan(planId: string) { return request<Plan>(`/plans/${planId}/restart`, { method: 'POST' }); }
-export async function getCompletedPlans() { return request<any[]>('/me/completed-plans'); }
+export async function restartPlan(planId: string) { return request<Plan>(`/plans/${planId}/restart`, { method: 'POST', headers: { 'x-device-timezone': getDeviceTimeZone() } }); }
+export async function getCompletedPlans() { return request<CompletedPlanSummary[]>('/me/completed-plans', { headers: { 'x-device-timezone': getDeviceTimeZone() } }); }
 export async function getWorkoutHistory() { return request<WorkoutHistorySession[]>('/history/workouts'); }
 export async function getExerciseHistory(exerciseName: string) { return request<any[]>(`/me/exercises/${encodeURIComponent(exerciseName)}/history`); }
 export async function getCurrentWorkout() { return request<any>('/workouts/current'); }
