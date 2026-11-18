@@ -11,6 +11,6 @@ export const theme = {
     success: '#22c55e',
     danger: '#ef4444',
     warning: '#eab308',
-    new: '#fffb00',
+    new: '#bd5b00',
   },
 } as const;
