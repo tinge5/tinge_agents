@@ -101,6 +101,9 @@ export function HistoryScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedGroupKey, setSelectedGroupKey] = useState<string | null>(null);
+  const [expandedWorkoutIds, setExpandedWorkoutIds] = useState<Set<string>>(
+    () => new Set()
+  );
 
   const loadHistory = async () => {
     try {
@@ -210,27 +213,45 @@ export function HistoryScreen() {
 
               <View style={{ gap: 12 }}>
                 {selectedGroup.sessions.map(workout => {
+                  const isExpanded = expandedWorkoutIds.has(workout.id);
                   const groupedSetResults = groupHistorySetResults(workout.setResults);
                   return (
                     <View key={workout.id} style={{ gap: 10, padding: 14, borderWidth: 1, borderColor: theme.colors.border, borderRadius: 14, backgroundColor: theme.colors.background }}>
-                      <View style={{ gap: 2 }}>
+                      <Pressable
+                        onPress={() =>
+                          setExpandedWorkoutIds(previous => {
+                            const next = new Set(previous);
+                            if (next.has(workout.id)) {
+                              next.delete(workout.id);
+                            } else {
+                              next.add(workout.id);
+                            }
+                            return next;
+                          })
+                        }
+                        accessibilityRole="button"
+                        accessibilityState={{ expanded: isExpanded }}
+                        style={{ gap: 2 }}
+                      >
                         <Text style={{ fontWeight: '700', color: theme.colors.text }}>{workout.workoutName}</Text>
                         <Text style={{ color: theme.colors.textMuted }}>{workout.planName}{workout.weekIndex != null ? ` • Week ${workout.weekIndex + 1}` : ''}{workout.dayOfWeek != null ? ` • Day ${workout.dayOfWeek + 1}` : ''}</Text>
                         <Text style={{ color: theme.colors.textMuted }}>{formatDate(workout.completedAt)}{formatTime(workout.completedAt) ? ` • ${formatTime(workout.completedAt)}` : ''}</Text>
-                      </View>
+                      </Pressable>
 
-                      <View style={{ gap: 10 }}>
-                        {groupedSetResults.length ? groupedSetResults.map(group => (
-                          <View key={`${workout.id}-${group.exerciseName}`} style={{ gap: 4 }}>
-                            <Text style={{ fontWeight: '600', color: theme.colors.text }}>{group.exerciseName}</Text>
-                            <View style={{ gap: 2 }}>
-                              {group.setResults.map((setResult, index) => (
-                                <Text key={setResult.id} style={{ color: theme.colors.textMuted }}>{formatSetLine(setResult, index)}</Text>
-                              ))}
+                      {isExpanded ? (
+                        <View style={{ gap: 10 }}>
+                          {groupedSetResults.length ? groupedSetResults.map(group => (
+                            <View key={`${workout.id}-${group.exerciseName}`} style={{ gap: 4 }}>
+                              <Text style={{ fontWeight: '600', color: theme.colors.text }}>{group.exerciseName}</Text>
+                              <View style={{ gap: 2 }}>
+                                {group.setResults.map((setResult, index) => (
+                                  <Text key={setResult.id} style={{ color: theme.colors.textMuted }}>{formatSetLine(setResult, index)}</Text>
+                                ))}
+                              </View>
                             </View>
-                          </View>
-                        )) : <Text style={{ color: theme.colors.textMuted }}>No set results recorded for this workout.</Text>}
-                      </View>
+                          )) : <Text style={{ color: theme.colors.textMuted }}>No set results recorded for this workout.</Text>}
+                        </View>
+                      ) : null}
                     </View>
                   );
                 })}
