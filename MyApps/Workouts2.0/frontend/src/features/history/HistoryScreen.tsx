@@ -236,6 +236,7 @@ export function HistoryScreen() {
                         style={{ gap: 2 }}
                       >
                         <Text style={{ fontWeight: '700', color: theme.colors.text }}>{workout.workoutName}</Text>
+                        {workout.isTemporary ? <Text style={{ color: theme.colors.primaryDark, fontSize: 12, fontWeight: '700' }}>Unplanned workout</Text> : null}
                         <Text style={{ color: theme.colors.textMuted }}>{workout.planName}{workout.weekIndex != null ? ` • Week ${workout.weekIndex + 1}` : ''}{workout.dayOfWeek != null ? ` • Day ${workout.dayOfWeek + 1}` : ''}</Text>
                         <Text style={{ color: theme.colors.textMuted }}>{formatDate(workout.completedAt)}{formatTime(workout.completedAt) ? ` • ${formatTime(workout.completedAt)}` : ''}</Text>
                       </Pressable>

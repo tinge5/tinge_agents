@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../shared/prisma/prisma.service';
 import { PlanCompletionService } from '../plans/plan-completion.service';
@@ -28,6 +28,27 @@ type PreviousPerformance = {
     reps: number | null;
     weight: number | null;
   }>;
+};
+
+type TemporaryWorkoutExercise = {
+  id: string;
+  name: string;
+  exerciseId: string | null;
+  sets: number;
+  reps: number;
+  weight: number | null;
+  setsTarget: number;
+  repsTarget: number;
+  suggestedTarget: {
+    sets: number;
+    reps: number;
+    weight: number | null;
+  };
+};
+
+type TemporaryWorkoutSnapshot = {
+  title: string;
+  exercises: TemporaryWorkoutExercise[];
 };
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -61,6 +82,58 @@ function getCalendarDateParts(date: Date, deviceTimeZone?: string) {
 
 function calendarDateToUtcMs(parts: { year: number; month: number; day: number }) {
   return Date.UTC(parts.year, parts.month - 1, parts.day);
+}
+
+function getCalendarDateKey(date: Date, deviceTimeZone?: string) {
+  const { year, month, day } = getCalendarDateParts(date, deviceTimeZone);
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+function readTemporaryWorkoutSnapshot(value: Prisma.JsonValue | null): TemporaryWorkoutSnapshot {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new InternalServerErrorException('Temporary workout snapshot is missing or invalid');
+  }
+
+  const title = value.title;
+  const exercises = value.exercises;
+  if (typeof title !== 'string' || !Array.isArray(exercises)) {
+    throw new InternalServerErrorException('Temporary workout snapshot is missing or invalid');
+  }
+
+  return {
+    title,
+    exercises: exercises.map((exercise) => {
+      if (!exercise || typeof exercise !== 'object' || Array.isArray(exercise)) {
+        throw new InternalServerErrorException('Temporary workout exercise is invalid');
+      }
+
+      const { id, name, exerciseId, sets, reps, weight } = exercise;
+      if (
+        typeof id !== 'string' ||
+        typeof name !== 'string' ||
+        (exerciseId !== null && typeof exerciseId !== 'string') ||
+        typeof sets !== 'number' ||
+        typeof reps !== 'number' ||
+        (weight !== null && typeof weight !== 'number')
+      ) {
+        throw new InternalServerErrorException('Temporary workout exercise is invalid');
+      }
+      const normalizedExerciseId = typeof exerciseId === 'string' ? exerciseId : null;
+      const normalizedWeight = typeof weight === 'number' ? weight : null;
+
+      return {
+        id,
+        name,
+        exerciseId: normalizedExerciseId,
+        sets,
+        reps,
+        weight: normalizedWeight,
+        setsTarget: sets,
+        repsTarget: reps,
+        suggestedTarget: { sets, reps, weight: normalizedWeight },
+      };
+    }),
+  };
 }
 
 function calculateWeekIndex(
@@ -281,6 +354,7 @@ export class WorkoutsService {
       where: {
         userId,
         status: 'completed',
+        isTemporary: false,
         planId: planId ?? undefined,
         planDayId: planDayId ?? undefined,
         setResults: {
@@ -332,7 +406,8 @@ export class WorkoutsService {
     if (!plan) return { status: 'no_active_plan' };
 
     const weekIndex = calculateWeekIndex(plan as any, new Date(), deviceTimeZone);
-    const { utcNow, deviceLocalTime, dayIndex } = getDeviceLocalDayInfo(deviceTimeZone);
+    const timeZone = plan.timeZone ?? deviceTimeZone;
+    const { utcNow, deviceLocalTime, dayIndex } = getDeviceLocalDayInfo(timeZone);
     // Temporary verification log for Render logs
     // eslint-disable-next-line no-console
     console.log('[workouts.today timezone check]', {
@@ -346,6 +421,37 @@ export class WorkoutsService {
       .filter((d) => Number(d.weekIndex ?? 0) === 0 || Number(d.weekIndex ?? 0) === weekIndex)
       .find((d) => Number(d.dayOfWeek) === dayIndex);
 
+    const temporaryDate = getCalendarDateKey(utcNow, timeZone);
+    const temporarySession = await this.prisma.workoutSession.findFirst({
+      where: {
+        userId,
+        planId: plan.id,
+        isTemporary: true,
+        temporaryDate,
+      },
+      include: { setResults: true },
+    });
+
+    if (temporarySession) {
+      const snapshot = readTemporaryWorkoutSnapshot(temporarySession.workoutSnapshot);
+      const selectedDay = plan.days.find((planDay) => planDay.id === temporarySession.planDayId);
+      return {
+        status: temporarySession.status,
+        isTemporary: true,
+        workoutSessionId: temporarySession.id,
+        planId: plan.id,
+        planDay: selectedDay ? { ...selectedDay, dayOfWeek: day?.dayOfWeek ?? dayIndex } : undefined,
+        plan,
+        weekIndex: temporarySession.weekIndex,
+        title: snapshot.title,
+        day: day
+          ? `Day ${day.dayOfWeek + 1} (${DAY_LABELS[day.dayOfWeek] ?? 'Day'})`
+          : `Today (${DAY_LABELS[dayIndex] ?? 'Day'})`,
+        exercises: snapshot.exercises,
+        setResults: temporarySession.setResults,
+      };
+    }
+
     if (!day) return { status: 'no_schedule', planId: plan.id, currentWeekIndex: weekIndex, plan };
 
     const latestRelevantSession = await this.prisma.workoutSession.findFirst({
@@ -354,6 +460,7 @@ export class WorkoutsService {
         planId: plan.id,
         planDayId: day.id,
         weekIndex,
+        isTemporary: false,
       },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       select: {
@@ -378,6 +485,7 @@ export class WorkoutsService {
         userId,
         planId: plan.id,
         planDayId: day.id,
+        isTemporary: false,
         status: 'completed',
         completedAt: {
           not: null,
@@ -484,6 +592,85 @@ export class WorkoutsService {
     };
   }
 
+  async switchTemporaryWorkout(userId: string, planDayId: string, deviceTimeZone?: string) {
+    await this.planCompletionService.completeExpiredPlansForUser(userId, deviceTimeZone);
+    const plan = await this.prisma.workoutPlan.findFirst({
+      where: { userId, isActive: true, status: 'active' },
+      include: {
+        days: {
+          include: { exercises: { orderBy: { order: 'asc' } } },
+        },
+      },
+    });
+    if (!plan) throw new NotFoundException('No active plan');
+
+    const selectedDay = plan.days.find((planDay) => planDay.id === planDayId);
+    if (!selectedDay) throw new NotFoundException('Workout day not found in the active plan');
+
+    const now = new Date();
+    const timeZone = plan.timeZone ?? deviceTimeZone;
+    const { dayIndex } = getDeviceLocalDayInfo(timeZone);
+    const weekIndex = calculateWeekIndex(plan, now, timeZone);
+    const scheduledDay = plan.days
+      .filter((planDay) => Number(planDay.weekIndex ?? 0) === 0 || Number(planDay.weekIndex ?? 0) === weekIndex)
+      .find((planDay) => Number(planDay.dayOfWeek) === dayIndex);
+    const temporaryDate = getCalendarDateKey(now, timeZone);
+
+    const existingTemporarySession = await this.prisma.workoutSession.findFirst({
+      where: { userId, planId: plan.id, isTemporary: true, temporaryDate },
+    });
+    if (existingTemporarySession) {
+      return this.today(userId, timeZone);
+    }
+
+    if (scheduledDay) {
+      const completedScheduledSession = await this.prisma.workoutSession.findFirst({
+        where: {
+          userId,
+          planId: plan.id,
+          planDayId: scheduledDay.id,
+          weekIndex,
+          isTemporary: false,
+          status: 'completed',
+        },
+        select: { id: true },
+      });
+      if (completedScheduledSession) {
+        throw new BadRequestException("Today's scheduled workout is already completed");
+      }
+    }
+
+    const workoutSnapshot = {
+      title: selectedDay.title,
+      exercises: selectedDay.exercises.map((exercise) => ({
+        id: exercise.id,
+        name: exercise.exerciseName,
+        exerciseId: exercise.exerciseId,
+        sets: exercise.setsTarget,
+        reps: exercise.repsTarget,
+        weight: exercise.weightTarget,
+      })),
+    };
+
+    await this.prisma.workoutSession.create({
+      data: {
+        userId,
+        planId: plan.id,
+        planDayId: selectedDay.id,
+        scheduledDate: now,
+        actualDate: now,
+        weekIndex,
+        status: 'in_progress',
+        isTemporary: true,
+        temporaryDate,
+        creditedDayOfWeek: scheduledDay?.dayOfWeek ?? null,
+        workoutSnapshot,
+      },
+    });
+
+    return this.today(userId, timeZone);
+  }
+
   async current(userId: string, deviceTimeZone?: string) {
     return this.today(userId, deviceTimeZone);
   }
@@ -579,16 +766,27 @@ export class WorkoutsService {
           });
 
           if (planDay && plan) {
+            const temporarySnapshot = completedSession.isTemporary
+              ? readTemporaryWorkoutSnapshot(completedSession.workoutSnapshot)
+              : null;
+            const historyDayOfWeek = completedSession.isTemporary
+              ? completedSession.creditedDayOfWeek
+              : planDay.dayOfWeek;
             const createdHistory = await tx.workoutHistoryEntry.create({
               data: {
                 userId,
                 workoutSessionId: completedSession.id,
                 originalPlanId: session.planId,
                 planName: plan.name,
-                workoutName: planDay.title,
-                dayName: `Day ${planDay.dayOfWeek + 1}`,
+                workoutName: temporarySnapshot?.title ?? planDay.title,
+                dayName: completedSession.isTemporary
+                  ? historyDayOfWeek == null
+                    ? 'Temporary workout'
+                    : `Temporary • Day ${historyDayOfWeek + 1}`
+                  : `Day ${planDay.dayOfWeek + 1}`,
                 weekIndex: completedSession.weekIndex,
-                dayOfWeek: planDay.dayOfWeek,
+                dayOfWeek: historyDayOfWeek,
+                isTemporary: completedSession.isTemporary,
                 completedAt,
                 setResults: {
                   create: setResults.map((setResult) => ({

@@ -1,7 +1,7 @@
-import React, { useEffect } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getTodayWorkout } from '@/shared/api/client';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { createTemporaryWorkout, getTodayWorkout, type PlanDay } from '@/shared/api/client';
 import { theme } from '@/shared/theme';
 
 type TodayExercise = {
@@ -87,7 +87,17 @@ function ExerciseCard({ exercise }: { exercise: TodayExercise }) {
 
 export function TodayScreen({ navigation }: any) {
   const queryClient = useQueryClient();
+  const [temporarySwitchOpen, setTemporarySwitchOpen] = useState(false);
+  const [selectedTemporaryDay, setSelectedTemporaryDay] = useState<PlanDay | null>(null);
   const { data, isLoading, isError, error } = useQuery({ queryKey: ['workouts', 'today'], queryFn: getTodayWorkout });
+  const temporarySwitchMutation = useMutation({
+    mutationFn: createTemporaryWorkout,
+    onSuccess: async () => {
+      setTemporarySwitchOpen(false);
+      setSelectedTemporaryDay(null);
+      await queryClient.invalidateQueries({ queryKey: ['workouts', 'today'] });
+    },
+  });
 
   useEffect(() => {
     const unsubscribe = navigation?.addListener?.('focus', () => {
@@ -102,6 +112,13 @@ export function TodayScreen({ navigation }: any) {
   const isCompletedWorkout = workout?.status === 'completed';
   const isInProgressWorkout = workout?.status === 'in_progress';
   const isReviewMode = isCompletedWorkout;
+  const isTemporaryWorkout = workout?.isTemporary === true;
+  const canUseTemporarySwitch = Boolean(
+    workout?.planId &&
+    !isTemporaryWorkout &&
+    ['no_schedule', 'scheduled', 'in_progress'].includes(workout.status)
+  );
+  const planDays = workout?.plan?.days ?? [];
   const workoutButtonLabel = isReviewMode ? 'Review Workout' : isInProgressWorkout ? 'Resume Workout' : 'Start Workout';
   const DAY_LABELS: Record<number, string> = {
   0: 'Sunday',
@@ -114,9 +131,31 @@ export function TodayScreen({ navigation }: any) {
 };
 
 
+  const closeTemporarySwitch = () => {
+    if (temporarySwitchMutation.isPending) return;
+    setTemporarySwitchOpen(false);
+    setSelectedTemporaryDay(null);
+    temporarySwitchMutation.reset();
+  };
+
   return (
+    <>
     <ScrollView contentContainerStyle={{ padding: 20, gap: 12, backgroundColor: theme.colors.background, flexGrow: 1 }}>
-      <Text style={{ fontSize: 30, fontWeight: '800', color: theme.colors.text }}>Today</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+        <Text style={{ fontSize: 30, fontWeight: '800', color: theme.colors.text }}>Today</Text>
+        {canUseTemporarySwitch ? (
+          <Pressable
+            onPress={() => {
+              temporarySwitchMutation.reset();
+              setSelectedTemporaryDay(null);
+              setTemporarySwitchOpen(true);
+            }}
+            style={{ backgroundColor: theme.colors.surfaceAlt, borderWidth: 1, borderColor: theme.colors.border, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12 }}
+          >
+            <Text style={{ color: theme.colors.text, fontWeight: '700' }}>Temporary switch</Text>
+          </Pressable>
+        ) : null}
+      </View>
       <Text style={{ color: theme.colors.textMuted }}>Your active plan's workout of the day</Text>
 
       {isLoading ? (
@@ -140,6 +179,7 @@ export function TodayScreen({ navigation }: any) {
         <>
           <View style={{ backgroundColor: theme.colors.surface, padding: 16, borderRadius: 16, gap: 8 }}>
             <Text style={{ fontSize: 22, fontWeight: '700', color: theme.colors.text }}>{workout.title ?? 'Scheduled Workout'}</Text>
+            {isTemporaryWorkout ? <Text style={{ color: theme.colors.primaryDark, fontWeight: '700' }}>Temporary workout — plan unchanged</Text> : null}
             <Text style={{ color: theme.colors.text }}>{workout.planDay?.dayOfWeek != null ? DAY_LABELS[workout.planDay.dayOfWeek] : 'Today'}</Text>
             <Text style={{ color: theme.colors.textMuted }}>Week {workout.weekIndex != null ? Number(workout.weekIndex) + 1 : 1}</Text>
             {workout.note ? <Text style={{ color: theme.colors.text }}>{workout.note}</Text> : null}
@@ -159,5 +199,76 @@ export function TodayScreen({ navigation }: any) {
         </>
       ) : null}
     </ScrollView>
+    <Modal
+      visible={temporarySwitchOpen}
+      transparent
+      animationType="fade"
+      onRequestClose={closeTemporarySwitch}
+    >
+      <View style={{ flex: 1, justifyContent: 'center', padding: 20, backgroundColor: 'rgba(0,0,0,0.65)' }}>
+        <View style={{ maxHeight: '85%', backgroundColor: theme.colors.surface, borderRadius: 18, borderWidth: 1, borderColor: theme.colors.border, padding: 18, gap: 12 }}>
+          <Text style={{ fontSize: 20, fontWeight: '800', color: theme.colors.text }}>Temporary switch</Text>
+          {selectedTemporaryDay ? (
+            <>
+              <Text style={{ color: theme.colors.text }}>
+                Use {selectedTemporaryDay.title} for today only?
+              </Text>
+              <Text style={{ color: theme.colors.textMuted }}>
+                Completing it counts as a workout for this plan and checks off today&apos;s scheduled workout, if there is one. Your plan and progression suggestions won&apos;t change.
+              </Text>
+              {temporarySwitchMutation.isError ? (
+                <Text style={{ color: theme.colors.danger }}>
+                  {(temporarySwitchMutation.error as Error)?.message ?? "Unable to switch today's workout"}
+                </Text>
+              ) : null}
+              <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
+                <Pressable onPress={() => setSelectedTemporaryDay(null)} disabled={temporarySwitchMutation.isPending} style={{ padding: 12, borderRadius: 10, backgroundColor: theme.colors.surfaceAlt }}>
+                  <Text style={{ color: theme.colors.text, fontWeight: '700' }}>Back</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    if (selectedTemporaryDay.id) temporarySwitchMutation.mutate(selectedTemporaryDay.id);
+                  }}
+                  disabled={temporarySwitchMutation.isPending || !selectedTemporaryDay.id}
+                  style={{ padding: 12, borderRadius: 10, backgroundColor: theme.colors.primary, opacity: temporarySwitchMutation.isPending ? 0.6 : 1 }}
+                >
+                  <Text style={{ color: '#ffffff', fontWeight: '700' }}>{temporarySwitchMutation.isPending ? 'Switching…' : 'Confirm'}</Text>
+                </Pressable>
+              </View>
+            </>
+          ) : (
+            <>
+              <Text style={{ color: theme.colors.textMuted }}>Choose a workout from your current plan for today.</Text>
+              <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ gap: 8 }}>
+                {planDays.map((day, index) => (
+                  <Pressable
+                    key={day.id ?? `${day.weekIndex ?? 0}-${day.dayOfWeek}-${index}`}
+                    onPress={() => setSelectedTemporaryDay(day)}
+                    style={{ backgroundColor: theme.colors.background, borderWidth: 1, borderColor: theme.colors.border, borderRadius: 12, padding: 12, gap: 4 }}
+                  >
+                    <Text style={{ color: theme.colors.text, fontWeight: '700' }}>{day.title}</Text>
+                    <Text style={{ color: theme.colors.textMuted, fontSize: 12 }}>
+                      Week {Number(day.weekIndex ?? 0) + 1} • {DAY_LABELS[day.dayOfWeek] ?? `Day ${day.dayOfWeek + 1}`}
+                    </Text>
+                  </Pressable>
+                ))}
+                {planDays.length === 0 ? (
+                  <Text style={{ color: theme.colors.textMuted }}>No workouts are configured in this plan.</Text>
+                ) : null}
+              </ScrollView>
+              {temporarySwitchMutation.isError ? (
+                <Text style={{ color: theme.colors.danger }}>
+                  {(temporarySwitchMutation.error as Error)?.message ?? "Unable to switch today's workout"}
+                </Text>
+              ) : null}
+              <Pressable onPress={closeTemporarySwitch} style={{ alignSelf: 'flex-end', padding: 10 }}>
+                <Text style={{ color: theme.colors.textMuted, fontWeight: '700' }}>Cancel</Text>
+              </Pressable>
+            </>
+          )}
+        </View>
+      </View>
+    </Modal>
+    </>
   );
 }

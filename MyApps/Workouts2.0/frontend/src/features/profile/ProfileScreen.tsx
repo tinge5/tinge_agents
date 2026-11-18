@@ -44,7 +44,7 @@ export function ProfileScreen() {
   const user = useAppSelector((s) => s.auth.user);
   const [profile, setProfile] = useState<MeProfile | null>(null);
   const [completedPlansFromApi, setCompletedPlansFromApi] = useState<CompletedPlanSummary[]>([]);
-  const [workoutHistory, setWorkoutHistory] = useState<Array<{ id?: string; date?: string; title?: string; status?: string; originalPlanId?: string | null; planName?: string | null; weekIndex?: number | null; dayOfWeek?: number | null }>>([]);
+  const [workoutHistory, setWorkoutHistory] = useState<Array<{ id?: string; date?: string; title?: string; status?: string; originalPlanId?: string | null; planName?: string | null; weekIndex?: number | null; dayOfWeek?: number | null; isTemporary?: boolean }>>([]);
   const [completedPlansError, setCompletedPlansError] = useState<string | null>(null);
 
   useFocusEffect(
@@ -77,6 +77,7 @@ export function ProfileScreen() {
             planName: entry?.planName ?? null,
             weekIndex: typeof entry?.weekIndex === 'number' ? entry.weekIndex : null,
             dayOfWeek: typeof entry?.dayOfWeek === 'number' ? entry.dayOfWeek : null,
+            isTemporary: entry?.isTemporary ?? false,
           })));
         } catch {
           if (!mounted) return;
@@ -128,6 +129,7 @@ export function ProfileScreen() {
       planName: entry?.planName ?? null,
       weekIndex: typeof entry?.weekIndex === 'number' ? entry.weekIndex : null,
       dayOfWeek: typeof entry?.dayOfWeek === 'number' ? entry.dayOfWeek : null,
+      isTemporary: entry?.isTemporary ?? false,
     }));
   }, [displayUser?.workoutHistory, workoutHistory]);
 
@@ -267,6 +269,7 @@ export function ProfileScreen() {
           ? (scheduledDay - weekStart.getDay() + 7) % 7
           : null;
         const completedEntryIndex = unmatchedCompletedEntries.findIndex((entry) => {
+          if (entry.isTemporary && entry.dayOfWeek == null) return false;
           const entryDay = typeof entry.dayOfWeek === 'number' ? entry.dayOfWeek : null;
           if (entryDay !== null && scheduledOffset !== null) return entryDay === scheduledDay;
           return !!entry.title && !!day.title && entry.title.trim().toLowerCase() === day.title.trim().toLowerCase();

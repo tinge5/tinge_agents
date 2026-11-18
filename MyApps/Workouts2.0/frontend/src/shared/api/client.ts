@@ -34,7 +34,7 @@ export type MeProfile = {
     updatedAt?: string | null;
     days?: Array<{ id?: string; dayOfWeek?: number; weekIndex?: number; title?: string; exercises?: any[] }>;
   } | null;
-  workoutHistory?: Array<{ id?: string; date?: string; title?: string; status?: string; originalPlanId?: string | null; planName?: string | null; weekIndex?: number | null; dayOfWeek?: number | null }>;
+  workoutHistory?: Array<{ id?: string; date?: string; title?: string; status?: string; originalPlanId?: string | null; planName?: string | null; weekIndex?: number | null; dayOfWeek?: number | null; isTemporary?: boolean }>;
   completedPlans?: CompletedPlanSummary[];
   exerciseHistory?: Array<{ exerciseName?: string; weight?: number; reps?: number; date?: string }>;
 };
@@ -84,8 +84,8 @@ function sanitizeWorkoutSetResultInput(input: WorkoutSetResultInput): WorkoutSet
     weight: weightValue,
   };
 }
-export type TodayWorkout = { status: 'scheduled' | 'no_schedule' | 'in_progress' | 'completed' | 'no_active_plan'; workoutSessionId?: string; title?: string; day?: string; note?: string; weekIndex?: number; planId?: string; plan?: Plan; planDay?: PlanDay; setResults?: WorkoutSetResult[]; exercises?: Array<{ id?: string; name: string; exerciseId?: string | null; sets: number | null; reps: number | null; weight: number | null; previousPerformance?: { sets: number | null; reps: number | null; weight: number | null; setResults?: Array<{ setNumber?: number | null; reps?: number | null; weight?: number | null }> | null } | null; suggestedTarget?: { sets: number | null; reps: number | null; weight: number | null } | null }> };
-export type WorkoutHistorySession = { id: string; userId: string; originalPlanId?: string | null; planName: string; workoutName: string; dayName: string; weekIndex?: number | null; dayOfWeek?: number | null; completedAt: string; workoutSessionId: string; setResults: WorkoutSetResultHistory[] };
+export type TodayWorkout = { status: 'scheduled' | 'no_schedule' | 'in_progress' | 'completed' | 'no_active_plan'; isTemporary?: boolean; workoutSessionId?: string; title?: string; day?: string; note?: string; weekIndex?: number; planId?: string; plan?: Plan; planDay?: PlanDay; setResults?: WorkoutSetResult[]; exercises?: Array<{ id?: string; name: string; exerciseId?: string | null; sets: number | null; reps: number | null; weight: number | null; repsTarget?: number | null; setsTarget?: number | null; previousPerformance?: { sets: number | null; reps: number | null; weight: number | null; setResults?: Array<{ setNumber?: number | null; reps?: number | null; weight?: number | null }> | null } | null; suggestedTarget?: { sets: number | null; reps: number | null; weight: number | null } | null }> };
+export type WorkoutHistorySession = { id: string; userId: string; originalPlanId?: string | null; planName: string; workoutName: string; dayName: string; weekIndex?: number | null; dayOfWeek?: number | null; isTemporary?: boolean; completedAt: string; workoutSessionId: string; setResults: WorkoutSetResultHistory[] };
 
 async function readStoredTokens() {
   const [accessToken, refreshToken] = await Promise.all([AsyncStorage.getItem(ACCESS_TOKEN_KEY), AsyncStorage.getItem(REFRESH_TOKEN_KEY)]);
@@ -109,6 +109,7 @@ export async function restoreSessionFromStorage() { const raw = await AsyncStora
 export async function signOut() { try { const { refreshToken } = await readStoredTokens(); if (refreshToken) { await request('/auth/logout', { method: 'POST', body: JSON.stringify({ refreshToken }) }, false).catch(() => undefined); } } finally { await persistTokens(null); } }
 export async function getMe() { return request<MeProfile>('/me', { headers: { 'x-device-timezone': getDeviceTimeZone() } }); }
 export async function getTodayWorkout() { return request<TodayWorkout>('/workouts/today', { headers: { 'x-device-timezone': getDeviceTimeZone() } }); }
+export async function createTemporaryWorkout(planDayId: string) { return request<TodayWorkout>('/workouts/temporary-switch', { method: 'POST', headers: { 'x-device-timezone': getDeviceTimeZone() }, body: JSON.stringify({ planDayId }) }); }
 export async function startWorkoutSession() { return request<WorkoutSessionStartResponse>('/workouts/start', { method: 'POST', headers: { 'x-device-timezone': Intl.DateTimeFormat().resolvedOptions().timeZone } }); }
 export async function saveWorkoutSetResult(workoutSessionId: string, input: WorkoutSetResultInput) {
   return request<void>(`/workouts/${workoutSessionId}/set-results`, {

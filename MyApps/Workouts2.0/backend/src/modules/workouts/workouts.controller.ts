@@ -29,6 +29,12 @@ class SaveWorkoutSetResultBody {
   @IsBoolean()
   completed?: boolean;
 }
+
+class TemporaryWorkoutSwitchBody {
+  @IsString()
+  planDayId!: string;
+}
+
 @UseGuards(JwtAuthGuard)
 @Controller('workouts')
 export class WorkoutsController {
@@ -42,6 +48,15 @@ export class WorkoutsController {
   @Get('current')
   current(@Req() req: any, @Headers('x-device-timezone') deviceTimeZone?: string) {
     return this.workoutsService.current(req.user.sub, deviceTimeZone);
+  }
+
+  @Post('temporary-switch')
+  temporarySwitch(
+    @Req() req: any,
+    @Body() body: TemporaryWorkoutSwitchBody,
+    @Headers('x-device-timezone') deviceTimeZone?: string,
+  ) {
+    return this.workoutsService.switchTemporaryWorkout(req.user.sub, body.planDayId, deviceTimeZone);
   }
 
   @Post('start')
