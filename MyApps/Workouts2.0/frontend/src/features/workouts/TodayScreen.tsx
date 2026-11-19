@@ -150,7 +150,7 @@ export function TodayScreen({ navigation }: any) {
               setSelectedTemporaryDay(null);
               setTemporarySwitchOpen(true);
             }}
-            style={{ backgroundColor: theme.colors.new, borderWidth: 1, borderColor: theme.colors.border, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12 }}
+            style={{ backgroundColor: theme.colors.surfaceAlt, borderWidth: 1, borderColor: theme.colors.surfaceAlt, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12 }}
           >
             <Text style={{ color: theme.colors.text, fontWeight: '700' }}>Quick Swap Workout</Text>
           </Pressable>
