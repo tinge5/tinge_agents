@@ -150,9 +150,9 @@ export function TodayScreen({ navigation }: any) {
               setSelectedTemporaryDay(null);
               setTemporarySwitchOpen(true);
             }}
-            style={{ backgroundColor: theme.colors.surfaceAlt, borderWidth: 1, borderColor: theme.colors.border, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12 }}
+            style={{ backgroundColor: theme.colors.new, borderWidth: 1, borderColor: theme.colors.border, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12 }}
           >
-            <Text style={{ color: theme.colors.text, fontWeight: '700' }}>Temporary switch</Text>
+            <Text style={{ color: theme.colors.text, fontWeight: '700' }}>Quick Swap Workout</Text>
           </Pressable>
         ) : null}
       </View>
@@ -179,7 +179,7 @@ export function TodayScreen({ navigation }: any) {
         <>
           <View style={{ backgroundColor: theme.colors.surface, padding: 16, borderRadius: 16, gap: 8 }}>
             <Text style={{ fontSize: 22, fontWeight: '700', color: theme.colors.text }}>{workout.title ?? 'Scheduled Workout'}</Text>
-            {isTemporaryWorkout ? <Text style={{ color: theme.colors.primaryDark, fontWeight: '700' }}>Temporary workout — plan unchanged</Text> : null}
+            {isTemporaryWorkout ? <Text style={{ color: theme.colors.primaryDark, fontWeight: '700' }}>Altered Today ONLY — Plan details unchanged</Text> : null}
             <Text style={{ color: theme.colors.text }}>{workout.planDay?.dayOfWeek != null ? DAY_LABELS[workout.planDay.dayOfWeek] : 'Today'}</Text>
             <Text style={{ color: theme.colors.textMuted }}>Week {workout.weekIndex != null ? Number(workout.weekIndex) + 1 : 1}</Text>
             {workout.note ? <Text style={{ color: theme.colors.text }}>{workout.note}</Text> : null}
@@ -207,7 +207,7 @@ export function TodayScreen({ navigation }: any) {
     >
       <View style={{ flex: 1, justifyContent: 'center', padding: 20, backgroundColor: 'rgba(0,0,0,0.65)' }}>
         <View style={{ maxHeight: '85%', backgroundColor: theme.colors.surface, borderRadius: 18, borderWidth: 1, borderColor: theme.colors.border, padding: 18, gap: 12 }}>
-          <Text style={{ fontSize: 20, fontWeight: '800', color: theme.colors.text }}>Temporary switch</Text>
+          <Text style={{ fontSize: 20, fontWeight: '800', color: theme.colors.text }}>Temporary Swap</Text>
           {selectedTemporaryDay ? (
             <>
               <Text style={{ color: theme.colors.text }}>
