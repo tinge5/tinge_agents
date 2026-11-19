@@ -326,6 +326,13 @@ export function ProfileScreen() {
         background: 'rgba(255,255,255,0.04)',
         border: theme.colors.border,
       };
+    } else if (completed >= planned) {
+      status = {
+        label: `Weekly workout goal reached · ${planned} workouts`,
+        color: theme.colors.success,
+        background: 'rgba(34, 197, 94, 0.12)',
+        border: 'rgba(34, 197, 94, 0.45)',
+      };
     } else if (workoutsToCatchUp > 0) {
       status = {
         label: `${workoutsToCatchUp} workout${workoutsToCatchUp === 1 ? '' : 's'} to catch up on`,
@@ -335,16 +342,7 @@ export function ProfileScreen() {
       };
     } else if (todayWorkoutCompleted) {
       status = {
-        label: completed >= planned
-          ? 'Workout completed today · All scheduled workouts complete'
-          : 'Workout completed today',
-        color: theme.colors.success,
-        background: 'rgba(34, 197, 94, 0.12)',
-        border: 'rgba(34, 197, 94, 0.45)',
-      };
-    } else if (completed >= planned) {
-      status = {
-        label: 'All scheduled workouts completed',
+        label: 'Workout completed today',
         color: theme.colors.success,
         background: 'rgba(34, 197, 94, 0.12)',
         border: 'rgba(34, 197, 94, 0.45)',
