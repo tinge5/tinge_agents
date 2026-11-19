@@ -152,7 +152,7 @@ export function TodayScreen({ navigation }: any) {
             }}
             style={{ backgroundColor: theme.colors.surfaceAlt, borderWidth: 1, borderColor: theme.colors.surfaceAlt, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12 }}
           >
-            <Text style={{ color: theme.colors.text, fontWeight: '700' }}>Quick Swap Workout</Text>
+            <Text style={{ color: theme.colors.text, fontWeight: '700',  textShadowColor: '#e5ebea', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 5 }}>Quick Swap Workout</Text>
           </Pressable>
         ) : null}
       </View>
